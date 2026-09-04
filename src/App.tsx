@@ -5,7 +5,7 @@ import { CheckoutCard } from './components/CheckoutCard';
 import { PaidCard } from './components/PaidCard';
 import { DownloadModal } from './components/DownloadModal';
 import { Order, OrderStatus } from './types';
-import { PRODUCT_ID, POLL_INTERVAL_MS, ORDER_EXPIRATION_SECONDS } from './config';
+import { PRODUCT_ID, POLL_INTERVAL_MS, ORDER_EXPIRATION_SECONDS, API_BASE_URL } from './config';
 import { api } from './services/api';
 import { AlertCircle, RotateCcw } from 'lucide-react';
 
@@ -97,6 +97,41 @@ export default function App() {
     setErrorMessage(null);
     setIsDownloadModalOpen(false);
     setTimeRemainingSeconds(ORDER_EXPIRATION_SECONDS);
+  };
+
+  // Handle product download
+  const handleDownload = async () => {
+    if (!order?.orderId) return;
+    try {
+      const res = await api.getDownloadToken(order.orderId);
+      if (res.success && res.data) {
+        const token = res.data.token;
+        if (token.startsWith('mock_tok_')) {
+          // Simulated client-side download for demo mode
+          const element = document.createElement("a");
+          const file = new Blob([
+            "--- VOLT PAYWALL DEMO DOWNLOAD ---\n" +
+            "¡Felicidades! Has completado el flujo de pago con éxito en modo simulado.\n" +
+            "ID de orden: " + order.orderId + "\n" +
+            "Hash de transacción: " + (order.txHash || "N/A") + "\n" +
+            "Monto: " + order.amount + " USDT"
+          ], { type: 'text/plain' });
+          element.href = URL.createObjectURL(file);
+          element.download = "creator_pack_demo_download.txt";
+          document.body.appendChild(element);
+          element.click();
+          document.body.removeChild(element);
+        } else {
+          // Production/Local server-side download
+          const downloadUrl = `${API_BASE_URL || ''}/api/download?token=${encodeURIComponent(token)}`;
+          window.location.href = downloadUrl;
+        }
+      } else {
+        alert(res.error?.message || 'No se pudo obtener el token de descarga.');
+      }
+    } catch (err) {
+      alert('Error de conexión al solicitar la descarga.');
+    }
   };
 
   // Polling Effect - Runs when order status is PENDING or CONFIRMING
@@ -233,7 +268,7 @@ export default function App() {
             (order.status === 'PAID' || order.status === 'PAID_LATE') && (
               <PaidCard
                 order={order}
-                onDownloadClick={() => setIsDownloadModalOpen(true)}
+                onDownloadClick={handleDownload}
               />
             )}
 

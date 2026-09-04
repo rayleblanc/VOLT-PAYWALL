@@ -34,6 +34,23 @@ export const api = {
   },
 
   /**
+   * Request secure single-use download token.
+   */
+  async getDownloadToken(orderId: string) {
+    const client = getApiClient();
+    if (client.getDownloadToken) {
+      return client.getDownloadToken(orderId);
+    }
+    return {
+      success: false,
+      error: {
+        code: 'NOT_SUPPORTED',
+        message: 'El método de descarga no es soportado por el cliente activo.',
+      },
+    };
+  },
+
+  /**
    * Simulate payment detection (Demo mode feature).
    */
   async simulatePayment(orderId: string) {

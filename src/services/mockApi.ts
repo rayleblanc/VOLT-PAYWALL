@@ -185,6 +185,41 @@ export const mockApi: ApiClient = {
   },
 
   /**
+   * Request secure single-use download token (Simulated in demo mode)
+   */
+  async getDownloadToken(orderId: string): Promise<ApiClientResponse<{ token: string }>> {
+    await delay(300);
+    const order = mockOrdersStore.get(orderId);
+    if (!order) {
+      return {
+        success: false,
+        error: {
+          code: 'ORDER_NOT_FOUND',
+          message: 'Orden no encontrada.',
+        },
+      };
+    }
+
+    if (order.status !== 'PAID' && order.status !== 'PAID_LATE') {
+      return {
+        success: false,
+        error: {
+          code: 'NOT_PAID',
+          message: 'La orden aún no ha sido pagada.',
+        },
+      };
+    }
+
+    const randomHex = Math.random().toString(16).substring(2, 10);
+    return {
+      success: true,
+      data: {
+        token: `mock_tok_${randomHex}`,
+      },
+    };
+  },
+
+  /**
    * Clears mock order data for development reset
    */
   async resetDemoOrder(orderId?: string): Promise<void> {

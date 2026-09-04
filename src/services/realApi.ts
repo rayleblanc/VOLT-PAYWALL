@@ -160,6 +160,50 @@ export const realApi: ApiClient = {
   },
 
   /**
+   * Request secure single-use download token via POST /api/download-token
+   */
+  async getDownloadToken(orderId: string): Promise<ApiClientResponse<{ token: string }>> {
+    if (!API_BASE_URL) {
+      return {
+        success: false,
+        error: {
+          code: 'API_NOT_CONFIGURED',
+          message: 'La URL de la API de producción no está configurada.',
+        },
+      };
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/download-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          error: handleApiError(errorData, 'DOWNLOAD_TOKEN_FAILED'),
+        };
+      }
+
+      const data = await response.json() as { token: string };
+      return {
+        success: true,
+        data,
+      };
+    } catch (err) {
+      return {
+        success: false,
+        error: handleApiError(err, 'NETWORK_ERROR'),
+      };
+    }
+  },
+
+  /**
    * Simulation is unavailable on production API.
    */
   async simulatePayment(): Promise<ApiClientResponse<Order>> {

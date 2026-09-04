@@ -61,11 +61,11 @@ export async function createOrderInD1(
   if (rpcUrl) {
     // Real/Testnet blockchain flow: RPC is configured, so we MUST successfully fetch chainId and blockNumber
     try {
-      const chainId = await getChainId(rpcUrl);
+      const chainId = await getChainId(env);
       if (chainId !== 97) {
         throw new Error(`Chain ID mismatch! Expected 97, got ${chainId}`);
       }
-      createdBlock = await getBlockNumber(rpcUrl);
+      createdBlock = await getBlockNumber(env);
       if (typeof createdBlock !== 'number' || createdBlock < 0) {
         throw new Error(`Invalid block number received from RPC: ${createdBlock}`);
       }

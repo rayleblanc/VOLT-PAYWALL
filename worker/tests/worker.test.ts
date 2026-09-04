@@ -187,7 +187,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     let updatedStatus = '';
 
     const expiredRecord: D1OrderRecord = {
-      id: 'volt_ord_expired_test',
+      id: 'volt_ord_6f1234567890abcd',
       product_id: 'creator-pack',
       payment_mode: 'manual',
       amount: '39.5000',
@@ -223,6 +223,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
         }),
       } as unknown as D1Database,
       APP_ENV: 'development',
+      BSC_RPC_URL: 'none',
     };
 
     const req = new Request(`http://localhost:8787/api/status?orderId=${expiredRecord.id}`, { method: 'GET' });
@@ -415,6 +416,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
         }),
       } as unknown as D1Database,
       APP_ENV: 'development',
+      BSC_RPC_URL: 'none',
     };
 
     const req = new Request('http://localhost:8787/api/orders', {
@@ -1331,6 +1333,100 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     } finally {
       globalThis.fetch = originalFetch;
     }
+  });
+
+  it('36. PRODUCTION jamás entrega el ZIP de fallback si KV falla', async () => {
+    let selectTokenRecord = {
+      order_id: 'volt_ord_prod_fail',
+      expires_at: new Date(Date.now() + 3600000).toISOString(),
+      used_at: null,
+    };
+
+    const mockDb: D1Database = {
+      prepare: (query: string) => ({
+        bind: (..._args: any[]) => ({
+          first: async () => selectTokenRecord,
+          run: async () => ({ success: true }),
+        }),
+      }),
+    } as unknown as D1Database;
+
+    const mockEnv: Env = {
+      DB: mockDb,
+      APP_ENV: 'production',
+      ASSETS_KV: undefined, // KV represents an unprovisioned or empty asset store
+    };
+
+    const token = 'volt_tok_12345678901234567890123456789012';
+    const req = new Request(`http://localhost:8787/api/download?token=${token}`);
+    const res = await worker.fetch(req, mockEnv);
+
+    assert.equal(res.status, 500);
+    const data = await res.json() as { error: string };
+    assert.equal(data.error, 'ASSET_UNAVAILABLE');
+  });
+
+  it('37. Permite descargas múltiples dentro de la ventana de recuperación de 10 minutos', async () => {
+    // Simulate a token claimed 2 minutes ago
+    const twoMinutesAgoIso = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    let selectTokenRecord = {
+      order_id: 'volt_ord_grace_success',
+      expires_at: new Date(Date.now() + 3600000).toISOString(),
+      used_at: twoMinutesAgoIso,
+    };
+
+    const mockDb: D1Database = {
+      prepare: (query: string) => ({
+        bind: (..._args: any[]) => ({
+          first: async () => selectTokenRecord,
+          run: async () => ({ success: true }),
+        }),
+      }),
+    } as unknown as D1Database;
+
+    const mockEnv: Env = {
+      DB: mockDb,
+      APP_ENV: 'development',
+    };
+
+    const token = 'volt_tok_12345678901234567890123456789012';
+    const req = new Request(`http://localhost:8787/api/download?token=${token}`);
+    const res = await worker.fetch(req, mockEnv);
+
+    // Should successfully deliver the fallback zip in development mode since it is inside the 10-minute grace window
+    assert.equal(res.status, 200);
+  });
+
+  it('38. Bloquea descargas si se excede la ventana de recuperación de 10 minutos', async () => {
+    // Simulate a token claimed 11 minutes ago
+    const elevenMinutesAgoIso = new Date(Date.now() - 11 * 60 * 1000).toISOString();
+    let selectTokenRecord = {
+      order_id: 'volt_ord_grace_fail',
+      expires_at: new Date(Date.now() + 3600000).toISOString(),
+      used_at: elevenMinutesAgoIso,
+    };
+
+    const mockDb: D1Database = {
+      prepare: (query: string) => ({
+        bind: (..._args: any[]) => ({
+          first: async () => selectTokenRecord,
+          run: async () => ({ success: true }),
+        }),
+      }),
+    } as unknown as D1Database;
+
+    const mockEnv: Env = {
+      DB: mockDb,
+      APP_ENV: 'development',
+    };
+
+    const token = 'volt_tok_12345678901234567890123456789012';
+    const req = new Request(`http://localhost:8787/api/download?token=${token}`);
+    const res = await worker.fetch(req, mockEnv);
+
+    assert.equal(res.status, 403);
+    const body = await res.text();
+    assert.match(body, /expired/i);
   });
 });
 

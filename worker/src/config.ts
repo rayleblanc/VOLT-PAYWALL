@@ -24,6 +24,9 @@ export const DEFAULT_BSC_TESTNET_USDT_CONTRACT = '0x337610d27c682E347C9cD60BD4b3
 // Configurable RPC chunk size for log searching
 export const DEFAULT_RPC_CHUNK_SIZE = 1000;
 
+// Configurable Business Policy for payments made after order expiration
+export const ALLOW_LATE_DELIVERY = true;
+
 // Order Time-To-Live: 45 minutes
 export const ORDER_TTL_MS = 45 * 60 * 1000;
 

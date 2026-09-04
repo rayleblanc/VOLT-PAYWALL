@@ -1,4 +1,4 @@
-// VOLT Paywall Worker - JSON-RPC BSC Testnet Client
+// VOLT Paywall Worker - Robust JSON-RPC BSC Testnet Client with Failover and Backoff
 
 import { Env } from '../types';
 import {
@@ -37,6 +37,15 @@ export interface GetLogsParams {
   topics?: (string | string[] | null)[];
 }
 
+export interface RpcTransactionReceipt {
+  transactionHash: string;
+  blockNumber: string;
+  status: string; // '0x1' or '0x0'
+  from: string;
+  to: string;
+  logs?: RpcLog[];
+}
+
 /**
  * Validates whether a string is a valid 42-character EVM address (0x-prefixed hex).
  */
@@ -46,20 +55,48 @@ export function isValidEvmAddress(address: string): boolean {
 }
 
 /**
- * Resolves the RPC URL exclusively from environment or returns null if not configured.
+ * Resolves list of RPC URLs from the environment or returns default public endpoints.
  */
-export function getRpcUrl(env: Env): string | null {
-  if (env.BSC_RPC_URL && env.BSC_RPC_URL.trim() !== '') {
-    return env.BSC_RPC_URL.trim();
+export function getRpcUrls(envOrUrl: Env | string): string[] {
+  if (typeof envOrUrl === 'string') {
+    return [envOrUrl];
   }
-  return null;
+  const env = envOrUrl;
+  if (env.BSC_RPC_URL !== undefined) {
+    const val = env.BSC_RPC_URL.trim();
+    if (val === '' || val.toLowerCase() === 'none' || val.toLowerCase() === 'disabled') {
+      return [];
+    }
+    return env.BSC_RPC_URL.split(',')
+      .map((u) => u.trim())
+      .filter((u) => u !== '');
+  }
+  // Robust list of public BSC Testnet endpoints for resilient failover
+  return [
+    'https://data-seed-prebsc-1-s1.binance.org:8545/',
+    'https://data-seed-prebsc-2-s1.binance.org:8545/',
+    'https://data-seed-prebsc-1-s2.binance.org:8545/',
+    'https://data-seed-prebsc-2-s2.binance.org:8545/',
+  ];
+}
+
+/**
+ * Resolves the primary/first configured RPC URL for diagnostic logging.
+ */
+export function getRpcUrl(envOrUrl: Env | string): string | null {
+  const urls = getRpcUrls(envOrUrl);
+  return urls.length > 0 ? urls[0] : null;
 }
 
 /**
  * Resolves the authoritative token contract address server-side.
  * Ignores any client-supplied input and validates EVM address format.
  */
-export function getTokenContractAddress(env: Env): string {
+export function getTokenContractAddress(envOrUrl: Env | string): string {
+  if (typeof envOrUrl === 'string') {
+    return DEFAULT_BSC_TESTNET_USDT_CONTRACT;
+  }
+  const env = envOrUrl;
   const addr = env.USDT_CONTRACT_ADDRESS && env.USDT_CONTRACT_ADDRESS.trim() !== ''
     ? env.USDT_CONTRACT_ADDRESS.trim()
     : DEFAULT_BSC_TESTNET_USDT_CONTRACT;
@@ -73,9 +110,13 @@ export function getTokenContractAddress(env: Env): string {
 /**
  * Resolves the block search chunk size from environment with safe bounds (min 10, max 5000).
  */
-export function getRpcChunkSize(env: Env): number {
+export function getRpcChunkSize(envOrUrl: Env | string): number {
   const MIN_CHUNK = 10;
   const MAX_CHUNK = 5000;
+  if (typeof envOrUrl === 'string') {
+    return DEFAULT_RPC_CHUNK_SIZE;
+  }
+  const env = envOrUrl;
   if (env.RPC_CHUNK_SIZE) {
     const parsed = parseInt(env.RPC_CHUNK_SIZE, 10);
     if (!isNaN(parsed)) {
@@ -153,11 +194,51 @@ export async function callJsonRpc<T>(
 }
 
 /**
+ * Core Orchestrator: Runs callJsonRpc sequentially over resolved RPC urls with retries and exponential backoff.
+ */
+export async function callJsonRpcWithFailover<T>(
+  envOrUrl: Env | string,
+  method: string,
+  params: unknown[] = [],
+  timeoutMs = 5000
+): Promise<T> {
+  const urls = getRpcUrls(envOrUrl);
+  if (urls.length === 0) {
+    throw new Error('No RPC endpoints configured.');
+  }
+
+  let lastError: Error | null = null;
+
+  for (const url of urls) {
+    const maxAttempts = 2;
+    let attemptDelay = 300; // ms
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await callJsonRpc<T>(url, method, params, timeoutMs);
+      } catch (err: unknown) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        console.warn(`RPC endpoint ${url} failed on attempt ${attempt}/${maxAttempts} for method '${method}': ${lastError.message}`);
+        
+        if (attempt < maxAttempts) {
+          await new Promise((r) => setTimeout(r, attemptDelay));
+          attemptDelay *= 2; // Exponential backoff
+        }
+      }
+    }
+  }
+
+  throw new RpcError(
+    `All RPC endpoints failed to execute method '${method}'. Last error: ${lastError ? lastError.message : 'Unknown'}`
+  );
+}
+
+/**
  * Queries eth_chainId and validates that it strictly matches BSC Testnet (97 / 0x61).
  * Immediately throws RpcError if network chainId != 97.
  */
-export async function getChainId(rpcUrl: string, timeoutMs = 5000): Promise<number> {
-  const hexChainId = await callJsonRpc<string>(rpcUrl, 'eth_chainId', [], timeoutMs);
+export async function getChainId(envOrUrl: Env | string, timeoutMs = 5000): Promise<number> {
+  const hexChainId = await callJsonRpcWithFailover<string>(envOrUrl, 'eth_chainId', [], timeoutMs);
 
   if (typeof hexChainId !== 'string' || !hexChainId.startsWith('0x')) {
     throw new RpcError(`Invalid eth_chainId response format: expected hex string starting with 0x, got '${String(hexChainId)}'`);
@@ -178,8 +259,8 @@ export async function getChainId(rpcUrl: string, timeoutMs = 5000): Promise<numb
 /**
  * Queries eth_blockNumber and returns current block as a decimal integer.
  */
-export async function getBlockNumber(rpcUrl: string, timeoutMs = 5000): Promise<number> {
-  const hexBlock = await callJsonRpc<string>(rpcUrl, 'eth_blockNumber', [], timeoutMs);
+export async function getBlockNumber(envOrUrl: Env | string, timeoutMs = 5000): Promise<number> {
+  const hexBlock = await callJsonRpcWithFailover<string>(envOrUrl, 'eth_blockNumber', [], timeoutMs);
 
   if (typeof hexBlock !== 'string' || !hexBlock.startsWith('0x')) {
     throw new RpcError(`Invalid eth_blockNumber response format: expected hex string starting with 0x, got '${String(hexBlock)}'`);
@@ -195,10 +276,9 @@ export async function getBlockNumber(rpcUrl: string, timeoutMs = 5000): Promise<
 
 /**
  * Prepared log search abstraction for chunked range queries (created_block -> latest).
- * Note: Transfer log processing and validation will be implemented in the next phase.
  */
 export async function getLogs(
-  rpcUrl: string,
+  envOrUrl: Env | string,
   params: GetLogsParams,
   timeoutMs = 5000
 ): Promise<RpcLog[]> {
@@ -216,7 +296,7 @@ export async function getLogs(
     ...(params.topics ? { topics: params.topics } : {}),
   };
 
-  const logs = await callJsonRpc<RpcLog[]>(rpcUrl, 'eth_getLogs', [filterObject], timeoutMs);
+  const logs = await callJsonRpcWithFailover<RpcLog[]>(envOrUrl, 'eth_getLogs', [filterObject], timeoutMs);
   if (!Array.isArray(logs)) {
     throw new RpcError(`Invalid eth_getLogs response format: expected array, got ${typeof logs}`);
   }
@@ -224,28 +304,19 @@ export async function getLogs(
   return logs;
 }
 
-export interface RpcTransactionReceipt {
-  transactionHash: string;
-  blockNumber: string;
-  status: string; // '0x1' or '0x0'
-  from: string;
-  to: string;
-  logs?: RpcLog[];
-}
-
 /**
  * Queries eth_getTransactionReceipt for verification of transaction success.
  */
 export async function getTransactionReceipt(
-  rpcUrl: string,
+  envOrUrl: Env | string,
   txHash: string,
   timeoutMs = 5000
 ): Promise<RpcTransactionReceipt | null> {
   if (!txHash || typeof txHash !== 'string' || !txHash.startsWith('0x')) {
     return null;
   }
-  const receipt = await callJsonRpc<RpcTransactionReceipt | null>(
-    rpcUrl,
+  const receipt = await callJsonRpcWithFailover<RpcTransactionReceipt | null>(
+    envOrUrl,
     'eth_getTransactionReceipt',
     [txHash],
     timeoutMs
@@ -258,14 +329,14 @@ export async function getTransactionReceipt(
  * Returns decimal seconds since epoch, or null if it fails.
  */
 export async function getBlockTimestamp(
-  rpcUrl: string,
+  envOrUrl: Env | string,
   blockNumber: number,
   timeoutMs = 5000
 ): Promise<number | null> {
   try {
     const hexBlock = '0x' + blockNumber.toString(16);
-    const block = await callJsonRpc<{ timestamp: string } | null>(
-      rpcUrl,
+    const block = await callJsonRpcWithFailover<{ timestamp: string } | null>(
+      envOrUrl,
       'eth_getBlockByNumber',
       [hexBlock, false],
       timeoutMs
@@ -278,4 +349,3 @@ export async function getBlockTimestamp(
   }
   return null;
 }
-

@@ -1,7 +1,7 @@
 // VOLT Paywall Worker - Server-Side Payment Verifier Engine
 
 import { Env, D1OrderRecord } from '../types';
-import { DEV_PAYMENT_RECIPIENT, usdtToTokenUnits } from '../config';
+import { DEV_PAYMENT_RECIPIENT, usdtToTokenUnits, ALLOW_LATE_DELIVERY } from '../config';
 import {
   getRpcUrl,
   getChainId,
@@ -43,9 +43,6 @@ export function decodeHexUint256(hexData: string | null | undefined): bigint {
 
 /**
  * Verifies if an order has received a valid on-chain payment on BSC Testnet.
- */
-/**
- * Verifies if an order has received a valid on-chain payment on BSC Testnet.
  * Supports optional clientTxHash for instant direct verification.
  */
 export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash?: string | null): Promise<void> {
@@ -67,7 +64,7 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
   }
 
   // 1. Validate Network Chain ID == 97
-  const chainId = await getChainId(rpcUrl);
+  const chainId = await getChainId(env);
   if (chainId !== 97) {
     throw new RpcError(`Chain ID mismatch during verification! Expected 97, got ${chainId}`);
   }
@@ -78,7 +75,7 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
   }
 
   // 3. Get current block number
-  const currentBlock = await getBlockNumber(rpcUrl);
+  const currentBlock = await getBlockNumber(env);
   if (currentBlock < record.created_block) {
     return; // No blocks mined since order creation
   }
@@ -107,7 +104,7 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
   // Path A: Direct validation if a client txHash is provided (EIP-1193 direct flow)
   if (clientTxHash && typeof clientTxHash === 'string' && clientTxHash.startsWith('0x') && clientTxHash.length === 66) {
     try {
-      const receipt = await getTransactionReceipt(rpcUrl, clientTxHash);
+      const receipt = await getTransactionReceipt(env, clientTxHash);
       if (receipt) {
         const isSuccess = receipt.status === '0x1' || receipt.status === '0x01' || (receipt as any).status === true;
         if (isSuccess) {
@@ -168,7 +165,7 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
       const chunkTo = Math.min(chunkFrom + chunkSize - 1, currentBlock);
 
       try {
-        const logs = await getLogs(rpcUrl, {
+        const logs = await getLogs(env, {
           fromBlock: chunkFrom,
           toBlock: chunkTo,
           address: tokenContract,
@@ -197,7 +194,7 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
           if (!txHash) continue;
 
           // E. Verify Transaction Receipt status
-          const receipt = await getTransactionReceipt(rpcUrl, txHash);
+          const receipt = await getTransactionReceipt(env, txHash);
           if (!receipt) continue;
 
           const isSuccess = receipt.status === '0x1' || receipt.status === '0x01' || (receipt as unknown as { status: boolean }).status === true;
@@ -258,7 +255,7 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
 
   // 11. Late Payment Check: Compare on-chain block timestamp vs expires_at
   const expiresAtMs = new Date(record.expires_at).getTime();
-  const blockTimeSec = await getBlockTimestamp(rpcUrl, validCandidate.blockNumber);
+  const blockTimeSec = await getBlockTimestamp(env, validCandidate.blockNumber);
   
   if (blockTimeSec === null) {
     throw new Error(`RPC_TIMESTAMP_FETCH_FAILED: Failed to fetch on-chain block timestamp for block ${validCandidate.blockNumber}`);
@@ -267,10 +264,18 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
   const blockTimeMs = blockTimeSec * 1000;
   const isLate = blockTimeMs > expiresAtMs;
 
-  const REQUIRED_CONFIRMATIONS = 12;
-  const newStatus = isLate
-    ? 'PAID_LATE'
-    : (validCandidate.confirmations >= REQUIRED_CONFIRMATIONS ? 'PAID' : 'CONFIRMING');
+  let newStatus: string;
+  if (isLate) {
+    if (ALLOW_LATE_DELIVERY) {
+      newStatus = 'PAID_LATE';
+    } else {
+      newStatus = 'MANUAL_REVIEW';
+    }
+  } else {
+    const REQUIRED_CONFIRMATIONS = 12;
+    newStatus = validCandidate.confirmations >= REQUIRED_CONFIRMATIONS ? 'PAID' : 'CONFIRMING';
+  }
+
   const nowIso = new Date().toISOString();
 
   // 16. Atomic transaction update in D1
@@ -321,5 +326,43 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
     await env.DB.batch([updateStmt, insertStmt]);
   } catch (err) {
     console.error(`D1 Atomic Transaction failed for order ${orderId}:`, err);
+  }
+}
+
+/**
+ * Scans D1 for active or recently expired orders and executes automated payment reconciliation.
+ */
+export async function reconcilePendingPayments(env: Env): Promise<void> {
+  const rpcUrl = getRpcUrl(env);
+  if (!rpcUrl) {
+    return; // No-op if RPC is offline or demo mode
+  }
+
+  // Get orders that are PENDING, CONFIRMING or recently EXPIRED (within last 2 hours)
+  const twoHoursAgoIso = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+  
+  try {
+    const selectQuery = `
+      SELECT id FROM orders
+      WHERE status IN ('PENDING', 'CONFIRMING')
+         OR (status = 'EXPIRED' AND created_at >= ?)
+      ORDER BY created_at ASC
+      LIMIT 15
+    `;
+    const records = await env.DB.prepare(selectQuery).bind(twoHoursAgoIso).all<{ id: string }>();
+    if (!records || !records.results || records.results.length === 0) {
+      return;
+    }
+
+    console.log(`[Reconciler] Found ${records.results.length} order candidates for autonomous verification.`);
+    for (const record of records.results) {
+      try {
+        await verifyOrderPayment(record.id, env);
+      } catch (err) {
+        console.error(`[Reconciler] Failed to verify order '${record.id}':`, err);
+      }
+    }
+  } catch (err) {
+    console.error(`[Reconciler] Error selecting pending order candidates:`, err);
   }
 }

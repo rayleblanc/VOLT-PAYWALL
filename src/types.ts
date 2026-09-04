@@ -82,9 +82,14 @@ export interface ApiClientResponse<T> {
   error?: ApiError;
 }
 
+export interface DownloadTokenResponse {
+  token: string;
+}
+
 export interface ApiClient {
   createOrder(params: CreateOrderParams): Promise<ApiClientResponse<Order>>;
   getOrderStatus(orderId: string, txHash?: string): Promise<ApiClientResponse<OrderStatusResponse>>;
+  getDownloadToken?(orderId: string): Promise<ApiClientResponse<DownloadTokenResponse>>;
   simulatePayment?(orderId: string): Promise<ApiClientResponse<Order>>;
   resetDemoOrder?(orderId?: string): Promise<void>;
 }
