@@ -1,0 +1,6 @@
+{
+  "name": "VOLT Paywall",
+  "description": "VOLT USDT Paywall - All-in-One Creator Pack",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
