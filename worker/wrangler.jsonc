@@ -1,24 +1,21 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "volt-paywall-worker",
+  "name": "volt-paywall",
   "main": "src/index.ts",
   "compatibility_date": "2024-09-01",
   "compatibility_flags": ["nodejs_compat"],
-  "vars": {
-    "APP_ENV": "development",
-    "PAYMENT_RECIPIENT": "0x000000000000000000000000000000000000dEaD"
-  },
+  "keep_vars": true,
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "volt-paywall-d1",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID_FROM_WRANGLER"
+      "database_name": "volt-paywall-db",
+      "database_id": "c9e2a3d2-5326-4fa8-ad0e-e35f8d6ffe6d"
     }
   ],
   "kv_namespaces": [
     {
       "binding": "ASSETS_KV",
-      "id": "REPLACE_WITH_KV_NAMESPACE_ID_FROM_WRANGLER"
+      "id": "13b740c4c9b944408b236b8e96d2c9e8"
     }
   ],
   "triggers": {

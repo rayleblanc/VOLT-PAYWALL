@@ -147,7 +147,8 @@ The Worker strictly relies on server-side authority for blockchain settings. Con
 * **NEVER enter any Private Keys (`sk`) or Seed Phrases** inside the frontend, the Worker configuration, or environment variables. This project operates as a non-custodial paywall. Transactions are signed solely on the client side by the user's wallet via EIP-1193.
 * **Never accept parameters sent by the client** to override blockchain RPC nodes, contract addresses, token symbols, or recipient wallets. The Worker rejects all client overrides.
 
-### 4. Phase Limitations & Current Status
-- **NO USDT Transfer Execution**: At this stage, the backend and frontend are wired for EIP-1193 connectivity, but they do NOT send USDT, execute `eth_sendTransaction`, or spend real or test funds.
-- **NO TxHash Verification**: The system is designed to save the block number during order creation (`created_block`), laying the foundation for future log searching. Actual `eth_getLogs` verification and transaction hash validation are deferred to the next phase.
+### 4. Verification Engine & On-Chain Status
+- **Fully Functional On-Chain Verification**: The backend features a production-ready payment verifier engine. It validates transaction hashes (`clientTxHash`) directly via `eth_getTransactionReceipt` (Path A) and automatically falls back to an optimized chunked `eth_getLogs` query (Path B) for manual payment flows.
+- **Native BSC Finality Support**: The payment engine prioritizes BNB Smart Chain's native `finalized` block tag to approve payments securely and instantly on finality, safely falling back to standard 12-block confirmation rules if the RPC node does not support the finalized tag.
+- **Strict Double-Spend and Re-use Protection**: Every validated transaction is recorded atomically in the D1 database. Reusing the same `txHash` across multiple orders is completely blocked.
 

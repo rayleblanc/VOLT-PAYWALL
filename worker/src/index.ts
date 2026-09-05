@@ -230,9 +230,9 @@ export default {
         // Atomic transaction: Delete any existing active token for this order (limit concurrency) and insert new
         const deleteStmt = env.DB.prepare(`DELETE FROM download_tokens WHERE order_id = ?`).bind(orderId);
         const insertStmt = env.DB.prepare(`
-          INSERT INTO download_tokens (order_id, token_hash, expires_at, created_at)
-          VALUES (?, ?, ?, ?)
-        `).bind(orderId, tokenHash, expiresAt, nowIso);
+          INSERT INTO download_tokens (order_id, token_hash, jti, expires_at, created_at)
+          VALUES (?, ?, ?, ?, ?)
+        `).bind(orderId, tokenHash, tokenHash, expiresAt, nowIso);
 
         await env.DB.batch([deleteStmt, insertStmt]);
 
@@ -262,11 +262,24 @@ export default {
         }
 
         const tokenHash = await sha256(cleanToken);
+        const now = new Date();
+        const nowIso = now.toISOString();
 
-        // Fetch and validate token record
+        // 3. Conditional Atomic Update: set used_at ONLY if currently NULL and not expired
+        const updateResult = await env.DB.prepare(`
+          UPDATE download_tokens
+          SET used_at = ?
+          WHERE (token_hash = ? OR jti = ?)
+            AND used_at IS NULL
+            AND expires_at > ?
+        `).bind(nowIso, tokenHash, tokenHash, nowIso).run();
+
+        const changes = updateResult?.meta?.changes ?? (updateResult as unknown as { changes?: number })?.changes ?? 0;
+
+        // Fetch token record to evaluate status or grace period window
         const tokenRecord = await env.DB.prepare(`
-          SELECT * FROM download_tokens WHERE token_hash = ? LIMIT 1
-        `).bind(tokenHash).first<{ order_id: string; expires_at: string; used_at: string | null }>();
+          SELECT * FROM download_tokens WHERE token_hash = ? OR jti = ? LIMIT 1
+        `).bind(tokenHash, tokenHash).first<{ order_id: string; expires_at: string; used_at: string | null }>();
 
         if (!tokenRecord) {
           const textHeaders = new Headers(corsHeaders);
@@ -274,7 +287,6 @@ export default {
           return new Response('Download token is invalid or does not exist.', { status: 403, headers: textHeaders });
         }
 
-        const now = new Date();
         const expiresAtDate = new Date(tokenRecord.expires_at);
         if (now.getTime() > expiresAtDate.getTime()) {
           const textHeaders = new Headers(corsHeaders);
@@ -282,7 +294,7 @@ export default {
           return new Response('This download token has expired (validity is 1 hour). Please request a new one.', { status: 403, headers: textHeaders });
         }
 
-        if (tokenRecord.used_at !== null) {
+        if (changes === 0 && tokenRecord.used_at !== null) {
           const usedAtTime = new Date(tokenRecord.used_at).getTime();
           const GRACE_PERIOD_MS = 10 * 60 * 1000; // 10 minutes lease grace window
           if (now.getTime() - usedAtTime > GRACE_PERIOD_MS) {
@@ -290,15 +302,7 @@ export default {
             textHeaders.set('Content-Type', 'text/plain; charset=utf-8');
             return new Response('This download token was claimed more than 10 minutes ago and has fully expired. Please request a new download token.', { status: 403, headers: textHeaders });
           }
-        } else {
-          // First access attempt: record the timestamp immediately to initiate the 10-minute grace lease window
-          const nowIso = now.toISOString();
-          await env.DB.prepare(`
-            UPDATE download_tokens SET used_at = ? WHERE token_hash = ?
-          `).bind(nowIso, tokenHash).run();
         }
-
-        const nowIso = now.toISOString();
 
         // Secure Digital Delivery from Workers KV
         let fileData: ArrayBuffer | ReadableStream | null = null;
@@ -307,21 +311,23 @@ export default {
         let fileSize: number | null = null;
 
         if (env.ASSETS_KV) {
+          const kv = env.ASSETS_KV;
           try {
-            const metadata = await env.ASSETS_KV.get<{ filename?: string; contentType?: string; size?: number; chunks?: string[] }>('zip_metadata', 'json');
+            const metadata = await kv.get<{ filename?: string; contentType?: string; size?: number; chunks?: string[] }>('zip_metadata', 'json');
             if (metadata) {
               filename = metadata.filename || filename;
               contentType = metadata.contentType || contentType;
               fileSize = metadata.size || null;
 
-              if (metadata.chunks && Array.isArray(metadata.chunks) && metadata.chunks.length > 0) {
+              const chunks = metadata.chunks;
+              if (chunks && Array.isArray(chunks) && chunks.length > 0) {
                 // Large chunked binary assembler streaming from KV
                 const { readable, writable } = new TransformStream();
                 const writer = writable.getWriter();
                 ctx.waitUntil((async () => {
                   try {
-                    for (const chunkKey of metadata.chunks) {
-                      const chunkData = await env.ASSETS_KV.get(chunkKey, 'arrayBuffer');
+                    for (const chunkKey of chunks) {
+                      const chunkData = await kv.get(chunkKey, 'arrayBuffer');
                       if (chunkData) {
                         await writer.write(new Uint8Array(chunkData));
                       }
@@ -335,10 +341,10 @@ export default {
                 fileData = readable;
               } else {
                 // Direct buffer retrieval
-                fileData = await env.ASSETS_KV.get('zip_content', 'arrayBuffer');
+                fileData = await kv.get('zip_content', 'arrayBuffer');
               }
             } else {
-              fileData = await env.ASSETS_KV.get('zip_content', 'arrayBuffer');
+              fileData = await kv.get('zip_content', 'arrayBuffer');
             }
           } catch (kvErr) {
             console.error('[KV] Error retrieving assets:', kvErr);

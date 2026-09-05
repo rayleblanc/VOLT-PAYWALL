@@ -349,3 +349,49 @@ export async function getBlockTimestamp(
   }
   return null;
 }
+
+/**
+ * Queries the latest finalized block number on BNB Smart Chain.
+ * Supports native 'finalized' block tag (EIP-1898 / BSC Fast Finality)
+ * and falls back to 'eth_getFinalizedHeader' if 'finalized' block tag is unsupported.
+ * Returns decimal block number, or null if unsupported/failed.
+ */
+export async function getFinalizedBlockNumber(
+  envOrUrl: Env | string,
+  timeoutMs = 5000
+): Promise<number | null> {
+  try {
+    const block = await callJsonRpcWithFailover<{ number: string } | null>(
+      envOrUrl,
+      'eth_getBlockByNumber',
+      ['finalized', false],
+      timeoutMs
+    );
+    if (block && block.number) {
+      const num = parseInt(block.number, 16);
+      if (!isNaN(num) && num > 0) {
+        return num;
+      }
+    }
+  } catch (_err) {
+    // Ignore and attempt eth_getFinalizedHeader fallback
+  }
+
+  try {
+    const header = await callJsonRpcWithFailover<{ number: string } | null>(
+      envOrUrl,
+      'eth_getFinalizedHeader',
+      [],
+      timeoutMs
+    );
+    if (header && header.number) {
+      const num = parseInt(header.number, 16);
+      if (!isNaN(num) && num > 0) {
+        return num;
+      }
+    }
+  } catch (err) {
+    console.warn(`RPC node does not support BSC finalized tags or calls failed:`, err);
+  }
+  return null;
+}

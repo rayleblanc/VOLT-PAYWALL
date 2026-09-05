@@ -11,6 +11,7 @@ import {
   getLogs,
   getTransactionReceipt,
   getBlockTimestamp,
+  getFinalizedBlockNumber,
   isValidEvmAddress,
   RpcError,
 } from './rpc';
@@ -272,8 +273,17 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
       newStatus = 'MANUAL_REVIEW';
     }
   } else {
-    const REQUIRED_CONFIRMATIONS = 12;
-    newStatus = validCandidate.confirmations >= REQUIRED_CONFIRMATIONS ? 'PAID' : 'CONFIRMING';
+    // Primary mechanism: BSC Fast Finality (verifiable BFT finalization via 'finalized' block tag or eth_getFinalizedHeader)
+    const finalizedBlock = await getFinalizedBlockNumber(env);
+    const isFinalized = finalizedBlock !== null && validCandidate.blockNumber <= finalizedBlock;
+
+    if (isFinalized) {
+      newStatus = 'PAID';
+    } else {
+      // Conservative probabilistic depth fallback when BSC finality endpoint is unsupported or block is still pending finalization
+      const FALLBACK_CONFIRMATIONS = 12;
+      newStatus = validCandidate.confirmations >= FALLBACK_CONFIRMATIONS ? 'PAID' : 'CONFIRMING';
+    }
   }
 
   const nowIso = new Date().toISOString();
@@ -281,13 +291,17 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
   // 16. Atomic transaction update in D1
   const updateStmt = env.DB.prepare(`
     UPDATE orders
-    SET status = ?, tx_hash = ?, confirmations = ?, buyer_address = ?, updated_at = ?
+    SET status = ?, tx_hash = ?, confirmations = ?, buyer_address = ?,
+        paid_at = CASE WHEN ? IN ('PAID', 'PAID_LATE') THEN COALESCE(paid_at, ?) ELSE paid_at END,
+        updated_at = ?
     WHERE id = ? AND status IN ('PENDING', 'EXPIRED', 'CONFIRMING') AND (tx_hash IS NULL OR tx_hash = ?)
   `).bind(
     newStatus,
     validCandidate.txHash,
     validCandidate.confirmations,
     validCandidate.fromAddress,
+    newStatus,
+    nowIso,
     nowIso,
     orderId,
     validCandidate.txHash
@@ -296,13 +310,13 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
   const insertStmt = env.DB.prepare(`
     INSERT INTO payments (
       order_id, tx_hash, token_contract, from_address, to_address, amount, amount_units,
-      block_number, confirmations, status, created_at
+      block_number, confirmations, status, created_at, confirmed_at
     )
-    SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
     WHERE EXISTS (
       SELECT 1 FROM orders WHERE id = ? AND tx_hash = ? AND status = ?
     ) AND NOT EXISTS (
-      SELECT 1 FROM payments WHERE tx_hash = ?
+      SELECT 1 FROM payments WHERE tx_hash = ? OR order_id = ?
     )
   `).bind(
     orderId,
@@ -316,10 +330,12 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
     validCandidate.confirmations,
     newStatus,
     nowIso,
+    nowIso,
     orderId,
     validCandidate.txHash,
     newStatus,
-    validCandidate.txHash
+    validCandidate.txHash,
+    orderId
   );
 
   try {

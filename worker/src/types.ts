@@ -98,3 +98,30 @@ export interface D1OrderRecord {
   confirmations: number | null;
   updated_at: string;
 }
+
+export interface D1PaymentRecord {
+  id: number;
+  order_id: string;
+  tx_hash: string;
+  token_contract?: string | null;
+  from_address?: string | null;
+  to_address?: string | null;
+  amount?: string | null;
+  amount_units?: string | null;
+  block_number?: number | null;
+  confirmations?: number | null;
+  status: string;
+  created_at: string;
+  confirmed_at?: string | null;
+}
+
+export interface D1DownloadTokenRecord {
+  id: number;
+  order_id: string;
+  token_hash: string;
+  jti?: string | null;
+  expires_at: string;
+  used_at: string | null;
+  created_at: string;
+}
+
