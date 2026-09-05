@@ -105,6 +105,14 @@ export default {
       });
     }
 
+    // Serve static assets for non-API requests
+    if (!path.startsWith('/api/')) {
+      if (env.ASSETS) {
+        return env.ASSETS.fetch(request);
+      }
+      return new Response('Assets binding not found', { status: 404 });
+    }
+
     try {
       // 2. Route: POST /api/orders
       if (path === '/api/orders') {

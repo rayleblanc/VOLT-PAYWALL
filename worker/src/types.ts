@@ -20,6 +20,7 @@ export interface Env {
   USDT_CONTRACT_ADDRESS?: string;
   RPC_CHUNK_SIZE?: string;
   ASSETS_KV?: KVNamespace;
+  ASSETS?: Fetcher;
 }
 
 export interface ProductConfig {
