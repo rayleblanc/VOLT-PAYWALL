@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Copy, Check, Clock, Sparkles, ShieldCheck, Loader2, AlertTriangle, Send, Wallet } from 'lucide-react';
+import { Copy, Check, Clock, Sparkles, ShieldCheck, Loader2, AlertTriangle, Send, Wallet, RefreshCw, RotateCcw } from 'lucide-react';
 import { Order } from '../types';
 import { QRCodeView } from './QRCodeView';
 import { WalletCard } from './WalletCard';
 import { APP_MODE, BSC_TESTNET_USDT_CONTRACT } from '../config';
 import { sendUsdtTransfer } from '../services/walletService';
 import { useWallet } from '../hooks/useWallet';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface CheckoutCardProps {
   order: Order;
@@ -23,12 +24,13 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
   onWalletPaymentSent,
 }) => {
   const { walletState, connect, switchNetwork } = useWallet();
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const handleExecuteWalletPayment = async () => {
-    if (isPaying) return;
+    if (isPaying || timeRemainingSeconds <= 0) return;
     setPaymentError(null);
 
     // 1. Ensure wallet is connected
@@ -36,7 +38,7 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
       try {
         await connect();
       } catch (err: any) {
-        setPaymentError(err.message || 'Error al conectar la wallet.');
+        setPaymentError(err.message || 'Error connecting wallet.');
       }
       return;
     }
@@ -46,13 +48,13 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
       try {
         await switchNetwork();
       } catch (err: any) {
-        setPaymentError(err.message || 'Error al cambiar la red.');
+        setPaymentError(err.message || 'Error switching network.');
       }
       return;
     }
 
     if (walletState.status !== 'connected' || !walletState.account) {
-      setPaymentError('Por favor conecta tu wallet para realizar el pago.');
+      setPaymentError('Please connect your wallet to process payment.');
       return;
     }
 
@@ -71,7 +73,14 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
       }
     } catch (err: any) {
       console.error('Wallet transfer failed:', err);
-      setPaymentError(err.message || 'La transferencia con la wallet falló o fue rechazada.');
+      const errMsg = err.message || '';
+      if (errMsg.includes('rejected') || errMsg.includes('4001') || errMsg.includes('cancelada')) {
+        setPaymentError('Transaction signature cancelled by user in wallet.');
+      } else if (errMsg.includes('gas') || errMsg.includes('funds')) {
+        setPaymentError('Insufficient BNB balance for gas fees on BNB Smart Chain Testnet.');
+      } else {
+        setPaymentError(errMsg || 'Web3 transfer failed or rejected.');
+      }
     } finally {
       setIsPaying(false);
     }
@@ -101,57 +110,86 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const isExpired = timeRemainingSeconds <= 0 || order.status === 'EXPIRED';
+
   return (
-    <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
       {/* LEFT MAIN BENTO CARD — High Contrast Payment Details */}
-      <div className="lg:col-span-7 bg-white text-black rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden flex flex-col justify-between">
+      <div className="lg:col-span-7 bg-white text-black rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl relative overflow-hidden flex flex-col justify-between space-y-5 sm:space-y-6">
         {/* Top Header Row */}
-        <div className="flex justify-between items-start mb-6 pb-4 border-b border-black/10">
+        <div className="flex flex-wrap justify-between items-start gap-2 pb-3.5 sm:pb-4 border-b border-black/10">
           <div>
-            <p className="text-[11px] uppercase tracking-widest font-bold opacity-60 mb-1">
-              Orden #{order.orderId}
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-widest font-bold opacity-60 mb-0.5 sm:mb-1">
+              {t.checkout.orderId} #{order.orderId}
             </p>
-            <h2 className="text-2xl font-black tracking-tight text-black">
-              Enviar Pago
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-black">
+              {t.checkout.activeOrder}
             </h2>
           </div>
-          <div className="bg-black/5 border border-black/10 rounded-xl px-3 py-1.5 text-xs font-mono font-bold tracking-tight text-black flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-black/70" />
-            <span>{formatTime(timeRemainingSeconds)} RESTANTE</span>
+          <div className={`border rounded-xl px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-mono font-bold tracking-tight flex items-center gap-1.5 ${
+            isExpired
+              ? 'bg-rose-50 border-rose-200 text-rose-700'
+              : timeRemainingSeconds < 180
+              ? 'bg-amber-50 border-amber-200 text-amber-800 animate-pulse'
+              : 'bg-black/5 border-black/10 text-black'
+          }`}>
+            <Clock className="w-3.5 h-3.5 shrink-0" />
+            <span>{formatTime(timeRemainingSeconds)} {isExpired ? 'EXPIRED' : t.checkout.timeRemaining}</span>
           </div>
         </div>
 
+        {/* Network & Wallet Status Banner */}
+        {walletState.status === 'wrong_network' && (
+          <div className="p-3.5 sm:p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl sm:rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-900 text-xs animate-fade-in">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold text-black block">Wrong Network in Wallet</span>
+                <span className="text-gray-700">Please switch your wallet to BNB Smart Chain Testnet (Chain ID 97).</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={switchNetwork}
+              className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs rounded-xl shrink-0 cursor-pointer transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Switch Network</span>
+            </button>
+          </div>
+        )}
+
         {/* Center Content — QR & Amount */}
-        <div className="flex-1 flex flex-col items-center justify-center gap-6 py-2">
+        <div className="flex-1 flex flex-col items-center justify-center gap-5 sm:gap-6 py-2">
           {/* QR Code Container */}
-          <div className="w-48 h-48 p-3 bg-white border-2 border-black/10 rounded-2xl flex items-center justify-center shadow-sm">
-            <QRCodeView value={order.recipientAddress} size={160} />
+          <div className="w-40 h-40 sm:w-48 sm:h-48 p-2.5 sm:p-3 bg-white border-2 border-black/10 rounded-2xl flex items-center justify-center shadow-sm shrink-0">
+            <QRCodeView value={order.recipientAddress} size={150} />
           </div>
 
           {/* Exact Amount Display */}
           <div className="text-center">
-            <p className="text-xs font-bold text-gray-500 mb-1 uppercase tracking-widest">
-              MONTO EXACTO A ENVIAR
+            <p className="text-[10px] sm:text-xs font-bold text-gray-500 mb-1 uppercase tracking-widest">
+              {t.checkout.amountToPay}
             </p>
-            <div className="text-4xl sm:text-5xl font-black tracking-tight text-black font-mono">
-              {order.amount} <span className="text-2xl font-bold text-gray-700">USDT</span>
+            <div className="text-3xl sm:text-5xl font-black tracking-tight text-black font-mono">
+              {order.amount} <span className="text-xl sm:text-2xl font-bold text-gray-700">USDT</span>
             </div>
             <div className="flex items-center justify-center gap-2 mt-2">
               <span className="text-[10px] font-bold bg-black/10 text-black px-2.5 py-0.5 rounded-full uppercase">
                 BNB Smart Chain
               </span>
               <span className="text-[10px] font-bold bg-[#FFB800] text-black px-2.5 py-0.5 rounded-full uppercase">
-                USDT
+                USDT BEP-20
               </span>
             </div>
           </div>
 
           {/* Copy Address Row */}
-          <div className="w-full space-y-2 mt-2">
-            <div className="bg-black/5 rounded-2xl p-3.5 flex items-center justify-between gap-3 group hover:bg-black/10 transition-colors">
-              <div className="overflow-hidden">
-                <p className="text-[10px] font-bold text-gray-500 mb-0.5 uppercase tracking-wider">
-                  DIRECCIÓN DE RECEPCIÓN
+          <div className="w-full space-y-2 mt-1 sm:mt-2">
+            <div className="bg-black/5 rounded-xl sm:rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-2.5 group hover:bg-black/10 transition-colors">
+              <div className="overflow-hidden min-w-0">
+                <p className="text-[9px] sm:text-[10px] font-bold text-gray-500 mb-0.5 uppercase tracking-wider">
+                  {t.checkout.recipientAddress}
                 </p>
                 <p className="text-xs sm:text-sm font-mono font-bold truncate text-black">
                   {order.recipientAddress}
@@ -159,8 +197,8 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
               </div>
               <button
                 onClick={handleCopy}
-                aria-label="Copiar dirección de recepción"
-                className={`p-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer ${
+                aria-label="Copy recipient address"
+                className={`p-2 sm:p-2.5 px-3 sm:px-4 rounded-lg sm:rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer ${
                   copied
                     ? 'bg-[#00C853] text-white'
                     : 'bg-black hover:bg-gray-800 text-white'
@@ -169,54 +207,92 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
                 {copied ? (
                   <>
                     <Check className="w-3.5 h-3.5" />
-                    <span>Copiada</span>
+                    <span>{t.checkout.addressCopied}</span>
                   </>
                 ) : (
                   <>
                     <Copy className="w-3.5 h-3.5" />
-                    <span>Copiar</span>
+                    <span>{t.checkout.copyAddress}</span>
                   </>
                 )}
               </button>
             </div>
           </div>
 
+          {/* Timer Expired Callout Banner */}
+          {isExpired && (
+            <div className="w-full p-3.5 sm:p-4 bg-rose-50 border border-rose-200 rounded-xl sm:rounded-2xl text-xs space-y-1 animate-fade-in">
+              <div className="flex items-center gap-2 font-bold text-rose-800">
+                <Clock className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{t.checkout.expiredTitle}</span>
+              </div>
+              <p className="text-rose-700 leading-relaxed text-[11px] sm:text-xs">
+                {t.checkout.expiredDesc}
+              </p>
+            </div>
+          )}
+
           {/* Interactive EIP-1193 Wallet Direct Payment Button */}
           {order.paymentMode === 'wallet' && order.status === 'PENDING' && (
-            <div className="w-full space-y-3 mt-4">
+            <div className="w-full space-y-3 mt-1 sm:mt-2">
               <button
                 type="button"
                 onClick={handleExecuteWalletPayment}
-                disabled={isPaying}
-                className="w-full bg-black hover:bg-gray-800 text-white font-black text-sm py-4 px-6 rounded-2xl transition-all shadow-xl flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]"
+                disabled={isPaying || isExpired}
+                className={`w-full font-black text-xs sm:text-sm py-3.5 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl transition-all shadow-xl flex items-center justify-center gap-2 sm:gap-2.5 cursor-pointer active:scale-[0.99] ${
+                  isExpired
+                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed shadow-none'
+                    : 'bg-black hover:bg-gray-800 text-white'
+                }`}
               >
                 {isPaying ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    <span>Confirmando firma en wallet...</span>
+                    <span>{t.checkout.txSentConfirming}</span>
+                  </>
+                ) : isExpired ? (
+                  <>
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    <span>{t.checkout.expiredTitle}</span>
                   </>
                 ) : walletState.status === 'disconnected' ? (
                   <>
                     <Wallet className="w-4 h-4 text-white" />
-                    <span>Conectar Wallet para Pagar</span>
+                    <span>{t.checkout.sendWalletTx}</span>
                   </>
                 ) : walletState.status === 'wrong_network' ? (
                   <>
                     <AlertTriangle className="w-4 h-4 text-amber-400 animate-pulse" />
-                    <span>Cambiar Red a BSC Testnet</span>
+                    <span>Switch Network to BSC Testnet</span>
                   </>
                 ) : (
                   <>
                     <Send className="w-4 h-4 text-[#FFB800]" />
-                    <span>Pagar {order.amount} USDT con Wallet</span>
+                    <span>{t.checkout.sendWalletTx}</span>
                   </>
                 )}
               </button>
 
+              {/* Transaction Error / Rejected Callout with Retry */}
               {paymentError && (
-                <div className="p-3.5 bg-rose-50 text-rose-800 border border-rose-200 rounded-2xl text-xs flex items-start gap-2 animate-fade-in">
-                  <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
-                  <span>{paymentError}</span>
+                <div className="p-3.5 sm:p-4 bg-rose-50 border border-rose-200 rounded-xl sm:rounded-2xl text-xs space-y-2 animate-fade-in">
+                  <div className="flex items-start gap-2 text-rose-900">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+                    <div className="flex-1">
+                      <span className="font-bold block text-rose-950">Signature issue</span>
+                      <span className="text-rose-800 text-[11px] sm:text-xs">{paymentError}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-rose-200/80">
+                    <button
+                      type="button"
+                      onClick={handleExecuteWalletPayment}
+                      className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>{t.product.retry}</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -225,72 +301,76 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
       </div>
 
       {/* RIGHT SIDE BENTO COLUMN — Status & Controls */}
-      <div className="lg:col-span-5 flex flex-col gap-6">
+      <div className="lg:col-span-5 flex flex-col gap-5 sm:gap-6">
         {/* Status Bento Card */}
-        <div className="bg-[#111111] border border-white/10 rounded-3xl p-6 flex flex-col gap-4 text-white">
+        <div className="bg-[#111111] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-6 flex flex-col gap-4 text-white">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-            ESTADO DEL PAGO
+            {t.checkout.statusPending}
           </h3>
 
           <div className="flex items-center gap-4 py-2">
             <div className="relative w-8 h-8 shrink-0">
               <div className="absolute inset-0 rounded-full border-2 border-white/10" />
-              <div className="absolute inset-0 rounded-full border-t-2 border-[#FFB800] animate-spin" />
+              <div className={`absolute inset-0 rounded-full border-t-2 ${isExpired ? 'border-rose-500' : 'border-[#FFB800] animate-spin'}`} />
             </div>
             <div>
-              <p className="text-base font-bold text-white">
-                {order.status === 'CONFIRMING'
-                  ? 'Confirmando transacción...'
-                  : 'Esperando pago...'}
+              <p className="text-sm sm:text-base font-bold text-white">
+                {isExpired
+                  ? t.checkout.expiredTitle
+                  : order.status === 'CONFIRMING'
+                  ? t.checkout.statusConfirming
+                  : t.checkout.statusPending}
               </p>
               <p className="text-xs text-gray-400">
-                {order.status === 'CONFIRMING'
-                  ? 'Verificando confirmaciones en BNB Smart Chain'
-                  : 'Comprobando red BNB Smart Chain'}
+                {isExpired
+                  ? t.checkout.expiredDesc
+                  : order.status === 'CONFIRMING'
+                  ? 'Verifying confirmations on BNB Smart Chain...'
+                  : 'Monitoring BNB Smart Chain network...'}
               </p>
             </div>
           </div>
 
           {/* Simulation / Status Controls Box */}
-          <div className="mt-2 p-4 bg-[#181818] rounded-2xl border border-white/5 space-y-3">
+          <div className="mt-1 p-3.5 sm:p-4 bg-[#181818] rounded-xl sm:rounded-2xl border border-white/5 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-[#FFB800] uppercase tracking-widest flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>{APP_MODE === 'demo' ? 'SIMULACIÓN' : 'WORKER BACKEND'}</span>
+                <span>{APP_MODE === 'demo' ? 'DEMO MODE' : 'WORKER BACKEND'}</span>
               </span>
               <span className="text-[10px] text-gray-500 font-mono">
-                {APP_MODE === 'demo' ? 'Modo Demo' : APP_MODE === 'local' ? 'Worker Local' : 'Worker Prod'}
+                {APP_MODE === 'demo' ? 'Demo Mode' : APP_MODE === 'local' ? 'Worker Local' : 'Worker Prod'}
               </span>
             </div>
 
             <p className="text-xs text-gray-400 leading-relaxed">
               {APP_MODE === 'demo'
-                ? 'Haz clic para simular la detección del pago en la blockchain.'
-                : 'Peticiones gestionadas por Cloudflare Worker local y D1 database.'}
+                ? 'Click below to simulate real-time blockchain payment confirmation.'
+                : 'Managed via Cloudflare Worker backend and D1 database.'}
             </p>
 
             {APP_MODE === 'demo' ? (
               <button
                 onClick={onSimulatePayment}
                 disabled={isSimulating}
-                aria-label="Simular pago confirmado"
-                className="w-full bg-[#FFB800] text-black py-3.5 rounded-xl text-xs font-bold hover:bg-[#FFC107] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                aria-label="Simulate payment confirmation"
+                className="w-full bg-[#FFB800] text-black py-3 sm:py-3.5 rounded-xl text-xs font-bold hover:bg-[#FFC107] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isSimulating ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-black" />
-                    <span>Procesando simulación...</span>
+                    <span>{t.checkout.simulating}</span>
                   </>
                 ) : (
                   <>
                     <ShieldCheck className="w-4 h-4 text-black" />
-                    <span>SIMULAR PAGO CONFIRMADO</span>
+                    <span>{t.checkout.simulatePaymentDemo}</span>
                   </>
                 )}
               </button>
             ) : (
               <div className="p-3 bg-white/5 rounded-xl text-center text-xs text-gray-400 font-mono">
-                Simulación deshabilitada en modo Worker real.
+                Simulation disabled in real Worker mode.
               </div>
             )}
           </div>
@@ -300,31 +380,31 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
         <WalletCard />
 
         {/* Details Bento Card */}
-        <div className="bg-[#111111] border border-white/10 rounded-3xl p-6 flex-1 text-white space-y-4">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
-            DETALLES DE LA TRANSACCIÓN
+        <div className="bg-[#111111] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-6 flex-1 text-white space-y-4">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 sm:mb-4">
+            TRANSACTION DETAILS
           </h3>
 
-          <div className="space-y-3.5 text-sm">
+          <div className="space-y-3 text-xs sm:text-sm">
             <div className="flex items-center justify-between pb-2 border-b border-white/5">
-              <span className="text-xs text-gray-400 font-medium">Activo Token</span>
-              <span className="font-bold text-white font-mono">USDT Test Token (BSC Testnet)</span>
+              <span className="text-xs text-gray-400 font-medium">Token Asset</span>
+              <span className="font-bold text-white font-mono">USDT (BEP-20)</span>
             </div>
 
             <div className="flex items-center justify-between pb-2 border-b border-white/5">
-              <span className="text-xs text-gray-400 font-medium">Red de pago</span>
+              <span className="text-xs text-gray-400 font-medium">Payment Network</span>
               <span className="font-bold text-white font-mono">BNB Smart Chain</span>
             </div>
 
             <div className="flex items-center justify-between pb-2 border-b border-white/5">
-              <span className="text-xs text-gray-400 font-medium">Comisión estimada</span>
-              <span className="font-bold text-gray-300 font-mono">~0.0002 BNB</span>
+              <span className="text-xs text-gray-400 font-medium">Est. Network Gas</span>
+              <span className="font-bold text-gray-300 font-mono">~0.0002 BNB (~$0.02)</span>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-400 font-medium">Modo de orden</span>
+              <span className="text-xs text-gray-400 font-medium">Order Mode</span>
               <span className="font-bold text-[#FFB800] font-mono text-xs">
-                {APP_MODE === 'demo' ? 'Simulación Demo' : APP_MODE === 'local' ? 'Worker Local' : 'Worker Prod'}
+                {APP_MODE === 'demo' ? 'Demo Simulation' : APP_MODE === 'local' ? 'Worker Local' : 'Worker Prod'}
               </span>
             </div>
           </div>
@@ -333,3 +413,4 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
     </div>
   );
 };
+

@@ -157,8 +157,8 @@ export default {
         return jsonResponse(newOrder, 201, corsHeaders);
       }
 
-      // 3. Route: GET /api/status?orderId=...
-      if (path === '/api/status') {
+      // 3. Route: GET /api/status or GET /api/order/status
+      if (path === '/api/status' || path === '/api/order/status') {
         if (method !== 'GET') {
           return errorResponse('METHOD_NOT_ALLOWED', 'Method not allowed. Use GET.', 405, corsHeaders);
         }

@@ -1847,6 +1847,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
                 created_block: 1000,
                 amount: '39',
                 expected_units: '39000000000000000000',
+                created_at: new Date(Date.now() - 60000).toISOString(),
                 expires_at: new Date(Date.now() + 3600000).toISOString(),
                 recipient,
               }),
@@ -2024,6 +2025,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       expected_units: '39000000000000000000',
       recipient,
       tx_hash: txHash,
+      created_at: new Date(Date.now() - 60000).toISOString(),
       expires_at: new Date(Date.now() + 3600000).toISOString(),
     };
 
@@ -2119,6 +2121,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       amount: '39',
       expected_units: '39000000000000000000',
       recipient,
+      created_at: new Date(expiresAtMs - 1000000).toISOString(),
       expires_at: new Date(expiresAtMs).toISOString(),
     };
 
@@ -2208,6 +2211,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       amount: '39',
       expected_units: '39000000000000000000',
       recipient,
+      created_at: new Date(Date.now() - 60000).toISOString(),
       expires_at: new Date(Date.now() + 3600000).toISOString(),
     };
 
@@ -2257,6 +2261,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       amount: '39',
       expected_units: '39000000000000000000',
       recipient,
+      created_at: new Date(Date.now() - 60000).toISOString(),
       expires_at: new Date(Date.now() + 3600000).toISOString(),
     };
 
@@ -2425,6 +2430,598 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     assert.equal(res.status, 200);
     assert.equal(await res.text(), '<html>Mock Index HTML</html>');
     assert.equal(assetsFetchedUrl, 'http://localhost:8787/checkout?order=volt_ord_123');
+  });
+
+  it('54. D1 Resiliency - created_block null is rescued successfully', async () => {
+    const originalFetch = globalThis.fetch;
+    const recipient = '0x1111111111111111111111111111111111111111';
+    const txHash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567891';
+
+    let statusSet: string | null = null;
+    const dbRecord: any = {
+      id: 'volt_ord_1111222233334544',
+      status: 'PENDING',
+      created_block: null, // Null to trigger rescue
+      amount: '39',
+      expected_units: '39000000000000000000',
+      recipient,
+      created_at: new Date(Date.now() - 30000).toISOString(),
+      expires_at: new Date(Date.now() + 3600000).toISOString(),
+    };
+
+    const mockDb: D1Database = {
+      prepare: (query: string) => ({
+        bind: (...args: any[]) => {
+          if (query.includes('UPDATE orders')) {
+            statusSet = args[0];
+          }
+          return {
+            first: async () => {
+              if (query.includes('SELECT * FROM orders')) return dbRecord;
+              if (query.includes('SELECT id FROM orders WHERE tx_hash = ?')) return null;
+              if (query.includes('SELECT id FROM payments WHERE tx_hash = ?')) return null;
+              return null;
+            },
+            run: async () => ({ success: true }),
+          };
+        },
+      }),
+      batch: async (stmts: any[]) => {
+        for (const s of stmts) {
+          if (s) await s.run();
+        }
+        return [];
+      },
+    } as unknown as D1Database;
+
+    globalThis.fetch = async (input: any, init?: any) => {
+      const bodyStr = init?.body || '';
+      if (bodyStr.includes('eth_chainId')) return new Response(JSON.stringify({ result: '0x61' }));
+      if (bodyStr.includes('eth_blockNumber')) return new Response(JSON.stringify({ result: '0x400' })); // 1024
+      if (bodyStr.includes('eth_getTransactionReceipt')) {
+        return new Response(JSON.stringify({
+          result: {
+            status: '0x1',
+            blockNumber: '0x3e8', // 1000
+            from: '0x2222222222222222222222222222222222222222',
+            logs: [{
+              address: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
+              topics: [
+                '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+                '0x0000000000000000000000002222222222222222222222222222222222222222',
+                '0x0000000000000000000000001111111111111111111111111111111111111111'
+              ],
+              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              blockNumber: '0x3e8',
+            }],
+          },
+        }));
+      }
+      if (bodyStr.includes('eth_getBlockByNumber')) {
+        return new Response(JSON.stringify({
+          result: { timestamp: '0x' + Math.floor((Date.now() - 10000) / 1000).toString(16) },
+        }));
+      }
+      return new Response(JSON.stringify({ result: null }));
+    };
+
+    const mockEnv: Env = {
+      DB: mockDb,
+      APP_ENV: 'development',
+      BSC_RPC_URL: 'http://mock-bsc-rpc',
+      USDT_CONTRACT_ADDRESS: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
+      PAYMENT_RECIPIENT: recipient,
+    };
+
+    try {
+      const { verifyOrderPayment } = await import('../src/services/verifier');
+      await verifyOrderPayment('volt_ord_1111222233334544', mockEnv, txHash);
+      // Under finalized checks or 24 confirmations fallback: 1024 - 1000 = 24 confirmations >= 12 -> PAID
+      assert.equal(statusSet, 'PAID');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('55. Security Hardening - created_block NULL + clientTxHash antiguo (anterior a created_at) es RECHAZADO (Bug Original)', async () => {
+    const originalFetch = globalThis.fetch;
+    const recipient = '0x1111111111111111111111111111111111111111';
+    const oldTxHash = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+    const orderCreatedAt = new Date('2026-03-01T12:00:00Z');
+    const orderCreatedAtMs = orderCreatedAt.getTime();
+    // Transaction mined 10 minutes BEFORE order creation
+    const txBlockTimestampSec = Math.floor(orderCreatedAtMs / 1000) - 600;
+
+    let statusUpdated: string | null = null;
+    const dbRecord: any = {
+      id: 'volt_ord_bug_test_old_tx',
+      status: 'PENDING',
+      created_block: null, // Null to simulate missing block
+      amount: '39',
+      expected_units: '39000000000000000000',
+      recipient,
+      created_at: orderCreatedAt.toISOString(),
+      expires_at: new Date(orderCreatedAtMs + 3600000).toISOString(),
+    };
+
+    const mockDb: D1Database = {
+      prepare: (query: string) => ({
+        bind: (...args: any[]) => {
+          if (query.includes('UPDATE orders')) {
+            statusUpdated = args[0];
+          }
+          return {
+            first: async () => {
+              if (query.includes('SELECT * FROM orders')) return dbRecord;
+              if (query.includes('SELECT id FROM orders WHERE tx_hash = ?')) return null;
+              if (query.includes('SELECT id FROM payments WHERE tx_hash = ?')) return null;
+              return null;
+            },
+            run: async () => ({ success: true }),
+          };
+        },
+      }),
+      batch: async (stmts: any[]) => {
+        for (const s of stmts) {
+          if (s) await s.run();
+        }
+        return [];
+      },
+    } as unknown as D1Database;
+
+    globalThis.fetch = async (input: any, init?: any) => {
+      const bodyStr = init?.body || '';
+      if (bodyStr.includes('eth_chainId')) return new Response(JSON.stringify({ result: '0x61' }));
+      // Current block is 2000
+      if (bodyStr.includes('eth_blockNumber')) return new Response(JSON.stringify({ result: '0x7d0' }));
+      // Receipt says block 500 (0x1f4)
+      if (bodyStr.includes('eth_getTransactionReceipt')) {
+        return new Response(JSON.stringify({
+          result: {
+            status: '0x1',
+            blockNumber: '0x1f4', // 500
+            from: '0x2222222222222222222222222222222222222222',
+            logs: [{
+              address: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
+              topics: [
+                '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+                '0x0000000000000000000000002222222222222222222222222222222222222222',
+                '0x0000000000000000000000001111111111111111111111111111111111111111',
+              ],
+              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              blockNumber: '0x1f4',
+            }],
+          },
+        }));
+      }
+      if (bodyStr.includes('eth_getBlockByNumber')) {
+        return new Response(JSON.stringify({
+          result: { timestamp: '0x' + txBlockTimestampSec.toString(16) },
+        }));
+      }
+      return new Response(JSON.stringify({ result: null }));
+    };
+
+    const mockEnv: Env = {
+      DB: mockDb,
+      APP_ENV: 'development',
+      BSC_RPC_URL: 'http://mock-bsc-rpc',
+      USDT_CONTRACT_ADDRESS: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
+      PAYMENT_RECIPIENT: recipient,
+    };
+
+    try {
+      const { verifyOrderPayment } = await import('../src/services/verifier');
+      await verifyOrderPayment('volt_ord_bug_test_old_tx', mockEnv, oldTxHash);
+
+      // MUST NOT be updated to PAID or CONFIRMING
+      assert.equal(statusUpdated, null, 'An old transaction mined prior to order creation MUST NOT mark order as PAID');
+      assert.equal(dbRecord.status, 'PENDING');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('56. Security Hardening - created_block NULL + clientTxHash válido (posterior a created_at) es ACEPTADO', async () => {
+    const originalFetch = globalThis.fetch;
+    const recipient = '0x1111111111111111111111111111111111111111';
+    const newTxHash = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+
+    const orderCreatedAt = new Date(Date.now() - 30000); // 30s ago
+    const orderCreatedAtMs = orderCreatedAt.getTime();
+    // Transaction mined 10 seconds ago (AFTER order creation)
+    const txBlockTimestampSec = Math.floor((orderCreatedAtMs + 20000) / 1000);
+
+    let statusUpdated: string | null = null;
+    const dbRecord: any = {
+      id: 'volt_ord_new_valid_tx',
+      status: 'PENDING',
+      created_block: null,
+      amount: '39',
+      expected_units: '39000000000000000000',
+      recipient,
+      created_at: orderCreatedAt.toISOString(),
+      expires_at: new Date(Date.now() + 3600000).toISOString(),
+    };
+
+    const mockDb: D1Database = {
+      prepare: (query: string) => ({
+        bind: (...args: any[]) => {
+          if (query.includes('UPDATE orders')) {
+            statusUpdated = args[0];
+          }
+          return {
+            first: async () => {
+              if (query.includes('SELECT * FROM orders')) return dbRecord;
+              if (query.includes('SELECT id FROM orders WHERE tx_hash = ?')) return null;
+              if (query.includes('SELECT id FROM payments WHERE tx_hash = ?')) return null;
+              return null;
+            },
+            run: async () => ({ success: true }),
+          };
+        },
+      }),
+      batch: async (stmts: any[]) => {
+        for (const s of stmts) {
+          if (s) await s.run();
+        }
+        return [];
+      },
+    } as unknown as D1Database;
+
+    globalThis.fetch = async (input: any, init?: any) => {
+      const bodyStr = init?.body || '';
+      if (bodyStr.includes('eth_chainId')) return new Response(JSON.stringify({ result: '0x61' }));
+      // Current block 1050
+      if (bodyStr.includes('eth_blockNumber')) return new Response(JSON.stringify({ result: '0x41a' }));
+      if (bodyStr.includes('finalized')) return new Response(JSON.stringify({ result: { number: '0x410' } }));
+      // Receipt mined at block 1020
+      if (bodyStr.includes('eth_getTransactionReceipt')) {
+        return new Response(JSON.stringify({
+          result: {
+            status: '0x1',
+            blockNumber: '0x3fc', // 1020
+            from: '0x2222222222222222222222222222222222222222',
+            logs: [{
+              address: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
+              topics: [
+                '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+                '0x0000000000000000000000002222222222222222222222222222222222222222',
+                '0x0000000000000000000000001111111111111111111111111111111111111111',
+              ],
+              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              blockNumber: '0x3fc',
+            }],
+          },
+        }));
+      }
+      if (bodyStr.includes('eth_getBlockByNumber')) {
+        return new Response(JSON.stringify({
+          result: { timestamp: '0x' + txBlockTimestampSec.toString(16) },
+        }));
+      }
+      return new Response(JSON.stringify({ result: null }));
+    };
+
+    const mockEnv: Env = {
+      DB: mockDb,
+      APP_ENV: 'development',
+      BSC_RPC_URL: 'http://mock-bsc-rpc',
+      USDT_CONTRACT_ADDRESS: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
+      PAYMENT_RECIPIENT: recipient,
+    };
+
+    try {
+      const { verifyOrderPayment } = await import('../src/services/verifier');
+      await verifyOrderPayment('volt_ord_new_valid_tx', mockEnv, newTxHash);
+
+      assert.equal(statusUpdated, 'PAID', 'A legitimate transaction mined after order creation must transition to PAID');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('57. Security Hardening - created_block NULL + Path B scan: pago anterior a created_at es omitido y posterior es aceptado', async () => {
+    const originalFetch = globalThis.fetch;
+    const recipient = '0x1111111111111111111111111111111111111111';
+    const oldTx = '0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc';
+    const validTx = '0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd';
+
+    const orderCreatedAt = new Date(Date.now() - 60000); // 60s ago
+    const orderCreatedAtMs = orderCreatedAt.getTime();
+    const oldTxTimestampSec = Math.floor((orderCreatedAtMs - 60000) / 1000); // 60s BEFORE order
+    const validTxTimestampSec = Math.floor((orderCreatedAtMs + 30000) / 1000); // 30s AFTER order
+
+    let statusUpdated: string | null = null;
+    let accreditedTx: string | null = null;
+
+    const dbRecord: any = {
+      id: 'volt_ord_path_b_filtering',
+      status: 'PENDING',
+      created_block: null,
+      amount: '39',
+      expected_units: '39000000000000000000',
+      recipient,
+      created_at: orderCreatedAt.toISOString(),
+      expires_at: new Date(Date.now() + 3600000).toISOString(),
+    };
+
+    const mockDb: D1Database = {
+      prepare: (query: string) => ({
+        bind: (...args: any[]) => {
+          if (query.includes('UPDATE orders')) {
+            statusUpdated = args[0];
+            accreditedTx = args[1];
+          }
+          return {
+            first: async () => {
+              if (query.includes('SELECT * FROM orders')) return dbRecord;
+              if (query.includes('SELECT id FROM orders WHERE tx_hash = ?')) return null;
+              if (query.includes('SELECT id FROM payments WHERE tx_hash = ?')) return null;
+              return null;
+            },
+            run: async () => ({ success: true }),
+          };
+        },
+      }),
+      batch: async (stmts: any[]) => {
+        for (const s of stmts) {
+          if (s) await s.run();
+        }
+        return [];
+      },
+    } as unknown as D1Database;
+
+    globalThis.fetch = async (input: any, init?: any) => {
+      const bodyStr = init?.body || '';
+      if (bodyStr.includes('eth_chainId')) return new Response(JSON.stringify({ result: '0x61' }));
+      // Current block is 1050
+      if (bodyStr.includes('eth_blockNumber')) return new Response(JSON.stringify({ result: '0x41a' }));
+      if (bodyStr.includes('finalized')) return new Response(JSON.stringify({ result: { number: '0x410' } }));
+
+      // Path B getLogs returns both oldTx and validTx
+      if (bodyStr.includes('eth_getLogs')) {
+        return new Response(JSON.stringify({
+          result: [
+            {
+              address: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
+              topics: [
+                '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+                '0x0000000000000000000000002222222222222222222222222222222222222222',
+                '0x0000000000000000000000001111111111111111111111111111111111111111',
+              ],
+              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              blockNumber: '0x3e8', // Block 1000 (old)
+              transactionHash: oldTx,
+            },
+            {
+              address: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
+              topics: [
+                '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+                '0x0000000000000000000000002222222222222222222222222222222222222222',
+                '0x0000000000000000000000001111111111111111111111111111111111111111',
+              ],
+              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              blockNumber: '0x400', // Block 1024 (valid, post-creation)
+              transactionHash: validTx,
+            },
+          ],
+        }));
+      }
+
+      if (bodyStr.includes('eth_getTransactionReceipt')) {
+        const bodyObj = JSON.parse(bodyStr);
+        const reqTx = bodyObj.params?.[0];
+        const isOld = reqTx === oldTx;
+        return new Response(JSON.stringify({
+          result: {
+            status: '0x1',
+            blockNumber: isOld ? '0x3e8' : '0x400',
+            from: '0x2222222222222222222222222222222222222222',
+            logs: [{
+              address: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
+              topics: [
+                '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+                '0x0000000000000000000000002222222222222222222222222222222222222222',
+                '0x0000000000000000000000001111111111111111111111111111111111111111',
+              ],
+              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              blockNumber: isOld ? '0x3e8' : '0x400',
+            }],
+          },
+        }));
+      }
+
+      if (bodyStr.includes('eth_getBlockByNumber')) {
+        const bodyObj = JSON.parse(bodyStr);
+        const blockParam = bodyObj.params?.[0];
+        const isOldBlock = blockParam === '0x3e8' || parseInt(blockParam, 16) === 1000;
+        const ts = isOldBlock ? oldTxTimestampSec : validTxTimestampSec;
+        return new Response(JSON.stringify({
+          result: { timestamp: '0x' + ts.toString(16) },
+        }));
+      }
+
+      return new Response(JSON.stringify({ result: null }));
+    };
+
+    const mockEnv: Env = {
+      DB: mockDb,
+      APP_ENV: 'development',
+      BSC_RPC_URL: 'http://mock-bsc-rpc',
+      USDT_CONTRACT_ADDRESS: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
+      PAYMENT_RECIPIENT: recipient,
+    };
+
+    try {
+      const { verifyOrderPayment } = await import('../src/services/verifier');
+      // Call without clientTxHash -> triggers Path B
+      await verifyOrderPayment('volt_ord_path_b_filtering', mockEnv);
+
+      assert.equal(statusUpdated, 'PAID');
+      assert.equal(accreditedTx, validTx, 'Path B must skip old transaction and accredit only the valid transaction');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('58. Security Hardening - created_block NULL + Path B scan: solo existe pago anterior a created_at -> RECHAZADO', async () => {
+    const originalFetch = globalThis.fetch;
+    const recipient = '0x1111111111111111111111111111111111111111';
+    const oldTx = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+
+    const orderCreatedAt = new Date(Date.now() - 60000);
+    const orderCreatedAtMs = orderCreatedAt.getTime();
+    const oldTxTimestampSec = Math.floor((orderCreatedAtMs - 60000) / 1000); // Prior to creation
+
+    let statusUpdated: string | null = null;
+    const dbRecord: any = {
+      id: 'volt_ord_path_b_only_old',
+      status: 'PENDING',
+      created_block: null,
+      amount: '39',
+      expected_units: '39000000000000000000',
+      recipient,
+      created_at: orderCreatedAt.toISOString(),
+      expires_at: new Date(Date.now() + 3600000).toISOString(),
+    };
+
+    const mockDb: D1Database = {
+      prepare: (query: string) => ({
+        bind: (...args: any[]) => {
+          if (query.includes('UPDATE orders')) {
+            statusUpdated = args[0];
+          }
+          return {
+            first: async () => {
+              if (query.includes('SELECT * FROM orders')) return dbRecord;
+              return null;
+            },
+            run: async () => ({ success: true }),
+          };
+        },
+      }),
+      batch: async () => [],
+    } as unknown as D1Database;
+
+    globalThis.fetch = async (input: any, init?: any) => {
+      const bodyStr = init?.body || '';
+      if (bodyStr.includes('eth_chainId')) return new Response(JSON.stringify({ result: '0x61' }));
+      if (bodyStr.includes('eth_blockNumber')) return new Response(JSON.stringify({ result: '0x41a' }));
+      if (bodyStr.includes('eth_getLogs')) {
+        return new Response(JSON.stringify({
+          result: [{
+            address: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
+            topics: [
+              '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+              '0x0000000000000000000000002222222222222222222222222222222222222222',
+              '0x0000000000000000000000001111111111111111111111111111111111111111',
+            ],
+            data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+            blockNumber: '0x3e8',
+            transactionHash: oldTx,
+          }],
+        }));
+      }
+      if (bodyStr.includes('eth_getTransactionReceipt')) {
+        return new Response(JSON.stringify({
+          result: {
+            status: '0x1',
+            blockNumber: '0x3e8',
+            from: '0x2222222222222222222222222222222222222222',
+            logs: [{
+              address: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
+              topics: [
+                '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+                '0x0000000000000000000000002222222222222222222222222222222222222222',
+                '0x0000000000000000000000001111111111111111111111111111111111111111',
+              ],
+              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              blockNumber: '0x3e8',
+            }],
+          },
+        }));
+      }
+      if (bodyStr.includes('eth_getBlockByNumber')) {
+        return new Response(JSON.stringify({
+          result: { timestamp: '0x' + oldTxTimestampSec.toString(16) },
+        }));
+      }
+      return new Response(JSON.stringify({ result: null }));
+    };
+
+    const mockEnv: Env = {
+      DB: mockDb,
+      APP_ENV: 'development',
+      BSC_RPC_URL: 'http://mock-bsc-rpc',
+      USDT_CONTRACT_ADDRESS: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
+      PAYMENT_RECIPIENT: recipient,
+    };
+
+    try {
+      const { verifyOrderPayment } = await import('../src/services/verifier');
+      await verifyOrderPayment('volt_ord_path_b_only_old', mockEnv);
+
+      assert.equal(statusUpdated, null, 'Order must remain PENDING when only old transactions exist in scan window');
+      assert.equal(dbRecord.status, 'PENDING');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('59. Security Hardening - created_at ausente o corrupto ejecuta fail-closed sin aceptar pagos', async () => {
+    const originalFetch = globalThis.fetch;
+    const recipient = '0x1111111111111111111111111111111111111111';
+    const txHash = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+
+    let statusUpdated: string | null = null;
+    const dbRecord: any = {
+      id: 'volt_ord_corrupted_created_at',
+      status: 'PENDING',
+      created_block: 1000,
+      amount: '39',
+      expected_units: '39000000000000000000',
+      recipient,
+      created_at: 'NOT_A_VALID_DATE_STRING', // Corrupted timestamp
+      expires_at: new Date(Date.now() + 3600000).toISOString(),
+    };
+
+    const mockDb: D1Database = {
+      prepare: (query: string) => ({
+        bind: (...args: any[]) => {
+          if (query.includes('UPDATE orders')) {
+            statusUpdated = args[0];
+          }
+          return {
+            first: async () => {
+              if (query.includes('SELECT * FROM orders')) return dbRecord;
+              return null;
+            },
+            run: async () => ({ success: true }),
+          };
+        },
+      }),
+      batch: async () => [],
+    } as unknown as D1Database;
+
+    const mockEnv: Env = {
+      DB: mockDb,
+      APP_ENV: 'development',
+      BSC_RPC_URL: 'http://mock-bsc-rpc',
+      USDT_CONTRACT_ADDRESS: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd',
+      PAYMENT_RECIPIENT: recipient,
+    };
+
+    try {
+      const { verifyOrderPayment } = await import('../src/services/verifier');
+      await verifyOrderPayment('volt_ord_corrupted_created_at', mockEnv, txHash);
+
+      assert.equal(statusUpdated, null, 'Verification must abort immediately (fail-closed) on invalid created_at');
+      assert.equal(dbRecord.status, 'PENDING');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });
 

@@ -4,18 +4,23 @@ import { ProductCard } from './components/ProductCard';
 import { CheckoutCard } from './components/CheckoutCard';
 import { PaidCard } from './components/PaidCard';
 import { DownloadModal } from './components/DownloadModal';
+import { EmbedModal } from './components/EmbedModal';
+import { WhyUsBento } from './components/WhyUsBento';
 import { Order, OrderStatus } from './types';
 import { PRODUCT_ID, POLL_INTERVAL_MS, ORDER_EXPIRATION_SECONDS, API_BASE_URL } from './config';
 import { api } from './services/api';
-import { AlertCircle, RotateCcw } from 'lucide-react';
+import { useLanguage } from './i18n/LanguageContext';
+import { AlertCircle, RotateCcw, Code } from 'lucide-react';
 
 type UiViewMode = 'IDLE' | 'CREATING_ORDER' | 'ACTIVE_ORDER' | 'ERROR';
 
 export default function App() {
+  const { t } = useLanguage();
   const [order, setOrder] = useState<Order | null>(null);
   const [viewMode, setViewMode] = useState<UiViewMode>('IDLE');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [timeRemainingSeconds, setTimeRemainingSeconds] = useState<number>(ORDER_EXPIRATION_SECONDS);
   const [isSimulatingPayment, setIsSimulatingPayment] = useState(false);
 
@@ -234,6 +239,7 @@ export default function App() {
       <Header
         onResetDemo={handleResetDemo}
         showReset={viewMode !== 'IDLE'}
+        onOpenEmbedModal={() => setIsEmbedModalOpen(true)}
       />
 
       {/* Main Body */}
@@ -278,16 +284,16 @@ export default function App() {
               <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
                 <AlertCircle className="w-6 h-6" />
               </div>
-              <h2 className="text-xl font-bold text-white">La orden ha expirado</h2>
+              <h2 className="text-xl font-bold text-white">{t.checkout.expiredTitle}</h2>
               <p className="text-xs text-gray-400 leading-relaxed">
-                El tiempo límite para realizar el pago finalizó. Por favor crea una nueva orden.
+                {t.checkout.expiredDesc}
               </p>
               <button
                 onClick={handleResetDemo}
                 className="w-full py-3.5 px-4 bg-[#FFB800] hover:bg-[#FFC107] text-black font-bold text-sm rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 <RotateCcw className="w-4 h-4" />
-                <span>Crear nueva orden</span>
+                <span>{t.checkout.createNewOrder}</span>
               </button>
             </div>
           )}
@@ -302,35 +308,48 @@ export default function App() {
                 </div>
                 <h2 className="text-xl font-bold text-white">
                   {order.status === 'MANUAL_REVIEW'
-                    ? 'Orden en revisión manual'
-                    : 'Orden cancelada'}
+                    ? 'Manual Review Required'
+                    : t.checkout.cancelledTitle}
                 </h2>
                 <p className="text-xs text-gray-400 leading-relaxed">
                   {order.status === 'MANUAL_REVIEW'
-                    ? 'Tu pago requiere revisión por parte del soporte técnico.'
-                    : 'Esta orden de pago ha sido cancelada.'}
+                    ? 'Your payment requires manual verification by technical support.'
+                    : t.checkout.cancelledDesc}
                 </p>
                 <button
                   onClick={handleResetDemo}
                   className="w-full py-3.5 px-4 bg-[#FFB800] hover:bg-[#FFC107] text-black font-bold text-sm rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  <span>Volver al inicio</span>
+                  <span>{t.checkout.backToStart}</span>
                 </button>
               </div>
             )}
+
+          {/* VALUE PROPOSITION & COMPARISON BENTO GRID */}
+          <WhyUsBento />
         </div>
       </main>
 
+
       {/* Footer */}
       <footer className="py-6 border-t border-white/5 text-[11px] text-gray-500 font-mono">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-center sm:text-left">
-          <div>Powered by VOLT Engine · Secure Payment Interface</div>
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-3 text-center sm:text-left">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
+            <span>{t.footer.poweredBy}</span>
+            <button
+              onClick={() => setIsEmbedModalOpen(true)}
+              className="text-[#FFB800] hover:underline flex items-center gap-1 cursor-pointer font-bold"
+            >
+              <Code className="w-3 h-3" />
+              <span>{t.footer.generateEmbed}</span>
+            </button>
+          </div>
           <div className="flex items-center gap-4 text-gray-400">
             <span>0x8f3a...demo-hash</span>
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#00C853]" />
-              <span>Server Status: Online</span>
+              <span>{t.footer.serverOnline}</span>
             </span>
           </div>
         </div>
@@ -340,6 +359,12 @@ export default function App() {
       <DownloadModal
         isOpen={isDownloadModalOpen}
         onClose={() => setIsDownloadModalOpen(false)}
+      />
+
+      {/* No-Code Integration Generator Modal */}
+      <EmbedModal
+        isOpen={isEmbedModalOpen}
+        onClose={() => setIsEmbedModalOpen(false)}
       />
     </div>
   );

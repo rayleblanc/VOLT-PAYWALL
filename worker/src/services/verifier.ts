@@ -64,20 +64,45 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
     return; // Demo / offline mode without RPC
   }
 
+  // Temporal Anchor: Validate record.created_at (fail-closed)
+  const createdAtMs = record.created_at ? new Date(record.created_at).getTime() : NaN;
+  if (isNaN(createdAtMs) || createdAtMs <= 0) {
+    console.error(`[Verifier] Order '${orderId}' has missing or invalid created_at timestamp: '${record.created_at}'. Aborting verification (fail-closed).`);
+    return;
+  }
+
   // 1. Validate Network Chain ID == 97
   const chainId = await getChainId(env);
   if (chainId !== 97) {
     throw new RpcError(`Chain ID mismatch during verification! Expected 97, got ${chainId}`);
   }
 
-  // 2. Check created_block
-  if (record.created_block === null || record.created_block === undefined) {
-    throw new Error(`BLOCKCHAIN_VERIFICATION_ERROR: Order '${orderId}' has created_block = null but RPC is active.`);
-  }
-
   // 3. Get current block number
   const currentBlock = await getBlockNumber(env);
-  if (currentBlock < record.created_block) {
+
+  // 2. Check and resolve created_block if null (dynamic fallback based on created_at)
+  let resolvedCreatedBlock = record.created_block;
+  if (resolvedCreatedBlock === null || resolvedCreatedBlock === undefined) {
+    console.warn(`[Verifier] Order '${orderId}' has created_block = null. Running dynamic fallback derived from created_at...`);
+    
+    const nowMs = Date.now();
+    const elapsedMs = Math.max(0, nowMs - createdAtMs);
+    const BUFFER_MS = 15 * 60 * 1000; // 15 minutes safety buffer
+    const totalSearchWindowMs = elapsedMs + BUFFER_MS;
+    
+    // BSC produces blocks approximately every 3 seconds.
+    // Use conservative 1.5s per block (1500 ms) to absorb block time variations, bursts, and jitter.
+    const estimatedBlocks = Math.ceil(totalSearchWindowMs / 1500);
+    const MAX_SCAN_BLOCKS = 30000;
+    const windowBlocks = Math.min(estimatedBlocks, MAX_SCAN_BLOCKS);
+    
+    resolvedCreatedBlock = Math.max(0, currentBlock - windowBlocks);
+    console.log(
+      `[Verifier] Dynamic fallback for order '${orderId}': resolvedCreatedBlock = ${resolvedCreatedBlock} (currentBlock: ${currentBlock}, window: ${windowBlocks} blocks derived from elapsed: ${elapsedMs}ms + 15m buffer)`
+    );
+  }
+
+  if (currentBlock < resolvedCreatedBlock) {
     return; // No blocks mined since order creation
   }
 
@@ -129,9 +154,9 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
             if (valBigInt !== expectedUnitsBigInt) {
               continue;
             }
-            // E. Verify block number >= created_block
+            // E. Verify block number >= resolvedCreatedBlock
             const blockNum = parseInt(log.blockNumber || receipt.blockNumber, 16);
-            if (isNaN(blockNum) || blockNum < record.created_block) {
+            if (isNaN(blockNum) || blockNum < resolvedCreatedBlock) {
               continue;
             }
 
@@ -161,7 +186,7 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
     // we restrict the chunk scan starting point to a safe maximum block range of 30,000 blocks (~25 hours of BSC testnet blocks).
     // If the payment occurred earlier, the user must provide clientTxHash for O(1) instant direct verification.
     const MAX_SCAN_BLOCKS = 30000;
-    let chunkFrom = Math.max(record.created_block, currentBlock - MAX_SCAN_BLOCKS);
+    let chunkFrom = Math.max(resolvedCreatedBlock, currentBlock - MAX_SCAN_BLOCKS);
     while (chunkFrom <= currentBlock) {
       const chunkTo = Math.min(chunkFrom + chunkSize - 1, currentBlock);
 
@@ -204,8 +229,25 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
           }
 
           const blockNum = parseInt(log.blockNumber, 16);
-          // F. Verify block number >= created_block
-          if (isNaN(blockNum) || blockNum < record.created_block) {
+          // F. Verify block number >= resolvedCreatedBlock
+          if (isNaN(blockNum) || blockNum < resolvedCreatedBlock) {
+            continue;
+          }
+
+          // G. Verify candidate on-chain timestamp >= createdAtMs
+          const candidateBlockTimeSec = await getBlockTimestamp(env, blockNum);
+          if (candidateBlockTimeSec !== null && candidateBlockTimeSec * 1000 < createdAtMs) {
+            console.warn(
+              `[Verifier] Candidate log tx '${txHash}' block timestamp (${candidateBlockTimeSec * 1000} ms) is strictly earlier than order created_at (${createdAtMs} ms). Skipping log candidate.`
+            );
+            continue;
+          }
+
+          // H. Verify tx is not already bound to another order
+          const isDupe = await env.DB.prepare(
+            `SELECT id FROM orders WHERE tx_hash = ? AND id != ? LIMIT 1`
+          ).bind(txHash, orderId).first();
+          if (isDupe) {
             continue;
           }
 
@@ -254,8 +296,7 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
     return;
   }
 
-  // 11. Late Payment Check: Compare on-chain block timestamp vs expires_at
-  const expiresAtMs = new Date(record.expires_at).getTime();
+  // 11. Mandatory Temporal Barrier & Late Payment Check
   const blockTimeSec = await getBlockTimestamp(env, validCandidate.blockNumber);
   
   if (blockTimeSec === null) {
@@ -263,7 +304,18 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
   }
 
   const blockTimeMs = blockTimeSec * 1000;
-  const isLate = blockTimeMs > expiresAtMs;
+
+  // Mandatory Temporal Barrier: Reject any transfer mined strictly prior to order creation
+  if (blockTimeMs < createdAtMs) {
+    console.warn(
+      `[Verifier] Transaction '${validCandidate.txHash}' block timestamp (${blockTimeMs} ms) is strictly earlier than order created_at (${createdAtMs} ms). Payment rejected.`
+    );
+    return;
+  }
+
+  // Late Payment Check: Compare on-chain block timestamp vs expires_at
+  const expiresAtMs = new Date(record.expires_at).getTime();
+  const isLate = !isNaN(expiresAtMs) && blockTimeMs > expiresAtMs;
 
   let newStatus: string;
   if (isLate) {
