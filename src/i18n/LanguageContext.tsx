@@ -18,6 +18,8 @@ export interface Translations {
     paywallTag: string;
     noFeesTag: string;
     nonCustodialTag: string;
+    heroHeadline: string;
+    heroSubheadline: string;
     title: string;
     tagline: string;
     description: string;
@@ -25,6 +27,8 @@ export interface Translations {
     feature2: string;
     feature3: string;
     feature4: string;
+    originalPrice: string;
+    discountBadge: string;
     totalPrice: string;
     paymentMethod: string;
     payWithWallet: string;
@@ -37,6 +41,7 @@ export interface Translations {
     secureNotice: string;
     retry: string;
     connectionError: string;
+    urgencyBadge: string;
   };
 
   // Checkout Card
@@ -155,6 +160,25 @@ export interface Translations {
     close: string;
   };
 
+  // FAQ Section
+  faq: {
+    badge: string;
+    heading: string;
+    subheading: string;
+    q1: string;
+    a1: string;
+    q2: string;
+    a2: string;
+    q3: string;
+    a3: string;
+    q4: string;
+    a4: string;
+    q5: string;
+    a5: string;
+    supportNotice: string;
+    supportAction: string;
+  };
+
   // Footer
   footer: {
     poweredBy: string;
@@ -177,25 +201,30 @@ export const translations: Record<Language, Translations> = {
       paywallTag: 'VOLT PAYWALL',
       noFeesTag: '0% FEES',
       nonCustodialTag: 'Non-Custodial USDT',
+      heroHeadline: 'Your own crypto gateway on Cloudflare Free.',
+      heroSubheadline: '0% fees, direct wallet payouts, total control.',
       title: 'All-in-One\nCreator Pack',
       tagline: 'USDT BEP-20 Payment Gateway',
       description: 'Complete source code + step-by-step implementation guide + unlimited commercial license. Instant digital delivery.',
-      feature1: '100% Editable complete source code',
-      feature2: 'Step-by-step PDF implementation guide',
-      feature3: 'Unlimited commercial license',
-      feature4: 'Instant digital delivery upon payment',
-      totalPrice: 'TOTAL PRICE',
+      feature1: '0% lifetime transaction fees (Direct P2P)',
+      feature2: 'Deploy on Cloudflare Free ($0/mo hosting)',
+      feature3: 'Complete source code + step-by-step PDF guide',
+      feature4: 'Unlimited commercial license + instant delivery',
+      originalPrice: '$99.00 USD',
+      discountBadge: '60% OFF',
+      totalPrice: 'LIMITED OFFER PRICE',
       paymentMethod: 'PAYMENT METHOD',
       payWithWallet: 'Pay with Wallet',
       manualPayment: 'Manual Payment / QR',
-      walletMethodSub: 'Exact payment of 39.00 USDT via MetaMask or Trust Wallet (BNB Smart Chain).',
-      manualMethodSub: 'Transfer with unique control decimals for automatic verification without connecting a wallet.',
-      buyNowWallet: 'Proceed with Wallet',
+      walletMethodSub: 'Exact payment of 39.00 USDT via Web3 Wallet (BNB Smart Chain).',
+      manualMethodSub: 'Transfer with unique control decimals for automatic verification without connecting wallet.',
+      buyNowWallet: 'Get Creator Pack — 39 USDT',
       buyNowManual: 'Proceed with Manual Payment',
       creatingOrder: 'Creating order...',
-      secureNotice: 'Secure payment verified directly on BNB Smart Chain Testnet',
+      secureNotice: 'Instant digital delivery upon on-chain confirmation',
       retry: 'Retry',
       connectionError: 'Connection error while creating order.',
+      urgencyBadge: 'LAUNCH OFFER · SAVE $60 USD',
     },
     checkout: {
       activeOrder: 'ORDER CREATED',
@@ -305,6 +334,23 @@ export const translations: Record<Language, Translations> = {
       copiedEnv: 'Copied!',
       close: 'Close',
     },
+    faq: {
+      badge: 'FREQUENTLY ASKED QUESTIONS',
+      heading: 'Everything You Need to Know Before Buying',
+      subheading: 'Clear answers to common questions about deployment, fees, and ownership.',
+      q1: 'Do I need to pay a Cloudflare monthly subscription?',
+      a1: 'No, absolutely not. The entire stack (Cloudflare Workers, KV, and D1 SQLite) operates 100% within Cloudflare’s generous Free Tier, which includes 100,000 requests per day. Your monthly operational cost is $0 USD.',
+      q2: 'Where do the funds go when a customer pays?',
+      a2: '100% of customer payments go directly to your personal Web3 wallet address (non-custodial). VOLT Paywall never holds, touches, or delays your funds. You keep 100% of your earnings instantly.',
+      q3: 'How are digital products or services delivered after payment?',
+      a3: 'Through real-time on-chain verification. The backend monitors the BNB Smart Chain network for the exact Transfer event (~3-second block time) and automatically unlocks the product download or executes your delivery webhook.',
+      q4: 'What exactly is included in my 39 USDT purchase?',
+      a4: 'You get full 100% editable source code (React + Vite + Tailwind CSS + Cloudflare Worker API), step-by-step PDF installation guide, 1-click No-Code embed generator, commercial license for unlimited projects, and lifetime updates.',
+      q5: 'Do I need company registration or KYC verification?',
+      a5: 'Zero registration, zero business documents, and zero KYC required. Just set your wallet address in your configuration file and start accepting payments globally in minutes.',
+      supportNotice: 'Have more technical questions?',
+      supportAction: 'Read Quickstart Guide',
+    },
     footer: {
       poweredBy: 'Powered by VOLT Engine · Secure Payment Interface',
       generateEmbed: 'Generate No-Code Embed',
@@ -325,25 +371,30 @@ export const translations: Record<Language, Translations> = {
       paywallTag: 'VOLT PAYWALL',
       noFeesTag: '0% COMISIONES',
       nonCustodialTag: 'USDT Autocustodia',
+      heroHeadline: 'Tu propia pasarela crypto en Cloudflare Free.',
+      heroSubheadline: '0% comisiones, cobros directos a tu wallet, control total.',
       title: 'All-in-One\nCreator Pack',
       tagline: 'Pasarela de Pagos USDT BEP-20',
       description: 'Código fuente completo + guía paso a paso + licencia comercial ilimitada. Entrega digital inmediata.',
-      feature1: 'Código fuente completo 100% editable',
-      feature2: 'Guía paso a paso en PDF para implementación',
-      feature3: 'Licencia comercial ilimitada',
-      feature4: 'Entrega digital inmediata al confirmar pago',
-      totalPrice: 'PRECIO TOTAL',
+      feature1: '0% comisiones de por vida (Cobros directo P2P)',
+      feature2: 'Despliegue en Cloudflare Free ($0/mes hosting)',
+      feature3: 'Código fuente completo + guía PDF paso a paso',
+      feature4: 'Licencia comercial ilimitada + entrega inmediata',
+      originalPrice: '$99.00 USD',
+      discountBadge: '60% OFF',
+      totalPrice: 'PRECIO EN OFERTA',
       paymentMethod: 'MÉTODO DE PAGO',
       payWithWallet: 'Pagar con Wallet',
       manualPayment: 'Pago Manual / QR',
-      walletMethodSub: 'Transferencia exacta de 39.00 USDT vía MetaMask o Trust Wallet (BNB Smart Chain).',
+      walletMethodSub: 'Transferencia exacta de 39.00 USDT vía Web3 Wallet (BNB Smart Chain).',
       manualMethodSub: 'Transferencia con decimales de control únicos para verificación automática sin conectar wallet.',
-      buyNowWallet: 'Proceder con Wallet',
+      buyNowWallet: 'Obtener Creator Pack — 39 USDT',
       buyNowManual: 'Proceder con Pago Manual',
       creatingOrder: 'Creando orden...',
-      secureNotice: 'Pago seguro verificado directamente en BNB Smart Chain Testnet',
+      secureNotice: 'Entrega digital inmediata al confirmar en blockchain',
       retry: 'Reintentar',
       connectionError: 'Error de conexión al crear la orden.',
+      urgencyBadge: 'OFERTA DE LANZAMIENTO · AHORRA $60 USD',
     },
     checkout: {
       activeOrder: 'ORDEN CREADA',
@@ -452,6 +503,23 @@ export const translations: Record<Language, Translations> = {
       copyEnv: 'Copiar Fragmento .env',
       copiedEnv: '¡Copiado!',
       close: 'Cerrar',
+    },
+    faq: {
+      badge: 'PREGUNTAS FRECUENTES',
+      heading: 'Todo lo que necesitas saber antes de comprar',
+      subheading: 'Respuestas claras para derribar cualquier duda sobre despliegue, costos y propiedad.',
+      q1: '¿Necesito pagar mensualidad de Cloudflare?',
+      a1: 'No, en absoluto. Todo el stack (Cloudflare Workers, KV y D1 SQLite) funciona 100% dentro del plan Free gratuito de Cloudflare, el cual incluye 100,000 peticiones diarias. Tu costo operativo mensual es de $0 USD.',
+      q2: '¿A dónde van los fondos cuando el cliente paga?',
+      a2: 'El 100% de los fondos van directamente a la dirección de tu wallet personal Web3 (autocustodia P2P). VOLT Paywall nunca retiene, toca ni congela tu dinero. Recibes tus ingresos al instante.',
+      q3: '¿Cómo entrego el producto o servicio tras la compra?',
+      a3: 'Mediante verificación automatizada en tiempo real. El backend escanea el evento Transfer en BNB Smart Chain (~3 segundos) y libera el enlace de descarga o ejecuta tu webhook de entrega al confirmar la transacción.',
+      q4: '¿Qué incluye mi pago de 39 USDT?',
+      a4: 'Incluye el código fuente completo 100% editable (React + Vite + Tailwind + Cloudflare Worker backend), la guía PDF de instalación paso a paso, el generador no-code de embed, licencia comercial ilimitada y actualizaciones de por vida.',
+      q5: '¿Requiere registro de empresa o verificación KYC?',
+      a5: 'Cero registros, cero trámites de empresa y cero verificación KYC. Solo configuras tu dirección de wallet y comienzas a cobrar a clientes de todo el mundo en minutos.',
+      supportNotice: '¿Tienes dudas adicionales sobre la integración?',
+      supportAction: 'Ver Guía de Instalación',
     },
     footer: {
       poweredBy: 'Powered by VOLT Engine · Secure Payment Interface',

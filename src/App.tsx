@@ -6,6 +6,7 @@ import { PaidCard } from './components/PaidCard';
 import { DownloadModal } from './components/DownloadModal';
 import { EmbedModal } from './components/EmbedModal';
 import { WhyUsBento } from './components/WhyUsBento';
+import { FAQ } from './components/FAQ';
 import { Order, OrderStatus } from './types';
 import { PRODUCT_ID, POLL_INTERVAL_MS, ORDER_EXPIRATION_SECONDS, API_BASE_URL } from './config';
 import { api } from './services/api';
@@ -328,6 +329,9 @@ export default function App() {
 
           {/* VALUE PROPOSITION & COMPARISON BENTO GRID */}
           <WhyUsBento />
+
+          {/* INTERACTIVE CONVERSION FAQ SECTION */}
+          <FAQ />
         </div>
       </main>
 

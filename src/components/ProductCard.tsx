@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, ShieldCheck, AlertCircle, Loader2, Check, Wallet, Smartphone } from 'lucide-react';
+import { ShoppingCart, ShieldCheck, AlertCircle, Loader2, Check, Wallet, Smartphone, Zap } from 'lucide-react';
 import { PRODUCT_INFO } from '../config';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -84,17 +84,43 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
       </div>
 
-      {/* Price Block */}
+      {/* Price & Urgency Anchor Block */}
       <div className="pt-5 sm:pt-6 border-t border-white/5 mb-6 sm:mb-8">
-        <span className="text-gray-500 text-[10px] sm:text-xs font-bold uppercase tracking-widest block mb-1.5">
+        {/* Ethical Urgency Banner */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FFB800]/10 border border-[#FFB800]/30 rounded-full text-[10px] sm:text-xs font-bold text-[#FFB800] mb-3">
+          <Zap className="w-3.5 h-3.5 fill-[#FFB800]" />
+          <span>{t.product.urgencyBadge}</span>
+        </div>
+
+        <span className="text-gray-500 text-[10px] sm:text-xs font-bold uppercase tracking-widest block mb-1">
           {t.product.totalPrice}
         </span>
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl sm:text-5xl font-extrabold text-[#FFB800] font-mono tracking-tight">
+
+        <div className="flex items-baseline gap-2.5 flex-wrap">
+          {/* Strikethrough Original Price */}
+          <span className="text-lg sm:text-2xl font-bold text-gray-500 line-through font-mono decoration-rose-500/80 decoration-2">
+            {t.product.originalPrice}
+          </span>
+
+          {/* Offer Price */}
+          <span className="text-3xl sm:text-5xl font-black text-[#FFB800] font-mono tracking-tight">
             {PRODUCT_INFO.basePrice}.00
           </span>
-          <span className="text-lg sm:text-xl text-gray-400 font-bold">USDT</span>
-          <span className="text-[10px] sm:text-xs text-gray-500 ml-auto font-mono">BNB Smart Chain</span>
+          <span className="text-lg sm:text-xl text-gray-300 font-extrabold">USDT</span>
+
+          {/* Discount Tag */}
+          <span className="bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10px] sm:text-xs font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider font-mono">
+            {t.product.discountBadge}
+          </span>
+        </div>
+
+        {/* Network Selection Pill */}
+        <div className="mt-3 flex items-center justify-between text-[10px] sm:text-xs text-gray-400 bg-[#161616] border border-white/5 p-2 rounded-xl">
+          <span className="font-mono text-gray-400">Payment Network:</span>
+          <span className="font-mono text-[#00C853] font-bold flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-[#00C853] animate-pulse" />
+            BNB Smart Chain (BEP-20)
+          </span>
         </div>
       </div>
 

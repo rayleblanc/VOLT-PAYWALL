@@ -3,6 +3,7 @@
 import { Env, ApiErrorResponse, D1OrderRecord } from './types';
 import { createOrderInD1, getOrderStatusFromD1 } from './services/orders';
 import { reconcilePendingPayments } from './services/verifier';
+import { buildZipArchive, getProjectBDeliverableFiles } from './services/zipBuilder';
 
 /**
  * Generates CORS headers for API responses
@@ -232,34 +233,51 @@ export default {
         const plaintextToken = `volt_tok_${hexToken}`;
 
         const tokenHash = await sha256(plaintextToken);
-        const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(); // 1-hour expiration window
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24-hour expiration window
         const nowIso = new Date().toISOString();
+        const downloadId = `dl_${hexToken.substring(0, 16)}`;
 
-        // Atomic transaction: Delete any existing active token for this order (limit concurrency) and insert new
-        const deleteStmt = env.DB.prepare(`DELETE FROM download_tokens WHERE order_id = ?`).bind(orderId);
-        const insertStmt = env.DB.prepare(`
+        // Atomic transaction: Record in both 'downloads' and 'download_tokens' tables
+        const deleteTokensStmt = env.DB.prepare(`DELETE FROM download_tokens WHERE order_id = ?`).bind(orderId);
+        const insertTokensStmt = env.DB.prepare(`
           INSERT INTO download_tokens (order_id, token_hash, jti, expires_at, created_at)
           VALUES (?, ?, ?, ?, ?)
         `).bind(orderId, tokenHash, tokenHash, expiresAt, nowIso);
 
-        await env.DB.batch([deleteStmt, insertStmt]);
+        const deleteDownloadsStmt = env.DB.prepare(`DELETE FROM downloads WHERE order_id = ?`).bind(orderId);
+        const insertDownloadsStmt = env.DB.prepare(`
+          INSERT INTO downloads (id, order_id, access_token, downloads_count, max_downloads, expires_at, created_at)
+          VALUES (?, ?, ?, 0, 1, ?, ?)
+        `).bind(downloadId, orderId, plaintextToken, expiresAt, nowIso);
+
+        try {
+          await env.DB.batch([deleteTokensStmt, insertTokensStmt, deleteDownloadsStmt, insertDownloadsStmt]);
+        } catch (dbErr) {
+          // Fallback if migration 0006 is pending on older local databases
+          console.warn('[DB] Batch with downloads table fallback:', dbErr);
+          await env.DB.batch([deleteTokensStmt, insertTokensStmt]);
+        }
 
         return jsonResponse({ token: plaintextToken }, 200, corsHeaders);
       }
 
-      // 5. Route: GET /api/download?token=... (Secure delivery endpoint)
-      if (path === '/api/download') {
+      // 5. Route: GET /api/download/:token or GET /api/download?token=... (Secure delivery endpoint)
+      if (path === '/api/download' || path.startsWith('/api/download/')) {
         if (method !== 'GET') {
           const textHeaders = new Headers(corsHeaders);
           textHeaders.set('Content-Type', 'text/plain; charset=utf-8');
           return new Response('Method not allowed. Use GET.', { status: 405, headers: textHeaders });
         }
 
-        const token = url.searchParams.get('token');
+        let token = url.searchParams.get('token');
+        if (!token && path.startsWith('/api/download/')) {
+          token = path.replace('/api/download/', '').trim();
+        }
+
         if (!token) {
           const textHeaders = new Headers(corsHeaders);
           textHeaders.set('Content-Type', 'text/plain; charset=utf-8');
-          return new Response('Missing required "token" query parameter.', { status: 400, headers: textHeaders });
+          return new Response('Missing required "token" parameter.', { status: 400, headers: textHeaders });
         }
 
         const cleanToken = token.trim();
@@ -272,56 +290,97 @@ export default {
         const tokenHash = await sha256(cleanToken);
         const now = new Date();
         const nowIso = now.toISOString();
+        const clientIp = request.headers.get('CF-Connecting-IP') || request.headers.get('x-forwarded-for') || null;
+        const userAgent = request.headers.get('User-Agent') || null;
 
-        // 3. Conditional Atomic Update: set used_at ONLY if currently NULL and not expired
-        const updateResult = await env.DB.prepare(`
-          UPDATE download_tokens
-          SET used_at = ?
-          WHERE (token_hash = ? OR jti = ?)
-            AND used_at IS NULL
-            AND expires_at > ?
-        `).bind(nowIso, tokenHash, tokenHash, nowIso).run();
+        // 1. Validation in 'downloads' table (downloads_count < max_downloads & expires_at > now)
+        let downloadRecord = await env.DB.prepare(`
+          SELECT * FROM downloads WHERE access_token = ? LIMIT 1
+        `).bind(cleanToken).first<{
+          id: string;
+          order_id: string;
+          access_token: string;
+          downloads_count: number;
+          max_downloads: number;
+          expires_at: string;
+        }>().catch(() => null);
 
-        const changes = updateResult?.meta?.changes ?? (updateResult as unknown as { changes?: number })?.changes ?? 0;
+        let orderIdAssociated = downloadRecord?.order_id;
 
-        // Fetch token record to evaluate status or grace period window
-        const tokenRecord = await env.DB.prepare(`
-          SELECT * FROM download_tokens WHERE token_hash = ? OR jti = ? LIMIT 1
-        `).bind(tokenHash, tokenHash).first<{ order_id: string; expires_at: string; used_at: string | null }>();
-
-        if (!tokenRecord) {
-          const textHeaders = new Headers(corsHeaders);
-          textHeaders.set('Content-Type', 'text/plain; charset=utf-8');
-          return new Response('Download token is invalid or does not exist.', { status: 403, headers: textHeaders });
-        }
-
-        const expiresAtDate = new Date(tokenRecord.expires_at);
-        if (now.getTime() > expiresAtDate.getTime()) {
-          const textHeaders = new Headers(corsHeaders);
-          textHeaders.set('Content-Type', 'text/plain; charset=utf-8');
-          return new Response('This download token has expired (validity is 1 hour). Please request a new one.', { status: 403, headers: textHeaders });
-        }
-
-        if (changes === 0 && tokenRecord.used_at !== null) {
-          const usedAtTime = new Date(tokenRecord.used_at).getTime();
-          const GRACE_PERIOD_MS = 10 * 60 * 1000; // 10 minutes lease grace window
-          if (now.getTime() - usedAtTime > GRACE_PERIOD_MS) {
+        if (downloadRecord) {
+          const expiresAtDate = new Date(downloadRecord.expires_at);
+          if (now.getTime() > expiresAtDate.getTime()) {
             const textHeaders = new Headers(corsHeaders);
             textHeaders.set('Content-Type', 'text/plain; charset=utf-8');
-            return new Response('This download token was claimed more than 10 minutes ago and has fully expired. Please request a new download token.', { status: 403, headers: textHeaders });
+            return new Response('This download token has expired (validity is 24 hours). Please request a new one.', { status: 403, headers: textHeaders });
+          }
+
+          if (downloadRecord.downloads_count >= downloadRecord.max_downloads) {
+            const textHeaders = new Headers(corsHeaders);
+            textHeaders.set('Content-Type', 'text/plain; charset=utf-8');
+            return new Response('This single-use download token has already been claimed and used. Access revoked.', { status: 403, headers: textHeaders });
+          }
+
+          // Atomic increment and invalidation
+          await env.DB.prepare(`
+            UPDATE downloads
+            SET downloads_count = downloads_count + 1,
+                last_download_at = ?,
+                ip_address = ?,
+                user_agent = ?
+            WHERE access_token = ? AND downloads_count < max_downloads
+          `).bind(nowIso, clientIp, userAgent, cleanToken).run();
+        } else {
+          // Fallback check against 'download_tokens' table with atomic CAS
+          const updateResult = await env.DB.prepare(`
+            UPDATE download_tokens
+            SET used_at = ?
+            WHERE (token_hash = ? OR jti = ?)
+              AND used_at IS NULL
+              AND expires_at > ?
+          `).bind(nowIso, tokenHash, tokenHash, nowIso).run();
+
+          const changes = updateResult?.meta?.changes ?? (updateResult as unknown as { changes?: number })?.changes ?? 0;
+
+          const tokenRecord = await env.DB.prepare(`
+            SELECT * FROM download_tokens WHERE token_hash = ? OR jti = ? LIMIT 1
+          `).bind(tokenHash, tokenHash).first<{ order_id: string; expires_at: string; used_at: string | null }>();
+
+          if (!tokenRecord) {
+            const textHeaders = new Headers(corsHeaders);
+            textHeaders.set('Content-Type', 'text/plain; charset=utf-8');
+            return new Response('Download token is invalid or does not exist.', { status: 403, headers: textHeaders });
+          }
+
+          orderIdAssociated = tokenRecord.order_id;
+          const expiresAtDate = new Date(tokenRecord.expires_at);
+          if (now.getTime() > expiresAtDate.getTime()) {
+            const textHeaders = new Headers(corsHeaders);
+            textHeaders.set('Content-Type', 'text/plain; charset=utf-8');
+            return new Response('This download token has expired. Please request a new one.', { status: 403, headers: textHeaders });
+          }
+
+          if (changes === 0 && tokenRecord.used_at !== null) {
+            const usedAtTime = new Date(tokenRecord.used_at).getTime();
+            const GRACE_PERIOD_MS = 10 * 60 * 1000; // 10 minutes lease grace window
+            if (now.getTime() - usedAtTime > GRACE_PERIOD_MS) {
+              const textHeaders = new Headers(corsHeaders);
+              textHeaders.set('Content-Type', 'text/plain; charset=utf-8');
+              return new Response('This single-use download token was already claimed and has fully expired.', { status: 403, headers: textHeaders });
+            }
           }
         }
 
-        // Secure Digital Delivery from Workers KV
+        // Secure Digital Delivery from Workers KV (PRODUCT_PAYLOAD_KV or ASSETS_KV)
         let fileData: ArrayBuffer | ReadableStream | null = null;
-        let filename = 'creator-pack.zip';
+        let filename = 'volt-paywall-engine.zip';
         let contentType = 'application/zip';
         let fileSize: number | null = null;
 
-        if (env.ASSETS_KV) {
-          const kv = env.ASSETS_KV;
+        const targetKv = env.PRODUCT_PAYLOAD_KV || env.ASSETS_KV;
+        if (targetKv) {
           try {
-            const metadata = await kv.get<{ filename?: string; contentType?: string; size?: number; chunks?: string[] }>('zip_metadata', 'json');
+            const metadata = await targetKv.get<{ filename?: string; contentType?: string; size?: number; chunks?: string[] }>('zip_metadata', 'json');
             if (metadata) {
               filename = metadata.filename || filename;
               contentType = metadata.contentType || contentType;
@@ -332,10 +391,10 @@ export default {
                 // Large chunked binary assembler streaming from KV
                 const { readable, writable } = new TransformStream();
                 const writer = writable.getWriter();
-                ctx.waitUntil((async () => {
+                ctx?.waitUntil?.((async () => {
                   try {
                     for (const chunkKey of chunks) {
-                      const chunkData = await kv.get(chunkKey, 'arrayBuffer');
+                      const chunkData = await targetKv.get(chunkKey, 'arrayBuffer');
                       if (chunkData) {
                         await writer.write(new Uint8Array(chunkData));
                       }
@@ -348,106 +407,26 @@ export default {
                 })());
                 fileData = readable;
               } else {
-                // Direct buffer retrieval
-                fileData = await kv.get('zip_content', 'arrayBuffer');
+                fileData = await targetKv.get('zip_content', 'arrayBuffer');
               }
             } else {
-              fileData = await kv.get('zip_content', 'arrayBuffer');
+              fileData = await targetKv.get('zip_content', 'arrayBuffer');
             }
           } catch (kvErr) {
-            console.error('[KV] Error retrieving assets:', kvErr);
+            console.error('[KV] Error retrieving assets from KV namespace:', kvErr);
           }
         }
 
-        // Fallback: If KV is unprovisioned, empty, or fails, serve a compliant minimal dynamic ZIP welcome deliverable on-the-fly ONLY in non-production
+        // Automatic Build of Project B Delivery ZIP if not pre-uploaded in KV
         if (!fileData) {
-          if (env.APP_ENV === 'production') {
-            console.error('[KV Production Incident] Creator Pack Asset not found in Workers KV (ASSETS_KV) in PRODUCTION mode. Order ID:', tokenRecord.order_id);
-            const textHeaders = new Headers(corsHeaders);
-            textHeaders.set('Content-Type', 'application/json; charset=utf-8');
-            return new Response(JSON.stringify({
-              error: 'ASSET_UNAVAILABLE',
-              message: 'El producto digital adquirido no se encuentra disponible en estos momentos para descarga. Nuestro equipo técnico ha sido notificado automáticamente. Por favor, intente descargar de nuevo en unos minutos.'
-            }), { status: 500, headers: textHeaders });
-          }
-
-          const readmeContent = `--- VOLT PAYWALL - ENTREGA COMPLETA ---\n\n` +
-            `¡Muchas gracias por adquirir tu Creator Pack!\n\n` +
-            `Detalles de la Transacción:\n` +
-            `- ID de Orden: ${tokenRecord.order_id}\n` +
-            `- Fecha de Entrega: ${nowIso}\n` +
-            `- Estado de Entrega: ENTREGADO Y AUTORIZADO (UN SOLO USO)\n\n` +
-            `Nota de Configuración:\n` +
-            `Este es un archivo ZIP autogenerado de forma dinámica por el Paywall.\n` +
-            `Para entregar el archivo real de tu producto, carga los bytes de tu ZIP\n` +
-            `en la clave "zip_content" de tu Workers KV (ASSETS_KV) en tu panel de Cloudflare.`;
-
-          const textBytes = new TextEncoder().encode(readmeContent);
-          const nameBytes = new TextEncoder().encode('README_COMPRA.txt');
-          const size = textBytes.length;
-
-          // Standard uncompressed ZIP layout: Local Header (30 + name_len) + file_data + CD Header (46 + name_len) + EOCD (22)
-          const localHeaderLen = 30 + nameBytes.length;
-          const centralHeaderLen = 46 + nameBytes.length;
-          const eocdLen = 22;
-
-          const totalZipLen = localHeaderLen + size + centralHeaderLen + eocdLen;
-          const fullZip = new Uint8Array(totalZipLen);
-
-          let offset = 0;
-
-          // 1. Local File Header (PK\x03\x04)
-          fullZip.set([0x50, 0x4b, 0x03, 0x04], offset); offset += 4;
-          fullZip.set([10, 0], offset); offset += 2; // version needed
-          fullZip.set([0, 0], offset); offset += 2; // general purpose flag
-          fullZip.set([0, 0], offset); offset += 2; // compression method (0 = stored)
-          fullZip.set([0, 0, 0, 0], offset); offset += 4; // last mod time/date
-          fullZip.set([0, 0, 0, 0], offset); offset += 4; // CRC-32 (0 is acceptable for fallback)
-          fullZip.set([size & 0xff, (size >> 8) & 0xff, (size >> 16) & 0xff, (size >> 24) & 0xff], offset); offset += 4; // compressed size
-          fullZip.set([size & 0xff, (size >> 8) & 0xff, (size >> 16) & 0xff, (size >> 24) & 0xff], offset); offset += 4; // uncompressed size
-          fullZip.set([nameBytes.length & 0xff, (nameBytes.length >> 8) & 0xff], offset); offset += 2; // file name length
-          fullZip.set([0, 0], offset); offset += 2; // extra field length
-          fullZip.set(nameBytes, offset); offset += nameBytes.length; // file name
-
-          // 2. File Data
-          fullZip.set(textBytes, offset); offset += size;
-
-          // 3. Central Directory File Header (PK\x01\x02)
-          const centralDirOffset = offset;
-          fullZip.set([0x50, 0x4b, 0x01, 0x02], offset); offset += 4;
-          fullZip.set([20, 0], offset); offset += 2; // version made by
-          fullZip.set([10, 0], offset); offset += 2; // version needed
-          fullZip.set([0, 0], offset); offset += 2; // general purpose flag
-          fullZip.set([0, 0], offset); offset += 2; // compression method
-          fullZip.set([0, 0, 0, 0], offset); offset += 4; // last mod time/date
-          fullZip.set([0, 0, 0, 0], offset); offset += 4; // CRC-32
-          fullZip.set([size & 0xff, (size >> 8) & 0xff, (size >> 16) & 0xff, (size >> 24) & 0xff], offset); offset += 4; // compressed size
-          fullZip.set([size & 0xff, (size >> 8) & 0xff, (size >> 16) & 0xff, (size >> 24) & 0xff], offset); offset += 4; // uncompressed size
-          fullZip.set([nameBytes.length & 0xff, (nameBytes.length >> 8) & 0xff], offset); offset += 2; // file name length
-          fullZip.set([0, 0], offset); offset += 2; // extra field length
-          fullZip.set([0, 0], offset); offset += 2; // file comment length
-          fullZip.set([0, 0], offset); offset += 2; // disk number start
-          fullZip.set([0, 0], offset); offset += 2; // internal file attrs
-          fullZip.set([0, 0, 0, 0], offset); offset += 4; // external file attrs
-          fullZip.set([0, 0, 0, 0], offset); offset += 4; // local header offset (0)
-          fullZip.set(nameBytes, offset); offset += nameBytes.length;
-
-          // 4. End of Central Directory Record (PK\x05\x06)
-          const centralDirSize = offset - centralDirOffset;
-          fullZip.set([0x50, 0x4b, 0x05, 0x06], offset); offset += 4;
-          fullZip.set([0, 0], offset); offset += 2; // number of this disk
-          fullZip.set([0, 0], offset); offset += 2; // disk start of CD
-          fullZip.set([1, 0], offset); offset += 2; // CD records on this disk
-          fullZip.set([1, 0], offset); offset += 2; // total CD records
-          fullZip.set([centralDirSize & 0xff, (centralDirSize >> 8) & 0xff, (centralDirSize >> 16) & 0xff, (centralDirSize >> 24) & 0xff], offset); offset += 4; // size of CD
-          fullZip.set([centralDirOffset & 0xff, (centralDirOffset >> 8) & 0xff, (centralDirOffset >> 16) & 0xff, (centralDirOffset >> 24) & 0xff], offset); offset += 4; // offset of CD start
-          fullZip.set([0, 0], offset); offset += 2; // comment length
-
-          fileData = fullZip.buffer;
-          fileSize = fullZip.length;
+          const orderId = orderIdAssociated || 'volt_ord_verified';
+          const projectBFiles = getProjectBDeliverableFiles(orderId, nowIso);
+          const zipBuffer = buildZipArchive(projectBFiles);
+          fileData = zipBuffer.buffer;
+          fileSize = zipBuffer.length;
         }
 
-        // Construct response with download headers
+        // Construct response with forced attachment download headers
         const downloadHeaders = new Headers(corsHeaders);
         downloadHeaders.set('Content-Type', contentType);
         downloadHeaders.set('Content-Disposition', `attachment; filename="${filename}"`);
@@ -461,7 +440,67 @@ export default {
         });
       }
 
-      // 6. Default 404 for unhandled API paths
+      // 6. Route: POST /api/test-checkout (Development & Testnet Quick E2E Simulation)
+      if (path === '/api/test-checkout') {
+        const isDev = (env.APP_ENV || 'development') !== 'production';
+        if (!isDev) {
+          return errorResponse('FORBIDDEN', 'Test checkout endpoint is disabled in production.', 403, corsHeaders);
+        }
+
+        if (method !== 'POST') {
+          return errorResponse('METHOD_NOT_ALLOWED', 'Method not allowed. Use POST.', 405, corsHeaders);
+        }
+
+        // 1. Generate Order
+        const testOrder = await createOrderInD1('creator-pack', 'wallet', env);
+
+        // 2. Simulate On-Chain Tx Hash & Payment Confirmation
+        const randomTx = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32)))
+          .map(b => b.toString(16).padStart(2, '0')).join('');
+        const nowIso = new Date().toISOString();
+
+        await env.DB.prepare(`
+          UPDATE orders
+          SET status = 'PAID',
+              tx_hash = ?,
+              paid_at = ?,
+              confirmations = 12
+          WHERE id = ?
+        `).bind(randomTx, nowIso, testOrder.orderId).run();
+
+        // 3. Generate Single-Use Download Token
+        const randomBytes = new Uint8Array(16);
+        crypto.getRandomValues(randomBytes);
+        const hexToken = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+        const plaintextToken = `volt_tok_${hexToken}`;
+        const tokenHash = await sha256(plaintextToken);
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        const downloadId = `dl_${hexToken.substring(0, 16)}`;
+
+        await env.DB.prepare(`
+          INSERT INTO downloads (id, order_id, access_token, downloads_count, max_downloads, expires_at, created_at)
+          VALUES (?, ?, ?, 0, 1, ?, ?)
+        `).bind(downloadId, testOrder.orderId, plaintextToken, expiresAt, nowIso).run();
+
+        await env.DB.prepare(`
+          INSERT INTO download_tokens (order_id, token_hash, jti, expires_at, created_at)
+          VALUES (?, ?, ?, ?, ?)
+        `).bind(testOrder.orderId, tokenHash, tokenHash, expiresAt, nowIso).run();
+
+        return jsonResponse({
+          success: true,
+          message: 'Test checkout flow completed successfully in testnet environment.',
+          orderId: testOrder.orderId,
+          amount: testOrder.amount,
+          simulatedTxHash: randomTx,
+          status: 'PAID',
+          downloadToken: plaintextToken,
+          downloadUrl: `/api/download/${plaintextToken}`,
+          directQueryUrl: `/api/download?token=${plaintextToken}`,
+        }, 200, corsHeaders);
+      }
+
+      // 7. Default 404 for unhandled API paths
       return errorResponse('NOT_FOUND', 'Endpoint not found.', 404, corsHeaders);
     } catch (err: unknown) {
       console.error('Unhandled Worker Error:', err);

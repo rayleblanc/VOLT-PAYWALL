@@ -20,6 +20,7 @@ export interface Env {
   USDT_CONTRACT_ADDRESS?: string;
   RPC_CHUNK_SIZE?: string;
   ASSETS_KV?: KVNamespace;
+  PRODUCT_PAYLOAD_KV?: KVNamespace; // Namespace for Project B ZIP delivery
   ASSETS?: Fetcher;
 }
 
@@ -116,6 +117,19 @@ export interface D1PaymentRecord {
   confirmed_at?: string | null;
 }
 
+export interface D1DownloadRecord {
+  id: string;
+  order_id: string;
+  access_token: string;
+  downloads_count: number;
+  max_downloads: number;
+  expires_at: string;
+  created_at: string;
+  last_download_at?: string | null;
+  ip_address?: string | null;
+  user_agent?: string | null;
+}
+
 export interface D1DownloadTokenRecord {
   id: number;
   order_id: string;
@@ -125,4 +139,3 @@ export interface D1DownloadTokenRecord {
   used_at: string | null;
   created_at: string;
 }
-
