@@ -2401,6 +2401,31 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     assert.equal(insertedData.status, 'PENDING');
     assert.equal(insertedData.amount, '39');
   });
+
+  it('53. Assets Routing - Solicitudes no /api/* son servidas via env.ASSETS.fetch', async () => {
+    let assetsFetchedUrl: string | null = null;
+    const mockEnv: Env = {
+      DB: {} as D1Database,
+      APP_ENV: 'development',
+      ASSETS: {
+        fetch: async (req: Request | string) => {
+          const url = typeof req === 'string' ? req : req.url;
+          assetsFetchedUrl = url;
+          return new Response('<html>Mock Index HTML</html>', {
+            status: 200,
+            headers: { 'Content-Type': 'text/html' },
+          });
+        },
+      } as unknown as Fetcher,
+    };
+
+    const req = new Request('http://localhost:8787/checkout?order=volt_ord_123');
+    const res = await worker.fetch(req, mockEnv);
+
+    assert.equal(res.status, 200);
+    assert.equal(await res.text(), '<html>Mock Index HTML</html>');
+    assert.equal(assetsFetchedUrl, 'http://localhost:8787/checkout?order=volt_ord_123');
+  });
 });
 
 
