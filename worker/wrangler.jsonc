@@ -14,7 +14,8 @@
     {
       "binding": "DB",
       "database_name": "volt-paywall-db",
-      "database_id": "c9e2a3d2-5326-4fa8-ad0e-e35f8d6ffe6d"
+      "database_id": "c9e2a3d2-5326-4fa8-ad0e-e35f8d6ffe6d",
+      "migrations_dir": "migrations"
     }
   ],
   "kv_namespaces": [
