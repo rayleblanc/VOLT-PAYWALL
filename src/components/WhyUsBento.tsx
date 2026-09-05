@@ -134,19 +134,26 @@ export const WhyUsBento: React.FC = () => {
       </div>
 
       {/* Direct Comparison Table */}
-      <div className="bg-[#111111] border border-white/10 rounded-3xl p-6 sm:p-8 overflow-hidden">
-        <div className="mb-6">
-          <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
-            <Globe2 className="w-5 h-5 text-[#FFB800]" />
-            <span>{t.whyUs.tableHeading}</span>
-          </h3>
-          <p className="text-gray-400 text-xs sm:text-sm">
-            {t.whyUs.tableSub}
-          </p>
+      <div className="bg-[#111111] border border-white/10 rounded-3xl p-5 sm:p-8 overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+          <div>
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-1 flex items-center gap-2">
+              <Globe2 className="w-5 h-5 text-[#FFB800] shrink-0" />
+              <span>{t.whyUs.tableHeading}</span>
+            </h3>
+            <p className="text-gray-400 text-xs sm:text-sm">
+              {t.whyUs.tableSub}
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-gray-400 self-start sm:self-center md:hidden">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FFB800] animate-pulse" />
+            Desliza horizontalmente &rarr;
+          </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs sm:text-sm">
+        {/* Responsive Table Container with Touch Scroll */}
+        <div className="w-full overflow-x-auto my-2 pb-2 scrollbar-thin scrollbar-thumb-white/10">
+          <table className="w-full min-w-[600px] text-left text-xs sm:text-sm">
             <thead>
               <tr className="border-b border-white/10 text-gray-400 font-mono text-[11px] uppercase">
                 <th className="pb-3 font-semibold">{t.whyUs.colFeature}</th>

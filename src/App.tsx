@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { EnvironmentBanner } from './components/EnvironmentBanner';
 import { Header } from './components/Header';
 import { ProductCard } from './components/ProductCard';
 import { CheckoutCard } from './components/CheckoutCard';
@@ -236,6 +237,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#080808] text-white flex flex-col font-sans selection:bg-[#FFB800]/30 selection:text-[#FFB800]">
+      {/* Network Environment Indicator Banner (Testnet vs Mainnet) */}
+      <EnvironmentBanner />
+
       {/* Header */}
       <Header
         onResetDemo={handleResetDemo}

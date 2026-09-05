@@ -1,6 +1,6 @@
 {
-  "name": "VOLT Paywall | Pasarela de Pagos USDT BEP-20",
-  "description": "VOLT Paywall es la pasarela de pagos USDT BEP-20 sin comisiones, autocustodia y verificación automática On-Chain para creadores y productos digitales.",
+  "name": "VOLT Paywall V1 — Self-Hosted Web3 Payment Starter Kit (0% Fees)",
+  "description": "Accept USDT (BEP-20) directly to your wallet. 0% platform fees, self-hosted on Cloudflare Free.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
