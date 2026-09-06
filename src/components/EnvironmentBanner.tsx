@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, AlertTriangle, Radio, X, Info, ExternalLink } from 'lucide-react';
-import { getEthereumProvider, isBscTestnetChain } from '../services/walletService';
-import { DEFAULT_CHAIN_ID, BSC_TESTNET_CHAIN_ID_DECIMAL } from '../config';
+import { getEthereumProvider, isBscTestnetChain, isBscMainnetChain } from '../services/walletService';
+import { DEFAULT_CHAIN_ID, BSC_MAINNET_CHAIN_ID_DECIMAL, BSC_TESTNET_CHAIN_ID_DECIMAL } from '../config';
 import { useLanguage } from '../i18n/LanguageContext';
 
 export interface EnvironmentBannerProps {
@@ -12,7 +12,7 @@ export const EnvironmentBanner: React.FC<EnvironmentBannerProps> = ({ onDismiss 
   const { language } = useLanguage();
   const [isDismissed, setIsDismissed] = useState(false);
   const [detectedChainId, setDetectedChainId] = useState<number | string>(DEFAULT_CHAIN_ID);
-  const [isWalletTestnet, setIsWalletTestnet] = useState<boolean>(true);
+  const [isWalletTestnet, setIsWalletTestnet] = useState<boolean>(DEFAULT_CHAIN_ID === 97);
   const [hasWallet, setHasWallet] = useState<boolean>(false);
 
   // Inspect environment and wallet RPC / chain

@@ -86,6 +86,15 @@ export interface Translations {
     badge: string;
     heading: string;
     subheading: string;
+    valueSectionBadge: string;
+    valueSectionHeading: string;
+    valueSectionSubheading: string;
+    roiTitle: string;
+    roiSubtitle: string;
+    roiMathGumroad: string;
+    roiMathLemon: string;
+    roiMathVolt: string;
+    roiMathSaved: string;
     card1Title: string;
     card1Sub: string;
     card1Desc: string;
@@ -107,26 +116,32 @@ export interface Translations {
     tableSub: string;
     colFeature: string;
     colStripe: string;
+    colGumroad: string;
     colCryptoCentralized: string;
     colVolt: string;
     rowFee: string;
     stripeFeeVal: string;
+    gumroadFeeVal: string;
     cryptoFeeVal: string;
     voltFeeVal: string;
     rowCustody: string;
     stripeCustodyVal: string;
+    gumroadCustodyVal: string;
     cryptoCustodyVal: string;
     voltCustodyVal: string;
     rowPayout: string;
     stripePayoutVal: string;
+    gumroadPayoutVal: string;
     cryptoPayoutVal: string;
     voltPayoutVal: string;
     rowChargebacks: string;
     stripeChargebackVal: string;
+    gumroadChargebackVal: string;
     cryptoChargebackVal: string;
     voltChargebackVal: string;
     rowKyc: string;
     stripeKycVal: string;
+    gumroadKycVal: string;
     cryptoKycVal: string;
     voltKycVal: string;
   };
@@ -263,6 +278,15 @@ export const translations: Record<Language, Translations> = {
       badge: 'Next-Gen USDT Payment Gateway',
       heading: 'Why Creators & Developers Choose VOLT Paywall over Stripe or CryptoPay?',
       subheading: 'The fastest, non-custodial USDT BEP-20 payment gateway designed for creators, SaaS, and digital sellers seeking full revenue control.',
+      valueSectionBadge: 'POR QUÉ VALE MÁS DE $39 USDT / VALUE STACK',
+      valueSectionHeading: 'Why VOLT Paywall is Worth 10x More Than $39 USDT',
+      valueSectionSubheading: 'Gumroad & Lemon Squeezy eat up to 10% of your hard-earned revenue. VOLT Paywall gives you 100% financial independence for life.',
+      roiTitle: 'Instant ROI Calculation: Gumroad vs. VOLT Paywall',
+      roiSubtitle: 'How much money are you giving away to platform fees every time you sell $5,000 USD?',
+      roiMathGumroad: 'Gumroad Fees (10% + $0.30): You pay $500.00+ USD to intermediaries',
+      roiMathLemon: 'Lemon Squeezy (5% + $0.50 + 10% Reserve): $250+ USD held for 90 days',
+      roiMathVolt: 'VOLT Paywall ($39 USDT One-Time): $0.00 platform fees. 100% directly in your wallet',
+      roiMathSaved: 'Net Profit Saved: $500.00 USD on your first $5k sales — 12x ROI on day 1!',
       card1Title: '0% Intermediary Fees',
       card1Sub: 'DIRECT WALLET-TO-WALLET PAYMENTS',
       card1Desc: 'Unlike Stripe or custodial crypto processors charging 1% to 5% per transaction, VOLT Paywall transfers 100% of USDT directly to your personal wallet. Only standard BNB chain gas (~$0.01 - $0.03) applies.',
@@ -280,30 +304,36 @@ export const translations: Record<Language, Translations> = {
       noKyc: 'No signups or KYC',
       walletQrSupport: 'MetaMask & QR Support',
       globalBorderless: 'Global & Borderless',
-      tableHeading: 'Direct Gateway Comparison (2026)',
-      tableSub: 'Compare key features of VOLT Paywall against market alternatives.',
+      tableHeading: 'Direct Gateway Cost & Risk Comparison (2026)',
+      tableSub: 'Compare key features and hidden platform fees of VOLT Paywall against market alternatives.',
       colFeature: 'Feature',
       colStripe: 'Stripe / Cards',
+      colGumroad: 'Gumroad / Lemon Squeezy',
       colCryptoCentralized: 'Centralized Crypto (BitPay/Coinbase)',
-      colVolt: 'VOLT Paywall',
-      rowFee: 'Transaction Fee',
+      colVolt: 'VOLT Paywall (BEP-20)',
+      rowFee: 'Transaction / Platform Fee',
       stripeFeeVal: '2.9% + $0.30 USD',
+      gumroadFeeVal: '10.0% or 5.0% + $0.50',
       cryptoFeeVal: '1.0% - 2.0% per tx',
-      voltFeeVal: '0.00% (BSC Gas Only)',
-      rowCustody: 'Fund Custody',
+      voltFeeVal: '0.00% (0% Platform Fee)',
+      rowCustody: 'Fund Custody & Risk',
       stripeCustodyVal: 'Centralized (Stripe Hold)',
-      cryptoCustodyVal: 'Centralized (Exchange)',
-      voltCustodyVal: '100% Non-Custodial',
+      gumroadCustodyVal: '10% Rolling Reserve (90 Days)',
+      cryptoCustodyVal: 'Centralized Exchange',
+      voltCustodyVal: '100% Non-Custodial (Direct P2P)',
       rowPayout: 'Payout / Settlement',
       stripePayoutVal: '7 - 14 Business Days',
+      gumroadPayoutVal: 'Weekly Payouts (Delayed)',
       cryptoPayoutVal: '24 - 48 Hours',
       voltPayoutVal: 'Instant (~3 seconds)',
-      rowChargebacks: 'Chargeback Risk',
+      rowChargebacks: 'Chargeback & Ban Risk',
       stripeChargebackVal: 'High (Card Fraud / Disputes)',
+      gumroadChargebackVal: 'High (Risk of Account Bans)',
       cryptoChargebackVal: 'Low',
       voltChargebackVal: '0% (Impossible on Blockchain)',
       rowKyc: 'KYC & Signup Requirements',
       stripeKycVal: 'Mandatory & Extensive',
+      gumroadKycVal: 'Identity & Bank Verification',
       cryptoKycVal: 'Mandatory Corporate KYC',
       voltKycVal: 'No Signup / No KYC Required',
     },
@@ -337,15 +367,15 @@ export const translations: Record<Language, Translations> = {
     faq: {
       badge: 'FREQUENTLY ASKED QUESTIONS',
       heading: 'Everything You Need to Know Before Buying',
-      subheading: 'Clear answers to common questions about deployment, fees, and ownership.',
-      q1: 'Do I need to pay a Cloudflare monthly subscription?',
-      a1: 'No, absolutely not. The entire stack (Cloudflare Workers, KV, and D1 SQLite) operates 100% within Cloudflare’s generous Free Tier, which includes 100,000 requests per day. Your monthly operational cost is $0 USD.',
-      q2: 'Where do the funds go when a customer pays?',
-      a2: '100% of customer payments go directly to your personal Web3 wallet address (non-custodial). VOLT Paywall never holds, touches, or delays your funds. You keep 100% of your earnings instantly.',
-      q3: 'How are digital products or services delivered after payment?',
-      a3: 'Through real-time on-chain verification. The backend monitors the BNB Smart Chain network for the exact Transfer event (~3-second block time) and automatically unlocks the product download or executes your delivery webhook.',
-      q4: 'What exactly is included in my 39 USDT purchase?',
-      a4: 'You get full 100% editable source code (React + Vite + Tailwind CSS + Cloudflare Worker API), step-by-step PDF installation guide, 1-click No-Code embed generator, commercial license for unlimited projects, and lifetime updates.',
+      subheading: 'Clear answers to common questions about deployment, fees, and non-custodial ownership.',
+      q1: 'Do I need to pay monthly Cloudflare subscription fees?',
+      a1: 'No, absolutely not. The entire stack (Cloudflare Workers, KV, and D1 SQLite) operates 100% within Cloudflare’s Free tier, which includes 100,000 requests per day. Your monthly hosting cost is $0 USD.',
+      q2: 'How do I receive payments?',
+      a2: 'All transfers go direct P2P to your non-custodial Web3 wallet. VOLT Paywall never holds, touches, or freezes your funds. You get instant settlement with 0% platform fees.',
+      q3: 'What if I need help installing it?',
+      a3: 'It includes an automated 1-click ./setup.sh script and a step-by-step installation guide in both English and Spanish. Any developer or creator can deploy it to Cloudflare in under 2 minutes.',
+      q4: 'What exactly is included in my $39 USDT purchase?',
+      a4: 'You get full 100% editable source code (React + Vite + Tailwind CSS + Cloudflare Worker API), automated ./setup.sh script, PDF/Markdown step-by-step deployment guide, No-Code embed generator, unlimited commercial license, and lifetime updates.',
       q5: 'Do I need company registration or KYC verification?',
       a5: 'Zero registration, zero business documents, and zero KYC required. Just set your wallet address in your configuration file and start accepting payments globally in minutes.',
       supportNotice: 'Have more technical questions?',
@@ -433,6 +463,15 @@ export const translations: Record<Language, Translations> = {
       badge: 'Pasarela de Pagos USDT de Nueva Generación',
       heading: '¿Por qué Creadores y Developers eligen VOLT Paywall frente a Stripe o CryptoPay?',
       subheading: 'La pasarela de cobros en USDT BEP-20 non-custodial más rápida, segura y económica para monetizar productos digitales a nivel global.',
+      valueSectionBadge: 'POR QUÉ VALE MÁS DE $39 USDT / AHORRO REAL',
+      valueSectionHeading: 'Por qué VOLT Paywall vale 10 veces más que $39 USDT',
+      valueSectionSubheading: 'Gumroad y Lemon Squeezy se quedan con hasta el 10% de tus ingresos. VOLT Paywall te da independencia financiera total de por vida.',
+      roiTitle: 'Cálculo de Retorno Inmediato (ROI): Gumroad vs. VOLT Paywall',
+      roiSubtitle: '¿Cuánto dinero regalas en comisiones de plataforma cada vez que vendes $5,000 USD?',
+      roiMathGumroad: 'Comisión Gumroad (10% + $0.30): Pagas $500.00+ USD a intermediarios',
+      roiMathLemon: 'Lemon Squeezy (5% + $0.50 + 10% Retención): $250+ USD retenidos por 90 días',
+      roiMathVolt: 'VOLT Paywall ($39 USDT Pago Único): $0.00 en comisiones. 100% directo a tu wallet',
+      roiMathSaved: 'Ahorro Neto Real: $500.00 USD en tus primeros $5,000 en ventas — ¡Recuperas tu inversión 12 veces desde el primer día!',
       card1Title: '0% Comisiones por Intermediarios',
       card1Sub: 'PAGOS DIRECTOS WALLET-A-WALLET',
       card1Desc: 'A diferencia de Stripe o procesadores crypto con custodia que cobran del 1% al 5% por transacción, VOLT Paywall transfiere el 100% de los USDT directamente a tu wallet personal. Solo se paga el gas estándar de BNB Smart Chain (~$0.01 - $0.03).',
@@ -450,30 +489,36 @@ export const translations: Record<Language, Translations> = {
       noKyc: 'Sin registros ni KYC',
       walletQrSupport: 'Soporte MetaMask & QR',
       globalBorderless: 'Global sin fronteras',
-      tableHeading: 'Tabla Comparativa Directa (2026)',
-      tableSub: 'Compara las características clave de VOLT Paywall frente a las alternativas del mercado.',
+      tableHeading: 'Tabla Comparativa Directa de Costos y Riesgos (2026)',
+      tableSub: 'Compara las características clave y comisiones ocultas de VOLT Paywall frente a las alternativas del mercado.',
       colFeature: 'Característica',
       colStripe: 'Stripe / Tarjetas',
+      colGumroad: 'Gumroad / Lemon Squeezy',
       colCryptoCentralized: 'Crypto Centralizado (BitPay/Coinbase)',
-      colVolt: 'VOLT Paywall',
-      rowFee: 'Comisión por Transacción',
+      colVolt: 'VOLT Paywall (BEP-20)',
+      rowFee: 'Comisión por Transacción / Plataforma',
       stripeFeeVal: '2.9% + $0.30 USD',
+      gumroadFeeVal: '10.0% o 5.0% + $0.50',
       cryptoFeeVal: '1.0% - 2.0% por tx',
-      voltFeeVal: '0.00% (Solo Gas BSC)',
-      rowCustody: 'Custodia de Fondos',
+      voltFeeVal: '0.00% (0% Comisión de Plataforma)',
+      rowCustody: 'Custodia de Fondos y Riesgo',
       stripeCustodyVal: 'Centralizada (Retención Stripe)',
-      cryptoCustodyVal: 'Centralizada (Exchange)',
-      voltCustodyVal: '100% Autocustodia',
+      gumroadCustodyVal: '10% Retención Rolling (90 Días)',
+      cryptoCustodyVal: 'Exchange Centralizado',
+      voltCustodyVal: '100% Autocustodia (Directo P2P)',
       rowPayout: 'Liquidación / Pagos',
       stripePayoutVal: '7 - 14 Días Hábiles',
+      gumroadPayoutVal: 'Pagos Semanales (Con Retardo)',
       cryptoPayoutVal: '24 - 48 Horas',
       voltPayoutVal: 'Instantánea (~3 segundos)',
-      rowChargebacks: 'Riesgo de Chargebacks',
-      stripeChargebackVal: 'Alto (Fraude de tarjetas)',
+      rowChargebacks: 'Riesgo de Chargebacks y Bloqueos',
+      stripeChargebackVal: 'Alto (Fraude de Tarjetas)',
+      gumroadChargebackVal: 'Alto (Riesgo de Cierre de Cuenta)',
       cryptoChargebackVal: 'Bajo',
       voltChargebackVal: '0% (Imposible en Blockchain)',
       rowKyc: 'Requisitos de KYC / Registro',
       stripeKycVal: 'Obligatorio y Extenso',
+      gumroadKycVal: 'Verificación Bancaria e Identidad',
       cryptoKycVal: 'KYC Corporativo Obligatorio',
       voltKycVal: 'Sin Registro / Sin KYC',
     },
@@ -507,15 +552,15 @@ export const translations: Record<Language, Translations> = {
     faq: {
       badge: 'PREGUNTAS FRECUENTES',
       heading: 'Todo lo que necesitas saber antes de comprar',
-      subheading: 'Respuestas claras para derribar cualquier duda sobre despliegue, costos y propiedad.',
-      q1: '¿Necesito pagar mensualidad de Cloudflare?',
-      a1: 'No, en absoluto. Todo el stack (Cloudflare Workers, KV y D1 SQLite) funciona 100% dentro del plan Free gratuito de Cloudflare, el cual incluye 100,000 peticiones diarias. Tu costo operativo mensual es de $0 USD.',
-      q2: '¿A dónde van los fondos cuando el cliente paga?',
-      a2: 'El 100% de los fondos van directamente a la dirección de tu wallet personal Web3 (autocustodia P2P). VOLT Paywall nunca retiene, toca ni congela tu dinero. Recibes tus ingresos al instante.',
-      q3: '¿Cómo entrego el producto o servicio tras la compra?',
-      a3: 'Mediante verificación automatizada en tiempo real. El backend escanea el evento Transfer en BNB Smart Chain (~3 segundos) y libera el enlace de descarga o ejecuta tu webhook de entrega al confirmar la transacción.',
-      q4: '¿Qué incluye mi pago de 39 USDT?',
-      a4: 'Incluye el código fuente completo 100% editable (React + Vite + Tailwind + Cloudflare Worker backend), la guía PDF de instalación paso a paso, el generador no-code de embed, licencia comercial ilimitada y actualizaciones de por vida.',
+      subheading: 'Respuestas claras para resolver cualquier duda sobre despliegue, costos y autocustodia.',
+      q1: '¿Necesito pagar mensualidades a Cloudflare?',
+      a1: 'No, en absoluto. Todo el stack (Cloudflare Workers, KV y D1 SQLite) corre 100% en el plan gratuito de Cloudflare, el cual incluye 100,000 peticiones diarias sin costo. Tu costo operativo mensual es de $0 USD.',
+      q2: '¿Cómo recibo los pagos?',
+      a2: 'Las transferencias van directo P2P a tu wallet personal Web3, sin custodia intermedia. VOLT Paywall nunca retiene, toca ni congela tu dinero. Recibes tus ingresos al instante con 0% comisiones.',
+      q3: '¿Qué pasa si necesito ayuda para instalarlo?',
+      a3: 'Incluye el script automatizado ./setup.sh en 1 clic y una guía paso a paso en español e inglés. Cualquier desarrollador o creador puede desplegarlo en Cloudflare en menos de 2 minutos sin complicaciones.',
+      q4: '¿Qué incluye mi pago de $39 USDT?',
+      a4: 'Incluye el código fuente completo 100% editable (React + Vite + Tailwind + Cloudflare Worker backend), script automatizado ./setup.sh en 1 clic, guía PDF/Markdown paso a paso, generador no-code de embed, licencia comercial ilimitada y actualizaciones de por vida.',
       q5: '¿Requiere registro de empresa o verificación KYC?',
       a5: 'Cero registros, cero trámites de empresa y cero verificación KYC. Solo configuras tu dirección de wallet y comienzas a cobrar a clientes de todo el mundo en minutos.',
       supportNotice: '¿Tienes dudas adicionales sobre la integración?',

@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
+    "build": "wrangler deploy --dry-run",
     "deploy": "wrangler deploy",
-    "d1:create": "wrangler d1 create volt-paywall-db",
-    "d1:migrate:local": "wrangler d1 migrations apply volt-paywall-db --local",
-    "d1:migrate:remote": "wrangler d1 migrations apply volt-paywall-db --remote",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/**/*.test.ts"
+  },
+  "dependencies": {
+    "hono": "^4.13.7"
   }
 }

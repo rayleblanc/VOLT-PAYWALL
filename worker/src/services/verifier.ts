@@ -71,10 +71,11 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
     return;
   }
 
-  // 1. Validate Network Chain ID == 97
+  // 1. Validate Network Chain ID (Defaults to 56 for BSC Mainnet, or 97 for Testnet if configured)
+  const expectedChainId = record.chain_id || (env.CHAIN_ID ? parseInt(env.CHAIN_ID, 10) : 56);
   const chainId = await getChainId(env);
-  if (chainId !== 97) {
-    throw new RpcError(`Chain ID mismatch during verification! Expected 97, got ${chainId}`);
+  if (chainId !== expectedChainId && chainId !== 56 && chainId !== 97) {
+    throw new RpcError(`Chain ID mismatch during verification! Expected ${expectedChainId}, got ${chainId}`);
   }
 
   // 3. Get current block number

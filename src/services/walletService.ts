@@ -7,7 +7,14 @@
  */
 
 import { EIP1193Provider, WalletState } from '../types';
-import { BSC_TESTNET_CHAIN_ID_HEX, BSC_TESTNET_CHAIN_CONFIG } from '../config';
+import {
+  DEFAULT_CHAIN_ID,
+  BSC_MAINNET_CHAIN_ID_HEX,
+  BSC_MAINNET_CHAIN_CONFIG,
+  BSC_MAINNET_USDT_CONTRACT,
+  BSC_TESTNET_CHAIN_ID_HEX,
+  BSC_TESTNET_CHAIN_CONFIG,
+} from '../config';
 
 /**
  * Safely resolves the injected window.ethereum provider.
@@ -30,6 +37,22 @@ export function formatAddress(address: string | null): string {
 }
 
 /**
+ * Validates if the given chain ID represents BSC Mainnet (Hex: 0x38 or Decimal: 56).
+ */
+export function isBscMainnetChain(chainId: string | number | null): boolean {
+  if (!chainId) return false;
+  if (typeof chainId === 'number') {
+    return chainId === 56;
+  }
+  const cleanHex = chainId.toLowerCase().trim();
+  if (cleanHex === '0x38' || cleanHex === '0x0038' || cleanHex === '56') {
+    return true;
+  }
+  const dec = parseInt(cleanHex, 16);
+  return dec === 56;
+}
+
+/**
  * Validates if the given chain ID represents BSC Testnet (Hex: 0x61 or Decimal: 97).
  */
 export function isBscTestnetChain(chainId: string | number | null): boolean {
@@ -46,6 +69,16 @@ export function isBscTestnetChain(chainId: string | number | null): boolean {
 }
 
 /**
+ * Checks if the wallet is on the currently targeted BSC network (Default: Mainnet 56).
+ */
+export function isTargetBscChain(chainId: string | number | null): boolean {
+  if (DEFAULT_CHAIN_ID === 56) {
+    return isBscMainnetChain(chainId);
+  }
+  return isBscTestnetChain(chainId);
+}
+
+/**
  * Requests wallet account connection via EIP-1193 eth_requestAccounts
  * and queries eth_chainId.
  */
@@ -57,6 +90,7 @@ export async function connectEip1193Wallet(): Promise<WalletState> {
       status: 'unavailable',
       account: null,
       chainId: null,
+      isBscMainnet: false,
       isBscTestnet: false,
       errorMessage: 'No se detectó un proveedor Web3/EIP-1193 (MetaMask, Trust Wallet, etc.).',
     };
@@ -70,6 +104,7 @@ export async function connectEip1193Wallet(): Promise<WalletState> {
         status: 'disconnected',
         account: null,
         chainId: null,
+        isBscMainnet: false,
         isBscTestnet: false,
         errorMessage: 'No se seleccionó ninguna cuenta en la wallet.',
       };
@@ -79,15 +114,19 @@ export async function connectEip1193Wallet(): Promise<WalletState> {
 
     // 2. Query chain ID
     const rawChainId = (await provider.request({ method: 'eth_chainId' })) as string;
+    const isMainnet = isBscMainnetChain(rawChainId);
     const isTestnet = isBscTestnetChain(rawChainId);
+    const isValidNetwork = DEFAULT_CHAIN_ID === 56 ? isMainnet : isTestnet;
 
-    if (!isTestnet) {
+    if (!isValidNetwork) {
+      const targetName = DEFAULT_CHAIN_ID === 56 ? 'BNB Smart Chain Mainnet (Chain ID 56)' : 'BNB Smart Chain Testnet (Chain ID 97)';
       return {
         status: 'wrong_network',
         account: primaryAccount,
         chainId: rawChainId,
-        isBscTestnet: false,
-        errorMessage: 'Red incorrecta. Cambia tu wallet a BNB Smart Chain Testnet (Chain ID 97).',
+        isBscMainnet: isMainnet,
+        isBscTestnet: isTestnet,
+        errorMessage: `Red incorrecta. Cambia tu wallet a ${targetName}.`,
       };
     }
 
@@ -95,7 +134,8 @@ export async function connectEip1193Wallet(): Promise<WalletState> {
       status: 'connected',
       account: primaryAccount,
       chainId: rawChainId,
-      isBscTestnet: true,
+      isBscMainnet: isMainnet,
+      isBscTestnet: isTestnet,
       errorMessage: null,
     };
   } catch (err: unknown) {
@@ -106,6 +146,7 @@ export async function connectEip1193Wallet(): Promise<WalletState> {
         status: 'disconnected',
         account: null,
         chainId: null,
+        isBscMainnet: false,
         isBscTestnet: false,
         errorMessage: 'Conexión cancelada por el usuario.',
       };
@@ -116,6 +157,7 @@ export async function connectEip1193Wallet(): Promise<WalletState> {
         status: 'connecting',
         account: null,
         chainId: null,
+        isBscMainnet: false,
         isBscTestnet: false,
         errorMessage: 'Abre la ventana de tu wallet para autorizar la conexión pendiente.',
       };
@@ -125,6 +167,7 @@ export async function connectEip1193Wallet(): Promise<WalletState> {
       status: 'error',
       account: null,
       chainId: null,
+      isBscMainnet: false,
       isBscTestnet: false,
       errorMessage: errorObj.message || 'Error al comunicarse con la wallet.',
     };
@@ -132,10 +175,10 @@ export async function connectEip1193Wallet(): Promise<WalletState> {
 }
 
 /**
- * Requests network switch to BSC Testnet (0x61) via wallet_switchEthereumChain.
- * Falls back to wallet_addEthereumChain if BSC Testnet is not yet registered in wallet.
+ * Requests network switch to BSC Mainnet (0x38 / 56) via wallet_switchEthereumChain.
+ * Falls back to wallet_addEthereumChain if BSC Mainnet is not yet registered in wallet.
  */
-export async function switchToBscTestnet(): Promise<WalletState> {
+export async function switchToBscMainnet(): Promise<WalletState> {
   const provider = getEthereumProvider();
 
   if (!provider) {
@@ -143,6 +186,7 @@ export async function switchToBscTestnet(): Promise<WalletState> {
       status: 'unavailable',
       account: null,
       chainId: null,
+      isBscMainnet: false,
       isBscTestnet: false,
       errorMessage: 'No se detectó un proveedor Web3.',
     };
@@ -151,7 +195,7 @@ export async function switchToBscTestnet(): Promise<WalletState> {
   try {
     await provider.request({
       method: 'wallet_switchEthereumChain',
-      params: [{ chainId: BSC_TESTNET_CHAIN_ID_HEX }],
+      params: [{ chainId: BSC_MAINNET_CHAIN_ID_HEX }],
     });
 
     // Re-verify after successful switch
@@ -164,7 +208,7 @@ export async function switchToBscTestnet(): Promise<WalletState> {
       try {
         await provider.request({
           method: 'wallet_addEthereumChain',
-          params: [BSC_TESTNET_CHAIN_CONFIG],
+          params: [BSC_MAINNET_CHAIN_CONFIG],
         });
         return await connectEip1193Wallet();
       } catch (addErr: unknown) {
@@ -173,8 +217,9 @@ export async function switchToBscTestnet(): Promise<WalletState> {
           status: 'wrong_network',
           account: null,
           chainId: null,
+          isBscMainnet: false,
           isBscTestnet: false,
-          errorMessage: addErrObj.message || 'No se pudo agregar la red BSC Testnet a la wallet.',
+          errorMessage: addErrObj.message || 'No se pudo agregar la red BNB Smart Chain Mainnet a la wallet.',
         };
       }
     }
@@ -184,6 +229,7 @@ export async function switchToBscTestnet(): Promise<WalletState> {
         status: 'wrong_network',
         account: null,
         chainId: null,
+        isBscMainnet: false,
         isBscTestnet: false,
         errorMessage: 'Cambio de red cancelado por el usuario.',
       };
@@ -193,11 +239,18 @@ export async function switchToBscTestnet(): Promise<WalletState> {
       status: 'wrong_network',
       account: null,
       chainId: null,
+      isBscMainnet: false,
       isBscTestnet: false,
-      errorMessage: errorObj.message || 'Error al cambiar a la red BSC Testnet.',
+      errorMessage: errorObj.message || 'Error al cambiar a la red BNB Smart Chain Mainnet.',
     };
   }
 }
+
+/**
+ * Legacy alias for switching to target network
+ */
+export const switchToBscTestnet = switchToBscMainnet;
+export const switchBscNetwork = switchToBscMainnet;
 
 /**
  * Executes a real USDT (or configured ERC-20 token) transfer using pure EIP-1193 eth_sendTransaction.

@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "volt-paywall",
+  "name": "volt-paywall-solana",
   "main": "src/index.ts",
   "compatibility_date": "2024-09-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -10,25 +10,19 @@
     "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "volt-paywall-db",
-      "database_id": "c9e2a3d2-5326-4fa8-ad0e-e35f8d6ffe6d",
-      "migrations_dir": "migrations"
-    }
-  ],
   "kv_namespaces": [
     {
-      "binding": "ASSETS_KV",
-      "id": "13b740c4c9b944408b236b8e96d2c9e8"
-    },
-    {
-      "binding": "PRODUCT_PAYLOAD_KV",
+      "binding": "PRODUCT_STORAGE",
       "id": "13b740c4c9b944408b236b8e96d2c9e8"
     }
   ],
-  "triggers": {
-    "crons": ["*/10 * * * *"]
+  "vars": {
+    "RECIPIENT_WALLET": "VoLT111111111111111111111111111111111111111",
+    "SOLANA_RPC_URL": "https://api.mainnet-beta.solana.com",
+    "SOLANA_RPC_FALLBACKS": "https://solana-mainnet.rpc.extrnode.com,https://rpc.ankr.com/solana,https://solana.public-rpc.com",
+    "ALLOWED_ORIGINS": "https://voltpaywall.com,http://localhost:3000,http://127.0.0.1:3000",
+    "DOWNLOAD_SECRET": "volt_solana_sec_prod_key_2026_unbreakable",
+    "EXPECTED_PRICE_USD": "39",
+    "APP_ENV": "production"
   }
 }

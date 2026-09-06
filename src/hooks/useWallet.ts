@@ -3,14 +3,17 @@ import { WalletState } from '../types';
 import {
   getEthereumProvider,
   isBscTestnetChain,
+  isBscMainnetChain,
   connectEip1193Wallet,
-  switchToBscTestnet,
+  switchToBscMainnet,
 } from '../services/walletService';
+import { DEFAULT_CHAIN_ID } from '../config';
 
 const INITIAL_WALLET_STATE: WalletState = {
   status: 'disconnected',
   account: null,
   chainId: null,
+  isBscMainnet: false,
   isBscTestnet: false,
   errorMessage: null,
 };
@@ -33,16 +36,20 @@ export function useWallet() {
       const accounts = (await provider.request({ method: 'eth_accounts' })) as string[];
       if (accounts && accounts.length > 0) {
         const rawChainId = (await provider.request({ method: 'eth_chainId' })) as string;
+        const isMainnet = isBscMainnetChain(rawChainId);
         const isTestnet = isBscTestnetChain(rawChainId);
+        const isValid = DEFAULT_CHAIN_ID === 56 ? isMainnet : isTestnet;
+        const targetName = DEFAULT_CHAIN_ID === 56 ? 'BNB Smart Chain Mainnet (Chain ID 56)' : 'BNB Smart Chain Testnet (Chain ID 97)';
 
         setWalletState({
-          status: isTestnet ? 'connected' : 'wrong_network',
+          status: isValid ? 'connected' : 'wrong_network',
           account: accounts[0],
           chainId: rawChainId,
+          isBscMainnet: isMainnet,
           isBscTestnet: isTestnet,
-          errorMessage: isTestnet
+          errorMessage: isValid
             ? null
-            : 'Red incorrecta. Cambia tu wallet a BNB Smart Chain Testnet (Chain ID 97).',
+            : `Red incorrecta. Cambia tu wallet a ${targetName}.`,
         });
       }
     } catch (err) {
@@ -60,26 +67,33 @@ export function useWallet() {
       if (!accList || accList.length === 0) {
         setWalletState(INITIAL_WALLET_STATE);
       } else {
-        setWalletState((prev) => ({
-          ...prev,
-          status: prev.isBscTestnet ? 'connected' : 'wrong_network',
-          account: accList[0],
-        }));
+        setWalletState((prev) => {
+          const isValid = DEFAULT_CHAIN_ID === 56 ? prev.isBscMainnet : prev.isBscTestnet;
+          return {
+            ...prev,
+            status: isValid ? 'connected' : 'wrong_network',
+            account: accList[0],
+          };
+        });
       }
     };
 
     const handleChainChanged = (chainId: unknown) => {
       const hexChainId = String(chainId);
+      const isMainnet = isBscMainnetChain(hexChainId);
       const isTestnet = isBscTestnetChain(hexChainId);
+      const isValid = DEFAULT_CHAIN_ID === 56 ? isMainnet : isTestnet;
+      const targetName = DEFAULT_CHAIN_ID === 56 ? 'BNB Smart Chain Mainnet (Chain ID 56)' : 'BNB Smart Chain Testnet (Chain ID 97)';
 
       setWalletState((prev) => ({
         ...prev,
         chainId: hexChainId,
+        isBscMainnet: isMainnet,
         isBscTestnet: isTestnet,
-        status: prev.account ? (isTestnet ? 'connected' : 'wrong_network') : 'disconnected',
-        errorMessage: isTestnet
+        status: prev.account ? (isValid ? 'connected' : 'wrong_network') : 'disconnected',
+        errorMessage: isValid
           ? null
-          : 'Red incorrecta. Cambia tu wallet a BNB Smart Chain Testnet (Chain ID 97).',
+          : `Red incorrecta. Cambia tu wallet a ${targetName}.`,
       }));
     };
 
@@ -105,7 +119,7 @@ export function useWallet() {
   };
 
   const switchNetwork = async () => {
-    const result = await switchToBscTestnet();
+    const result = await switchToBscMainnet();
     setWalletState(result);
     return result;
   };

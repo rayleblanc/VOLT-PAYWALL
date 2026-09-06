@@ -2,18 +2,32 @@
 
 import { ProductConfig } from './types';
 
-// Server-side authoritative product specification
+// Server-side authoritative product specification (BSC Mainnet default)
 export const PRODUCT: ProductConfig = {
   id: 'creator-pack',
   name: 'All-in-One Creator Pack',
   price: '39',
   currency: 'USDT',
   network: 'BSC',
-  chainId: 97, // BSC Testnet for initial testing
+  chainId: 56, // BNB Smart Chain Mainnet
 };
 
 // Fallback payment receiver address for local dev (Overridden by env.PAYMENT_RECIPIENT in production)
 export const DEV_PAYMENT_RECIPIENT = '0x000000000000000000000000000000000000dEaD';
+
+// BSC Mainnet & Testnet Constants
+export const BSC_MAINNET_CHAIN_ID = 56;
+export const BSC_TESTNET_CHAIN_ID = 97;
+
+// Default BSC Mainnet JSON-RPC Endpoints (Chain ID 56 / 0x38)
+export const DEFAULT_BSC_MAINNET_RPC = 'https://bsc-dataseed.binance.org/';
+export const DEFAULT_BSC_MAINNET_RPC_FALLBACKS = [
+  'https://bsc-dataseed1.defibit.io/',
+  'https://bsc-dataseed1.ninicoin.io/',
+];
+
+// Official BSC Mainnet Binance-Peg USDT Token Contract Address
+export const DEFAULT_BSC_MAINNET_USDT_CONTRACT = '0x55d398326f99059fF775485246999027B3197955';
 
 // Default BSC Testnet JSON-RPC Endpoint (Chain ID 97 / 0x61)
 export const DEFAULT_BSC_TESTNET_RPC = 'https://data-seed-prebsc-1-s1.binance.org:8545/';

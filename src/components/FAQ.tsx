@@ -30,7 +30,7 @@ export const FAQ: React.FC = () => {
     {
       question: t.faq.q5,
       answer: t.faq.a5,
-      icon: <RefreshCw className="w-5 h-5 text-indigo-400" />
+      icon: <ShieldCheck className="w-5 h-5 text-indigo-400" />
     }
   ];
 

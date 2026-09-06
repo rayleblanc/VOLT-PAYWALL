@@ -105,8 +105,9 @@ export type WalletStatus =
 export interface WalletState {
   status: WalletStatus;
   account: string | null;
-  chainId: string | null; // e.g. "0x61" or "97"
-  isBscTestnet: boolean;
+  chainId: string | null; // e.g. "0x38", "56", "0x61", "97"
+  isBscMainnet: boolean;
+  isBscTestnet?: boolean;
   errorMessage: string | null;
 }
 

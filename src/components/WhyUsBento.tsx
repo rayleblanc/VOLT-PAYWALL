@@ -21,6 +21,48 @@ export const WhyUsBento: React.FC = () => {
         </p>
       </div>
 
+      {/* ROI & Value Proposition Banner ($39 USDT Stack vs. Gumroad) */}
+      <div className="bg-gradient-to-r from-[#FFB800]/10 via-[#111111] to-[#00C853]/10 border border-[#FFB800]/30 rounded-3xl p-6 sm:p-8 space-y-6 relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#FFB800] bg-[#FFB800]/10 border border-[#FFB800]/20 px-3 py-1 rounded-full font-mono">
+              {t.whyUs.valueSectionBadge}
+            </span>
+            <h3 className="text-xl sm:text-3xl font-black text-white tracking-tight mt-2">
+              {t.whyUs.valueSectionHeading}
+            </h3>
+            <p className="text-gray-300 text-xs sm:text-sm mt-1 max-w-2xl">
+              {t.whyUs.valueSectionSubheading}
+            </p>
+          </div>
+          <div className="bg-[#FFB800] text-black px-4 py-2.5 rounded-2xl font-black text-center shrink-0 shadow-lg shadow-[#FFB800]/20">
+            <span className="block text-[10px] uppercase tracking-wider font-bold">One-Time License</span>
+            <span className="text-xl sm:text-2xl font-mono leading-none">$39 USDT</span>
+          </div>
+        </div>
+
+        {/* ROI Breakdown Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-4 border-t border-white/10 font-mono text-xs">
+          <div className="bg-[#181818] p-4 rounded-2xl border border-rose-500/20 text-rose-300 space-y-1">
+            <span className="text-rose-400 font-bold block text-[10px] uppercase">Gumroad (10%)</span>
+            <p>{t.whyUs.roiMathGumroad}</p>
+          </div>
+          <div className="bg-[#181818] p-4 rounded-2xl border border-amber-500/20 text-amber-300 space-y-1">
+            <span className="text-amber-400 font-bold block text-[10px] uppercase">Lemon Squeezy (5% + Reserve)</span>
+            <p>{t.whyUs.roiMathLemon}</p>
+          </div>
+          <div className="bg-[#00C853]/10 p-4 rounded-2xl border border-[#00C853]/40 text-[#00C853] space-y-1">
+            <span className="text-[#00C853] font-black block text-[10px] uppercase">VOLT Paywall ($39 Once)</span>
+            <p className="font-bold">{t.whyUs.roiMathVolt}</p>
+          </div>
+        </div>
+
+        <div className="bg-[#00C853]/20 border border-[#00C853]/40 p-3 rounded-xl text-center text-xs font-bold text-[#00C853] flex items-center justify-center gap-2">
+          <Check className="w-4 h-4 shrink-0" />
+          <span>{t.whyUs.roiMathSaved}</span>
+        </div>
+      </div>
+
       {/* Main Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-2 sm:px-0">
         
@@ -153,11 +195,12 @@ export const WhyUsBento: React.FC = () => {
 
         {/* Responsive Table Container with Touch Scroll */}
         <div className="w-full overflow-x-auto my-2 pb-2 scrollbar-thin scrollbar-thumb-white/10">
-          <table className="w-full min-w-[600px] text-left text-xs sm:text-sm">
+          <table className="w-full min-w-[700px] text-left text-xs sm:text-sm">
             <thead>
               <tr className="border-b border-white/10 text-gray-400 font-mono text-[11px] uppercase">
                 <th className="pb-3 font-semibold">{t.whyUs.colFeature}</th>
                 <th className="pb-3 font-semibold text-rose-400">{t.whyUs.colStripe}</th>
+                <th className="pb-3 font-semibold text-orange-400">{t.whyUs.colGumroad}</th>
                 <th className="pb-3 font-semibold text-amber-400">{t.whyUs.colCryptoCentralized}</th>
                 <th className="pb-3 font-semibold text-[#FFB800] bg-[#FFB800]/5 px-3 py-1 rounded-t-xl">{t.whyUs.colVolt}</th>
               </tr>
@@ -166,30 +209,35 @@ export const WhyUsBento: React.FC = () => {
               <tr>
                 <td className="py-3.5 font-bold text-white">{t.whyUs.rowFee}</td>
                 <td className="py-3.5 text-rose-300">{t.whyUs.stripeFeeVal}</td>
+                <td className="py-3.5 text-orange-300 font-semibold">{t.whyUs.gumroadFeeVal}</td>
                 <td className="py-3.5 text-amber-300">{t.whyUs.cryptoFeeVal}</td>
                 <td className="py-3.5 text-[#FFB800] font-extrabold bg-[#FFB800]/5 px-3 font-mono">{t.whyUs.voltFeeVal}</td>
               </tr>
               <tr>
                 <td className="py-3.5 font-bold text-white">{t.whyUs.rowCustody}</td>
                 <td className="py-3.5 text-gray-400">{t.whyUs.stripeCustodyVal}</td>
+                <td className="py-3.5 text-gray-400">{t.whyUs.gumroadCustodyVal}</td>
                 <td className="py-3.5 text-gray-400">{t.whyUs.cryptoCustodyVal}</td>
                 <td className="py-3.5 text-[#00C853] font-bold bg-[#FFB800]/5 px-3">{t.whyUs.voltCustodyVal}</td>
               </tr>
               <tr>
                 <td className="py-3.5 font-bold text-white">{t.whyUs.rowPayout}</td>
                 <td className="py-3.5 text-gray-400">{t.whyUs.stripePayoutVal}</td>
+                <td className="py-3.5 text-gray-400">{t.whyUs.gumroadPayoutVal}</td>
                 <td className="py-3.5 text-gray-400">{t.whyUs.cryptoPayoutVal}</td>
                 <td className="py-3.5 text-[#00C853] font-bold bg-[#FFB800]/5 px-3">{t.whyUs.voltPayoutVal}</td>
               </tr>
               <tr>
                 <td className="py-3.5 font-bold text-white">{t.whyUs.rowChargebacks}</td>
                 <td className="py-3.5 text-rose-400">{t.whyUs.stripeChargebackVal}</td>
+                <td className="py-3.5 text-orange-400">{t.whyUs.gumroadChargebackVal}</td>
                 <td className="py-3.5 text-gray-400">{t.whyUs.cryptoChargebackVal}</td>
                 <td className="py-3.5 text-[#00C853] font-bold bg-[#FFB800]/5 px-3">{t.whyUs.voltChargebackVal}</td>
               </tr>
               <tr>
                 <td className="py-3.5 font-bold text-white">{t.whyUs.rowKyc}</td>
                 <td className="py-3.5 text-gray-400">{t.whyUs.stripeKycVal}</td>
+                <td className="py-3.5 text-gray-400">{t.whyUs.gumroadKycVal}</td>
                 <td className="py-3.5 text-gray-400">{t.whyUs.cryptoKycVal}</td>
                 <td className="py-3.5 text-[#FFB800] font-bold bg-[#FFB800]/5 px-3">{t.whyUs.voltKycVal}</td>
               </tr>

@@ -16,6 +16,7 @@ export interface Env {
   PAYMENT_RECIPIENT?: string;
   APP_ENV?: string;
   ALLOWED_ORIGINS?: string;
+  CHAIN_ID?: string;
   BSC_RPC_URL?: string;
   USDT_CONTRACT_ADDRESS?: string;
   RPC_CHUNK_SIZE?: string;

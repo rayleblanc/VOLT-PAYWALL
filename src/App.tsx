@@ -106,7 +106,7 @@ export default function App() {
     setTimeRemainingSeconds(ORDER_EXPIRATION_SECONDS);
   };
 
-  // Handle product download
+  // Handle product download - triggers commercial zip package /volt-paywall-kit.zip
   const handleDownload = async () => {
     if (!order?.orderId) return;
     try {
@@ -114,22 +114,15 @@ export default function App() {
       if (res.success && res.data) {
         const token = res.data.token;
         if (token.startsWith('mock_tok_')) {
-          // Simulated client-side download for demo mode
+          // Direct download of commercial starter pack zip
           const element = document.createElement("a");
-          const file = new Blob([
-            "--- VOLT PAYWALL DEMO DOWNLOAD ---\n" +
-            "¡Felicidades! Has completado el flujo de pago con éxito en modo simulado.\n" +
-            "ID de orden: " + order.orderId + "\n" +
-            "Hash de transacción: " + (order.txHash || "N/A") + "\n" +
-            "Monto: " + order.amount + " USDT"
-          ], { type: 'text/plain' });
-          element.href = URL.createObjectURL(file);
-          element.download = "creator_pack_demo_download.txt";
+          element.href = "/volt-paywall-kit.zip";
+          element.download = "volt-paywall-kit.zip";
           document.body.appendChild(element);
           element.click();
           document.body.removeChild(element);
         } else {
-          // Production/Local server-side download
+          // Production server-side tokenized download route
           const downloadUrl = `${API_BASE_URL || ''}/api/download?token=${encodeURIComponent(token)}`;
           window.location.href = downloadUrl;
         }

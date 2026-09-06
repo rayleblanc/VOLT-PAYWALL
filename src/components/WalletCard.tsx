@@ -10,10 +10,13 @@ import {
 } from 'lucide-react';
 import { useWallet } from '../hooks/useWallet';
 import { formatAddress } from '../services/walletService';
+import { DEFAULT_CHAIN_ID } from '../config';
 
 export const WalletCard: React.FC = () => {
   const { walletState, connect, switchNetwork, disconnect } = useWallet();
   const [copied, setCopied] = useState(false);
+
+  const targetNetworkLabel = DEFAULT_CHAIN_ID === 56 ? 'BSC Mainnet (56)' : 'BSC Testnet (97)';
 
   const handleCopy = async () => {
     if (!walletState.account) return;
@@ -46,7 +49,7 @@ export const WalletCard: React.FC = () => {
           }`}
         >
           {walletState.status === 'connected'
-            ? 'BSC Testnet'
+            ? walletState.isBscMainnet ? 'BSC Mainnet' : 'BSC Testnet'
             : walletState.status === 'wrong_network'
             ? 'Red Incorrecta'
             : walletState.status === 'connecting'
@@ -61,7 +64,7 @@ export const WalletCard: React.FC = () => {
         {walletState.status === 'disconnected' && (
           <div className="space-y-3">
             <p className="text-xs text-gray-400 leading-relaxed">
-              Conecta tu wallet EIP-1193 (MetaMask, Trust Wallet, etc.) para operar en BNB Smart Chain Testnet.
+              Conecta tu wallet EIP-1193 (MetaMask, Trust Wallet, etc.) para operar en BNB Smart Chain.
             </p>
             {walletState.errorMessage && (
               <p className="text-xs text-amber-400 bg-amber-400/10 p-2.5 rounded-xl border border-amber-400/20">
@@ -102,7 +105,7 @@ export const WalletCard: React.FC = () => {
                 </span>
                 <span className="text-[10px] font-mono text-[#00C853] flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
-                  <span>BSC Testnet (97)</span>
+                  <span>{walletState.isBscMainnet ? 'BSC Mainnet (56)' : 'BSC Testnet (97)'}</span>
                 </span>
               </div>
 
@@ -126,7 +129,7 @@ export const WalletCard: React.FC = () => {
             </div>
 
             <p className="text-[11px] text-gray-400 leading-snug">
-              Wallet vinculada correctamente. El flujo está preparado para futuras autorizaciones.
+              Wallet vinculada correctamente. El flujo está preparado para transferencias de pago USDT en BSC.
             </p>
 
             <button
@@ -148,7 +151,7 @@ export const WalletCard: React.FC = () => {
                 <span className="text-xs font-bold">Red Actual No Soportada</span>
               </div>
               <p className="text-xs text-amber-200/80 leading-relaxed">
-                Tu wallet está conectada pero en una red distinta. Debes cambiar a BNB Smart Chain Testnet (Chain ID 97).
+                Tu wallet está conectada pero en una red distinta. Debes cambiar a {targetNetworkLabel}.
               </p>
               {walletState.account && (
                 <p className="text-[10px] font-mono text-gray-400">
@@ -159,11 +162,11 @@ export const WalletCard: React.FC = () => {
 
             <button
               onClick={switchNetwork}
-              aria-label="Cambiar a BSC Testnet"
+              aria-label={`Cambiar a ${targetNetworkLabel}`}
               className="w-full bg-[#FFB800] hover:bg-[#FFC107] text-black py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
             >
               <RefreshCw className="w-4 h-4" />
-              <span>Cambiar a BSC Testnet (0x61)</span>
+              <span>Cambiar a {targetNetworkLabel}</span>
             </button>
           </div>
         )}

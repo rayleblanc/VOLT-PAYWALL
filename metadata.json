@@ -1,6 +1,6 @@
 {
-  "name": "VOLT Paywall V1 — Self-Hosted Web3 Payment Starter Kit (0% Fees)",
-  "description": "Accept USDT (BEP-20) directly to your wallet. 0% platform fees, self-hosted on Cloudflare Free.",
+  "name": "VOLT Paywall — Self-Hosted Web3 Crypto Payment Gateway ($39 USDT)",
+  "description": "Accept USDT and BNB with 0% platform fees. Self-hosted Web3 paywall running on Cloudflare Workers edge network. One-time payment of $39 USDT.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -3,7 +3,7 @@ import { Copy, Check, Clock, Sparkles, ShieldCheck, Loader2, AlertTriangle, Send
 import { Order } from '../types';
 import { QRCodeView } from './QRCodeView';
 import { WalletCard } from './WalletCard';
-import { APP_MODE, BSC_TESTNET_USDT_CONTRACT } from '../config';
+import { APP_MODE, BSC_USDT_CONTRACT, BSC_MAINNET_USDT_CONTRACT } from '../config';
 import { sendUsdtTransfer } from '../services/walletService';
 import { useWallet } from '../hooks/useWallet';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -43,7 +43,7 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
       return;
     }
 
-    // 2. Ensure network is correct (BSC Testnet, Chain ID 97)
+    // 2. Ensure network is correct (BSC Mainnet, Chain ID 56)
     if (walletState.status === 'wrong_network') {
       try {
         await switchNetwork();
@@ -61,10 +61,11 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
     // 3. Initiate payment
     setIsPaying(true);
     try {
+      const targetContract = order.tokenContract || BSC_USDT_CONTRACT;
       const txHash = await sendUsdtTransfer({
         recipient: order.recipientAddress,
         expectedUnits: order.expectedUnits || '39000000000000000000',
-        tokenContract: BSC_TESTNET_USDT_CONTRACT,
+        tokenContract: targetContract,
         userAddress: walletState.account,
       });
 
@@ -77,7 +78,7 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
       if (errMsg.includes('rejected') || errMsg.includes('4001') || errMsg.includes('cancelada')) {
         setPaymentError('Transaction signature cancelled by user in wallet.');
       } else if (errMsg.includes('gas') || errMsg.includes('funds')) {
-        setPaymentError('Insufficient BNB balance for gas fees on BNB Smart Chain Testnet.');
+        setPaymentError('Insufficient BNB balance for gas fees on BNB Smart Chain.');
       } else {
         setPaymentError(errMsg || 'Web3 transfer failed or rejected.');
       }

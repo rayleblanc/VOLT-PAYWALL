@@ -28,15 +28,46 @@ export const API_BASE_URL: string = resolveApiBaseUrl();
 // Stable product identifier sent to the backend
 export const PRODUCT_ID = 'creator-pack';
 
-// Chain ID configuration (BSC Testnet = 97, BSC Mainnet = 56)
-export const DEFAULT_CHAIN_ID: 56 | 97 = 97;
+// Chain ID configuration (BSC Mainnet = 56, BSC Testnet = 97)
+export const DEFAULT_CHAIN_ID: 56 | 97 = 56;
+
+// BSC Mainnet Constants
+export const BSC_MAINNET_CHAIN_ID_DECIMAL = 56;
+export const BSC_MAINNET_CHAIN_ID_HEX = '0x38';
+
+// Official USDT Contract Address on BSC Mainnet (BEP-20)
+export const BSC_MAINNET_USDT_CONTRACT = '0x55d398326f99059fF775485246999027B3197955';
+
+// BSC Mainnet RPC Endpoints
+export const BSC_MAINNET_RPC_PRIMARY = 'https://bsc-dataseed.binance.org/';
+export const BSC_MAINNET_RPC_FALLBACKS = [
+  'https://bsc-dataseed1.defibit.io/',
+  'https://bsc-dataseed1.ninicoin.io/',
+];
+
+// BSC Mainnet EIP-3085 Add Chain Configuration
+export const BSC_MAINNET_CHAIN_CONFIG = {
+  chainId: BSC_MAINNET_CHAIN_ID_HEX,
+  chainName: 'BNB Smart Chain Mainnet',
+  nativeCurrency: {
+    name: 'BNB',
+    symbol: 'BNB',
+    decimals: 18,
+  },
+  rpcUrls: [
+    BSC_MAINNET_RPC_PRIMARY,
+    ...BSC_MAINNET_RPC_FALLBACKS,
+  ],
+  blockExplorerUrls: ['https://bscscan.com'],
+};
+
+// Aliases for active USDT Contract & Network configuration
+export const BSC_USDT_CONTRACT = BSC_MAINNET_USDT_CONTRACT;
+export const BSC_TESTNET_USDT_CONTRACT = '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd';
 export const BSC_TESTNET_CHAIN_ID_DECIMAL = 97;
 export const BSC_TESTNET_CHAIN_ID_HEX = '0x61';
 
-// Authoritative USDT Contract Address on BSC Testnet
-export const BSC_TESTNET_USDT_CONTRACT = '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd';
-
-// BSC Testnet EIP-3085 Add Chain Configuration
+// BSC Testnet EIP-3085 Add Chain Configuration (retained for sandbox/dev testing)
 export const BSC_TESTNET_CHAIN_CONFIG = {
   chainId: BSC_TESTNET_CHAIN_ID_HEX,
   chainName: 'BNB Smart Chain Testnet',

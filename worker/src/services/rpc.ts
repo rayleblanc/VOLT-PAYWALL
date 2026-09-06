@@ -2,8 +2,12 @@
 
 import { Env } from '../types';
 import {
+  DEFAULT_BSC_MAINNET_RPC,
+  DEFAULT_BSC_MAINNET_RPC_FALLBACKS,
+  DEFAULT_BSC_MAINNET_USDT_CONTRACT,
   DEFAULT_BSC_TESTNET_USDT_CONTRACT,
   DEFAULT_RPC_CHUNK_SIZE,
+  BSC_MAINNET_CHAIN_ID,
 } from '../config';
 
 export class RpcError extends Error {
@@ -55,7 +59,7 @@ export function isValidEvmAddress(address: string): boolean {
 }
 
 /**
- * Resolves list of RPC URLs from the environment or returns default public endpoints.
+ * Resolves list of RPC URLs from the environment or returns default public endpoints (BSC Mainnet by default).
  */
 export function getRpcUrls(envOrUrl: Env | string): string[] {
   if (typeof envOrUrl === 'string') {
@@ -71,12 +75,12 @@ export function getRpcUrls(envOrUrl: Env | string): string[] {
       .map((u) => u.trim())
       .filter((u) => u !== '');
   }
-  // Robust list of public BSC Testnet endpoints for resilient failover
+  // Robust list of public BSC Mainnet endpoints for resilient failover
   return [
-    'https://data-seed-prebsc-1-s1.binance.org:8545/',
-    'https://data-seed-prebsc-2-s1.binance.org:8545/',
-    'https://data-seed-prebsc-1-s2.binance.org:8545/',
-    'https://data-seed-prebsc-2-s2.binance.org:8545/',
+    DEFAULT_BSC_MAINNET_RPC,
+    ...DEFAULT_BSC_MAINNET_RPC_FALLBACKS,
+    'https://binance.llamarpc.com',
+    'https://bsc.meowrpc.com',
   ];
 }
 
@@ -90,16 +94,17 @@ export function getRpcUrl(envOrUrl: Env | string): string | null {
 
 /**
  * Resolves the authoritative token contract address server-side.
+ * Defaults to official BSC Mainnet USDT contract (0x55d398326f99059fF775485246999027B3197955).
  * Ignores any client-supplied input and validates EVM address format.
  */
 export function getTokenContractAddress(envOrUrl: Env | string): string {
   if (typeof envOrUrl === 'string') {
-    return DEFAULT_BSC_TESTNET_USDT_CONTRACT;
+    return DEFAULT_BSC_MAINNET_USDT_CONTRACT;
   }
   const env = envOrUrl;
   const addr = env.USDT_CONTRACT_ADDRESS && env.USDT_CONTRACT_ADDRESS.trim() !== ''
     ? env.USDT_CONTRACT_ADDRESS.trim()
-    : DEFAULT_BSC_TESTNET_USDT_CONTRACT;
+    : DEFAULT_BSC_MAINNET_USDT_CONTRACT;
 
   if (!isValidEvmAddress(addr)) {
     throw new Error(`INVALID_TOKEN_CONTRACT: Configured token contract address '${addr}' is not a valid EVM address.`);
