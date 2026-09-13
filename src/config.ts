@@ -94,8 +94,8 @@ export const PRODUCT_INFO = {
   networkBadge: 'BSC USDT',
 };
 
-// Simulated receiver wallet address for demo mode
-export const SIMULATED_WALLET_ADDRESS = '0x742d35Cc6634C0532925a3b844Bc454e4438f44e';
+// Simulated receiver wallet address for demo mode (uses user's configured BNB address)
+export const SIMULATED_WALLET_ADDRESS = '0x1750C0c093650C36DcF45843446567FF3f50cC5A';
 
 // Order expiration duration in seconds for demo mode (10 minutes)
 export const ORDER_EXPIRATION_SECONDS = 600;

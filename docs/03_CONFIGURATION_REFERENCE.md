@@ -9,20 +9,18 @@
 
 | Variable Name | Type | Description | Default / Example |
 | :--- | :--- | :--- | :--- |
-| `RECIPIENT_WALLET` | Plain text | The Solana Base58 public key receiving all payments | `32f741vY9e8aHqQjV3pW...` |
-| `EXPECTED_PRICE_USD` | Number/String | Target price in USD | `39` |
-| `USDT_MINT` | String | Solana SPL Mint Address for Tether USD | `Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB` |
-| `USDC_MINT` | String | Solana SPL Mint Address for USD Coin | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` |
-| `SOLANA_RPC_URL` | URL | Primary Solana Mainnet-Beta RPC endpoint | `https://api.mainnet-beta.solana.com` |
-| `SOLANA_RPC_FALLBACKS` | Comma-separated | Backup RPCs for seamless failover | `https://solana-mainnet.rpc.extrnode.com,...` |
-| `DOWNLOAD_SECRET` | Secret | Secret key used to sign and verify HMAC tokens | Keep secret via `wrangler secret put` |
+| `PAYMENT_RECIPIENT` | Plain text | The 42-character EVM address receiving all payments | `0x1234567890123456789012345678901234567890` |
+| `BSC_RPC_URL` | Comma-separated | Primary and backup BSC JSON-RPC endpoints | `https://bsc-dataseed.binance.org/,https://binance.llamarpc.com` |
+| `USDT_CONTRACT_ADDRESS` | EVM Address | USDT BEP-20 contract address | `0x55d398326f99059fF775485246999027B3197955` (Mainnet) |
+| `CHAIN_ID` | Number | BSC network chain ID (56 for Mainnet, 97 for Testnet) | `56` |
 | `ALLOWED_ORIGINS` | Comma-separated | Allowed origins for CORS policy | `https://voltpaywall.com,http://localhost:3000` |
+| `APP_ENV` | String | Environment mode (`production` or `development`) | `production` |
 
 ### 2. Frontend Configuration (`src/config.ts` or `.env`)
 
 | Variable Name | Description |
 | :--- | :--- |
-| `VITE_RECIPIENT_WALLET` | Public key displayed in UI & QR codes |
+| `VITE_RECIPIENT_WALLET` | Public EVM wallet address displayed in UI & QR codes |
 | `VITE_EXPECTED_PRICE_USD` | Base product price shown to buyers ($39) |
 | `VITE_API_BASE_URL` | Backend URL for payment verification (`/api` or custom domain) |
 
@@ -34,19 +32,17 @@
 
 | Nombre de Variable | Tipo | Descripción | Valor Predeterminado / Ejemplo |
 | :--- | :--- | :--- | :--- |
-| `RECIPIENT_WALLET` | Texto | Clave pública Base58 de Solana que recibe los fondos | `32f741vY9e8aHqQjV3pW...` |
-| `EXPECTED_PRICE_USD` | Número | Precio objetivo del producto en USD | `39` |
-| `USDT_MINT` | Texto | Dirección de Contrato SPL de Tether USD en Solana | `Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB` |
-| `USDC_MINT` | Texto | Dirección de Contrato SPL de USD Coin en Solana | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` |
-| `SOLANA_RPC_URL` | URL | Endpoint RPC principal de Solana Mainnet-Beta | `https://api.mainnet-beta.solana.com` |
-| `SOLANA_RPC_FALLBACKS` | Lista (comas) | RPCs de respaldo ante caídas del principal | `https://solana-mainnet.rpc.extrnode.com,...` |
-| `DOWNLOAD_SECRET` | Secreto | Clave secreta para firmar y validar tokens HMAC | Gestionar con `wrangler secret put` |
+| `PAYMENT_RECIPIENT` | Texto | Dirección EVM (0x...) que recibe los fondos de USDT | `0x1234567890123456789012345678901234567890` |
+| `BSC_RPC_URL` | Lista (comas) | Endpoints RPC de BNB Smart Chain con failover | `https://bsc-dataseed.binance.org/,https://binance.llamarpc.com` |
+| `USDT_CONTRACT_ADDRESS` | Dirección EVM | Contrato de USDT BEP-20 en BSC | `0x55d398326f99059fF775485246999027B3197955` |
+| `CHAIN_ID` | Número | ID de red de BSC (56 para Mainnet, 97 para Testnet) | `56` |
 | `ALLOWED_ORIGINS` | Lista (comas) | Dominios permitidos para políticas CORS | `https://voltpaywall.com,http://localhost:3000` |
+| `APP_ENV` | Texto | Entorno de ejecución (`production` o `development`) | `production` |
 
 ### 2. Configuración del Frontend (`src/config.ts` o `.env`)
 
 | Nombre de Variable | Descripción |
 | :--- | :--- |
-| `VITE_RECIPIENT_WALLET` | Clave pública de recepción mostrada en la UI y QR |
+| `VITE_RECIPIENT_WALLET` | Dirección pública EVM de recepción mostrada en la UI y QR |
 | `VITE_EXPECTED_PRICE_USD` | Precio base en USD mostrado al comprador ($39) |
 | `VITE_API_BASE_URL` | URL del backend para validación (`/api` o dominio propio) |

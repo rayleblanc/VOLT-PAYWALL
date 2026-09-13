@@ -26,36 +26,52 @@ You can embed the VOLT Paywall checkout modal into any website (WordPress, Webfl
 ### 2. REST API Endpoints
 
 #### `GET /api/health`
-Checks server status, active Solana network, RPC connection health, and current SOL/USD price.
+Checks server status, active BSC network, chain ID, and RPC connection health.
 
 #### `GET /api/config`
-Returns public gateway configuration, including the recipient wallet address, product price, and supported token addresses.
+Returns public gateway configuration, including the recipient wallet address, product price, and USDT BEP-20 token contract.
 
-#### `POST /api/verify-payment`
-Validates a Solana transaction signature on-chain.
+#### `POST /api/orders`
+Creates an authoritative order in Cloudflare D1.
 - **Request Body**:
   ```json
   {
-    "signature": "5UfD...transactionSignature...",
-    "currency": "USDT",
-    "buyerAddress": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
+    "productId": "creator-pack",
+    "paymentMode": "wallet"
   }
   ```
-- **Response (200 OK)**:
+- **Response (201 Created)**:
   ```json
   {
-    "success": true,
-    "verified": true,
-    "signature": "5UfD...",
-    "amountPaid": 39,
+    "orderId": "volt_ord_...",
+    "productId": "creator-pack",
+    "paymentMode": "wallet",
+    "amount": "39",
+    "expectedAmount": "39",
+    "expectedUnits": "39000000000000000000",
     "currency": "USDT",
-    "downloadUrl": "https://voltpaywall.com/api/download?token=eyJhbGci...&sig=5UfD...",
-    "expiresIn": 7200
+    "network": "BSC",
+    "chainId": 56,
+    "recipient": "0x...",
+    "expiresAt": "2026-09-09T10:00:00.000Z",
+    "status": "PENDING"
   }
   ```
 
-#### `GET /api/download?token=...&sig=...`
-Serves the downloadable product directly from Cloudflare KV. Requires a valid HMAC-SHA256 token generated upon successful on-chain payment verification.
+#### `GET /api/orders/:id`
+Retrieves live order status and blockchain confirmation progress from Cloudflare D1.
+
+#### `POST /api/orders/:id/verify`
+Triggers on-chain verification for an order.
+- **Request Body**:
+  ```json
+  {
+    "txHash": "0x..."
+  }
+  ```
+
+#### `GET /api/download?orderId=...&token=...`
+Serves the digital product zip securely from Cloudflare KV after verifying that the order is PAID and token is valid.
 
 ---
 
@@ -82,33 +98,26 @@ Puedes incrustar la pasarela de pago en cualquier sitio web (WordPress, Webflow,
 ### 2. Endpoints de la API REST
 
 #### `GET /api/health`
-Comprueba el estado del Worker, la red de Solana conectada, la salud de los RPCs y el precio actual de SOL en USD.
+Comprueba el estado del Worker, la red conectada (BSC), el chain ID y la salud del RPC.
 
 #### `GET /api/config`
-Devuelve la configuración pública de la pasarela: dirección pública de recepción, precio del producto y tokens soportados.
+Devuelve la configuración pública de la pasarela: dirección EVM receptora, precio del producto y contrato del token USDT BEP-20.
 
-#### `POST /api/verify-payment`
-Verifica on-chain la firma de una transacción de Solana.
+#### `POST /api/orders`
+Crea una orden con precio y montos calculados server-side y la registra en Cloudflare D1.
 - **Cuerpo de la Petición**:
   ```json
   {
-    "signature": "5UfD...firmaDeTransaccion...",
-    "currency": "USDT",
-    "buyerAddress": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"
-  }
-  ```
-- **Respuesta Exitosa (200 OK)**:
-  ```json
-  {
-    "success": true,
-    "verified": true,
-    "signature": "5UfD...",
-    "amountPaid": 39,
-    "currency": "USDT",
-    "downloadUrl": "https://voltpaywall.com/api/download?token=eyJhbGci...&sig=5UfD...",
-    "expiresIn": 7200
+    "productId": "creator-pack",
+    "paymentMode": "wallet"
   }
   ```
 
-#### `GET /api/download?token=...&sig=...`
-Entrega el archivo ZIP del producto directamente desde Cloudflare KV tras validar el token criptográfico HMAC.
+#### `GET /api/orders/:id`
+Consulta el estado de una orden (`PENDING`, `CONFIRMING`, `PAID`, `PAID_LATE`, `EXPIRED`) y las confirmaciones on-chain.
+
+#### `POST /api/orders/:id/verify`
+Inicia la verificación de la transacción on-chain en BNB Smart Chain usando el hash de la transacción.
+
+#### `GET /api/download?orderId=...&token=...`
+Entrega el archivo ZIP del producto desde Cloudflare KV tras validar que la orden está pagada y el token de descarga es legítimo.

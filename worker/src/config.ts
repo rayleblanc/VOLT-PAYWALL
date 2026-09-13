@@ -9,7 +9,7 @@ export const PRODUCT: ProductConfig = {
   price: '39',
   currency: 'USDT',
   network: 'BSC',
-  chainId: 56, // BNB Smart Chain Mainnet
+  chainId: 97, // BNB Smart Chain Testnet by default, configurable via env.CHAIN_ID
 };
 
 // Fallback payment receiver address for local dev (Overridden by env.PAYMENT_RECIPIENT in production)

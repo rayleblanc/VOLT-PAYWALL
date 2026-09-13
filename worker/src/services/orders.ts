@@ -57,8 +57,11 @@ export async function createOrderInD1(
 
   // Obtain block number via RPC if configured (Objetivo 3 & Audit hardening)
   let createdBlock: number | null = null;
-  const rpcUrl = getRpcUrl(env);
-  if (rpcUrl) {
+  const rpcConfigured = Boolean(
+    env.BSC_RPC_URL &&
+    !['', 'none', 'disabled'].includes(env.BSC_RPC_URL.trim().toLowerCase())
+  );
+  if (rpcConfigured) {
     // Real/Testnet blockchain flow: RPC is configured, so we MUST successfully fetch chainId and blockNumber
     try {
       const chainId = await getChainId(env);

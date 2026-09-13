@@ -12,10 +12,10 @@ export const EmbedModal: React.FC<EmbedModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<'generator' | 'quickstart'>('generator');
   
   // Dynamic form state for No-Code generator
-  const [recipient, setRecipient] = useState('0x742d35Cc6634C0532925a3b844Bc454e4438f44e');
+  const [recipient, setRecipient] = useState('0x1750C0c093650C36DcF45843446567FF3f50cC5A');
   const [productName, setProductName] = useState('All-in-One Creator Pack');
   const [amount, setAmount] = useState('39');
-  const [network, setNetwork] = useState<'56' | '97'>('97');
+  const [network, setNetwork] = useState<'56' | '97'>('56');
 
   // Copy feedback states
   const [copiedLink, setCopiedLink] = useState(false);
