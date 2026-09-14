@@ -231,7 +231,8 @@ app.get('/api/download', async (c) => {
   let zipData: ArrayBuffer | null = null;
   if (kv) {
     try {
-      zipData = await kv.get('volt-paywall-engine.zip', { type: 'arrayBuffer' })
+      zipData = await kv.get('volt-studio.zip', { type: 'arrayBuffer' })
+        || await kv.get('volt-paywall-engine.zip', { type: 'arrayBuffer' })
         || await kv.get('zip_content', { type: 'arrayBuffer' });
     } catch {
       // KV lookup error
@@ -252,7 +253,7 @@ app.get('/api/download', async (c) => {
     status: 200,
     headers: {
       'Content-Type': 'application/zip',
-      'Content-Disposition': 'attachment; filename="volt-paywall-engine.zip"',
+      'Content-Disposition': 'attachment; filename="volt-studio.zip"',
       'Content-Length': zipData.byteLength.toString(),
       'Cache-Control': 'no-store, no-cache, must-revalidate',
     },

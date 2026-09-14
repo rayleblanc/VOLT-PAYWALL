@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   X, Sparkles, Folder, FileCode2, Check, Play, Lock, Unlock, 
-  Terminal, ShieldCheck, AlertOctagon, HelpCircle, Laptop, Eye
+  Terminal, ShieldCheck, AlertOctagon, HelpCircle, Laptop, Eye,
+  Sliders, MessageSquare, Paintbrush, Send, Layers, CheckCircle2
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -10,133 +11,97 @@ interface EmbedModalProps {
   onClose: () => void;
 }
 
-type DemoFile = 'index.html' | 'server.ts' | 'config.ts' | '.env' | 'README.md';
+type BrandColor = 'amber' | 'emerald' | 'cyan' | 'violet' | 'crimson';
 
 export const EmbedModal: React.FC<EmbedModalProps> = ({ isOpen, onClose }) => {
   const { language } = useLanguage();
-  const [selectedFile, setSelectedFile] = useState<DemoFile>('index.html');
-  const [demoStep, setDemoStep] = useState<'locked' | 'connecting' | 'paying' | 'unlocked'>('locked');
+  const [selectedColor, setSelectedColor] = useState<BrandColor>('violet');
+  const [telegramAlerts, setTelegramAlerts] = useState<boolean>(true);
+  const [demoState, setDemoState] = useState<'idle' | 'simulating' | 'success'>('idle');
 
   if (!isOpen) return null;
 
   const isEs = language === 'ES';
 
-  // Files data & description
-  const files: Record<DemoFile, { name: string; type: string; desc: string; code: string }> = {
-    'index.html': {
-      name: 'index.html',
-      type: 'HTML/React Component',
-      desc: isEs 
-        ? 'Interfaz de Checkout UI ultra rápida y responsiva. Diseñada con Tailwind CSS puro para integrarse con un copiar y pegar.'
-        : 'Ultra-fast and responsive Checkout UI interface. Styled with pure Tailwind CSS to integrate with a simple copy-paste.',
-      code: `<!-- VOLT Paywall Component -->
-<div className="bg-[#111111] rounded-3xl border border-white/10 p-6 max-w-md">
-  <div className="flex items-center justify-between mb-4">
-    <span className="text-sm font-bold text-white">USDT BSC Paywall</span>
-    <span className="text-xs text-[#00C853] font-mono">Mainnet Active</span>
-  </div>
-  <button className="w-full py-3.5 bg-[#FFB800] text-black font-extrabold rounded-2xl">
-    Pay 29.00 USDT
-  </button>
-</div>`
-    },
-    'server.ts': {
-      name: 'server.ts',
-      type: 'Node/Express/Fastify Backend',
-      desc: isEs
-        ? 'Controlador del servidor para validación en tiempo real de transacciones directamente en la BSC Chain.'
-        : 'Server-side controller for real-time validation of blockchain transactions directly on the BSC Chain.',
-      code: `// Secure payment validation route
-app.post("/api/verify-payment", async (req, res) => {
-  const { txHash, recipient, expectedAmount } = req.body;
-  const isVerified = await bscClient.verifyTransfer({
-    txHash,
-    to: recipient,
-    token: USDT_CONTRACT,
-    amount: expectedAmount
-  });
-  return res.json({ success: isVerified });
-});`
-    },
-    'config.ts': {
-      name: 'config.ts',
-      type: 'TypeScript Config',
-      desc: isEs
-        ? 'Configuración unificada: edita el precio, tu wallet de cobro directa y la metadata de tu marca.'
-        : 'Unified configuration: edit price, your direct receiver wallet, and custom brand metadata.',
-      code: `export const PAYWALL_CONFIG = {
-  priceUsdt: 29.00,
-  recipientAddress: "0x1750C0c093650C36DcF45843446567FF3f50cC5A",
-  bscChainId: 56, // BSC Mainnet
-  tokenSymbol: "USDT",
-  brandName: "My Digital Store V1"
-};`
-    },
-    '.env': {
-      name: '.env',
-      type: 'Configuración Privada',
-      desc: isEs
-        ? 'Variables de entorno privadas para nodos RPC rápidos de la BSC y claves de acceso seguras.'
-        : 'Private environment variables for fast BSC RPC nodes and secure database credentials.',
-      code: `# VOLT Environment Variables
-BSC_RPC_URL="https://bsc-dataseed.binance.org/"
-USDT_CONTRACT="0x55d398326f99059fF775485246999027B3197955"
-SERVER_PORT=3000
-DATABASE_URL="d1://volt-cache-production"`
-    },
-    'README.md': {
-      name: 'README.md',
-      type: 'Markdown Documentation',
-      desc: isEs
-        ? 'Guía de instalación rápida paso a paso para desplegar en tu propio Cloudflare o hosting en 5 minutos.'
-        : 'Quickstart installation guide step-by-step to deploy to your own Cloudflare or hosting in 5 minutes.',
-      code: `# Quickstart Integration
-1. Unzip the downloaded kit
-2. Run \`npm install\` to configure dependencies
-3. Set your wallet address inside \`config.ts\`
-4. Run \`npm run deploy\` to go live on Cloudflare/Vercel
-5. Done! Start receiving instant automated payments.`
+  const handleSimulate = () => {
+    if (demoState === 'idle') {
+      setDemoState('simulating');
+      setTimeout(() => {
+        setDemoState('success');
+      }, 1500);
+    } else {
+      setDemoState('idle');
     }
   };
 
-  const handleSimulateWorkflow = () => {
-    if (demoStep === 'locked') {
-      setDemoStep('connecting');
-      setTimeout(() => {
-        setDemoStep('paying');
-        setTimeout(() => {
-          setDemoStep('unlocked');
-        }, 1500);
-      }, 1000);
-    } else {
-      setDemoStep('locked');
+  // Dynamic Color Class mappings for client preview simulation
+  const colorClasses: Record<BrandColor, { bg: string; text: string; hover: string; border: string; glow: string }> = {
+    amber: {
+      bg: 'bg-[#FFB800]',
+      text: 'text-black',
+      hover: 'hover:bg-[#FFC107]',
+      border: 'border-[#FFB800]',
+      glow: 'shadow-[0_0_15px_rgba(255,184,0,0.3)]'
+    },
+    emerald: {
+      bg: 'bg-[#00C853]',
+      text: 'text-black',
+      hover: 'hover:bg-[#00E676]',
+      border: 'border-[#00C853]',
+      glow: 'shadow-[0_0_15px_rgba(0,200,83,0.3)]'
+    },
+    cyan: {
+      bg: 'bg-cyan-500',
+      text: 'text-black',
+      hover: 'hover:bg-cyan-400',
+      border: 'border-cyan-500',
+      glow: 'shadow-[0_0_15px_rgba(6,182,212,0.3)]'
+    },
+    violet: {
+      bg: 'bg-[#8B5CF6]',
+      text: 'text-white',
+      hover: 'hover:bg-[#7C3AED]',
+      border: 'border-[#8B5CF6]',
+      glow: 'shadow-[0_0_15px_rgba(139,92,246,0.3)]'
+    },
+    crimson: {
+      bg: 'bg-rose-600',
+      text: 'text-white',
+      hover: 'hover:bg-rose-500',
+      border: 'border-rose-600',
+      glow: 'shadow-[0_0_15px_rgba(225,29,72,0.3)]'
     }
   };
+
+  const activeColor = colorClasses[selectedColor];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-4xl bg-[#0d0d0d] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh]">
         
-        {/* BANNER MUY VISIBLE Y PERMANENTE - SOLO DEMOSTRACIÓN */}
+        {/* BANNER PERMANENTE DE SOLO DEMOSTRACIÓN */}
         <div className="bg-amber-500/20 border-b border-amber-500/30 px-4 py-2 flex items-center justify-center gap-2 text-[#FFB800] text-center shrink-0">
           <AlertOctagon className="w-4 h-4 text-[#FFB800] shrink-0" />
           <span className="text-[10px] sm:text-xs font-black tracking-widest uppercase font-mono">
-            {isEs ? '⚠️ SOLO DEMOSTRACIÓN – No funcional (Vista previa de lo que recibirás)' : '⚠️ DEMONSTRATION ONLY – Non-functional (Preview of what you will purchase)'}
+            {isEs ? '⚠️ SOLO DEMOSTRACIÓN – No funcional (Vista previa de la interfaz de Volt Studio)' : '⚠️ DEMONSTRATION ONLY – Non-functional (Volt Studio Interface Preview)'}
           </span>
         </div>
 
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-white/5 bg-[#111111]">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-white/5 bg-[#111111]">
           <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-[#FFB800]/10 border border-[#FFB800]/20 flex items-center justify-center text-[#FFB800]">
-              <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#FFB800] rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(255,184,0,0.25)]">
+              <span className="text-black font-black text-sm sm:text-lg italic">V</span>
             </div>
             <div>
-              <h2 className="text-sm sm:text-lg font-black text-white leading-tight">
-                {isEs ? 'Live Demo del Producto' : 'Product Live Demo'}
+              <h2 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
+                <span>VOLT STUDIO</span>
+                <span className="text-[9px] bg-[#FFB800]/10 text-[#FFB800] border border-[#FFB800]/20 px-1.5 py-0.5 rounded-full uppercase font-mono font-bold">
+                  {isEs ? 'Estudio No-Code' : 'No-Code Studio'}
+                </span>
               </h2>
-              <p className="text-[10px] sm:text-xs text-gray-400">
-                {isEs ? 'Así se ve lo que vas a recibir' : 'This is what you will receive'}
+              <p className="text-[10px] text-gray-400">
+                {isEs ? 'Vista previa del panel de control que recibirás al comprar el kit' : 'Control panel preview included in your download kit'}
               </p>
             </div>
           </div>
@@ -149,207 +114,229 @@ DATABASE_URL="d1://volt-cache-production"`
           </button>
         </div>
 
-        {/* Content Body - Two Columns */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 bg-[#090909]">
+        {/* Two Column Layout */}
+        <div className="p-3 sm:p-5 overflow-y-auto space-y-5 flex-1 bg-[#090909]">
           
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
             
-            {/* COLUMN 1: Deliverable Kit Files Explorer (5 Cols) */}
-            <div className="lg:col-span-5 bg-[#121212] border border-white/5 rounded-2xl p-4 flex flex-col justify-between space-y-4">
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Folder className="w-4 h-4 text-[#FFB800]" />
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">
-                    {isEs ? 'Estructura del Kit' : 'Kit Directory Structure'}
+            {/* COLUMN 1: Mock Form Customization (Volt Studio settings) - 5 Columns */}
+            <div className="lg:col-span-5 bg-[#121212] border border-white/5 rounded-2xl p-4 flex flex-col gap-4 text-xs select-none">
+              
+              <div className="flex items-center gap-2 border-b border-white/5 pb-2.5">
+                <Sliders className="w-4 h-4 text-[#FFB800]" />
+                <span className="font-bold text-white uppercase tracking-wider text-[10px]">
+                  {isEs ? '1. Configuración del Producto' : '1. Product Configuration'}
+                </span>
+              </div>
+
+              {/* Product Info inputs (Mock) */}
+              <div className="space-y-2.5">
+                <div className="space-y-1">
+                  <label className="text-gray-400 text-[10px] uppercase font-bold">{isEs ? 'Nombre del Producto' : 'Product Name'}</label>
+                  <div className="w-full bg-[#161616] border border-white/5 rounded-xl px-3 py-2 text-gray-300 font-medium">
+                    Curso Completo de Web3 & Smart Contracts
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-gray-400 text-[10px] uppercase font-bold">{isEs ? 'Precio en USDT' : 'Sale Price (USDT)'}</label>
+                  <div className="w-full bg-[#161616] border border-white/5 rounded-xl px-3 py-2 text-gray-300 font-mono font-medium">
+                    49.00 USDT
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-gray-400 text-[10px] uppercase font-bold">{isEs ? 'Tu Wallet Receptora (BSC)' : 'Receiver Wallet (BSC)'}</label>
+                  <div className="w-full bg-[#161616] border border-white/5 rounded-xl px-3 py-2 text-gray-500 font-mono text-[9px] truncate">
+                    0x71C8F79428B78f57f4955be6b403487c0879b820
+                  </div>
+                </div>
+              </div>
+
+              {/* Visual customization (Simulated Interactive) */}
+              <div className="space-y-3 pt-3 border-t border-white/5">
+                <div className="flex items-center gap-1.5">
+                  <Paintbrush className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="font-bold text-white uppercase tracking-wider text-[10px]">
+                    {isEs ? '2. Editor de Marca' : '2. Brand Editor'}
                   </span>
                 </div>
-                <p className="text-[10px] sm:text-xs text-gray-400 leading-relaxed mb-4">
-                  {isEs 
-                    ? 'Explora los archivos de código limpio, documentados y listos para usar que vienen dentro del archivo descargable ZIP.'
-                    : 'Explore the clean, fully commented, production-ready code files included inside the downloadable ZIP file.'}
-                </p>
 
-                {/* File List */}
-                <div className="space-y-1">
-                  {(Object.keys(files) as DemoFile[]).map((fileName) => {
-                    const file = files[fileName];
-                    const isSelected = selectedFile === fileName;
-                    return (
-                      <button
-                        key={fileName}
-                        onClick={() => setSelectedFile(fileName)}
-                        className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all text-xs font-mono border cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#FFB800]/10 border-[#FFB800]/20 text-[#FFB800]'
-                            : 'bg-transparent border-transparent text-gray-400 hover:text-white hover:bg-white/5'
-                        }`}
-                      >
-                        <span className="flex items-center gap-2 font-bold">
-                          <FileCode2 className={`w-3.5 h-3.5 ${isSelected ? 'text-[#FFB800]' : 'text-gray-500'}`} />
-                          <span>{file.name}</span>
-                        </span>
-                        <span className="text-[9px] text-gray-500 font-sans hidden sm:inline">{file.type}</span>
-                      </button>
-                    );
-                  })}
+                <div className="space-y-1.5">
+                  <label className="text-gray-400 text-[10px] uppercase font-bold">{isEs ? 'Nombre de tu Tienda' : 'Store Name'}</label>
+                  <div className="w-full bg-[#161616] border border-white/5 rounded-xl px-3 py-2 text-gray-300 font-medium">
+                    Sovereign Digital Store
+                  </div>
+                </div>
+
+                {/* Color Buttons */}
+                <div className="space-y-1.5">
+                  <label className="text-gray-400 text-[10px] uppercase font-bold">{isEs ? 'Color de Botón' : 'Primary Color'}</label>
+                  <div className="flex flex-wrap gap-2 pt-0.5">
+                    {(['amber', 'emerald', 'cyan', 'violet', 'crimson'] as BrandColor[]).map((col) => {
+                      const colors: Record<BrandColor, string> = {
+                        amber: 'bg-[#FFB800]',
+                        emerald: 'bg-[#00C853]',
+                        cyan: 'bg-cyan-500',
+                        violet: 'bg-[#8B5CF6]',
+                        crimson: 'bg-rose-600'
+                      };
+                      const active = selectedColor === col;
+                      return (
+                        <button
+                          key={col}
+                          onClick={() => setSelectedColor(col)}
+                          className={`w-6 h-6 rounded-full ${colors[col]} border-2 transition-all cursor-pointer ${
+                            active ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'
+                          }`}
+                          title={col}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
-              {/* Code Snippet Preview Frame */}
-              <div className="space-y-2 mt-4 pt-4 border-t border-white/5">
-                <span className="text-[10px] font-mono text-gray-500 block uppercase tracking-widest">
-                  {isEs ? 'Vista previa del código' : 'Code file preview'}
-                </span>
-                <p className="text-[10px] text-gray-400 font-medium">
-                  {files[selectedFile].desc}
-                </p>
-                <div className="bg-[#080808] border border-white/5 p-3 rounded-xl font-mono text-[10px] text-gray-300 overflow-x-auto max-h-[140px] whitespace-pre-wrap select-none scrollbar-thin">
-                  {files[selectedFile].code}
-                </div>
-              </div>
-            </div>
-
-            {/* COLUMN 2: Simulated Interactive Checkout Paywall (7 Cols) */}
-            <div className="lg:col-span-7 bg-[#121212] border border-white/5 rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
-              
-              {/* Context info */}
-              <div className="mb-4">
+              {/* Telegram Alerts (Interactive Mock) */}
+              <div className="space-y-2 pt-3 border-t border-white/5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <Laptop className="w-4 h-4 text-cyan-400" />
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">
-                      {isEs ? 'Prueba la experiencia de pago' : 'Test the checkout experience'}
+                    <Send className="w-3.5 h-3.5 text-sky-400" />
+                    <span className="font-bold text-white uppercase tracking-wider text-[10px]">
+                      {isEs ? '3. Alertas en Telegram' : '3. Telegram Notifications'}
                     </span>
                   </div>
-                  <span className="text-[9px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full font-mono font-bold">
-                    {isEs ? 'Simulado' : 'Simulated'}
-                  </span>
+                  <button 
+                    onClick={() => setTelegramAlerts(!telegramAlerts)}
+                    className={`w-9 h-5 rounded-full transition-all duration-200 cursor-pointer flex items-center px-0.5 ${
+                      telegramAlerts ? 'bg-sky-500 justify-end' : 'bg-gray-700 justify-start'
+                    }`}
+                  >
+                    <div className="w-4 h-4 rounded-full bg-white shadow-md" />
+                  </button>
                 </div>
-                <p className="text-[10px] sm:text-xs text-gray-400 mt-1.5 leading-relaxed">
+                <p className="text-[10px] text-gray-400">
                   {isEs 
-                    ? 'Haz clic en el botón de abajo para simular cómo tus clientes verán el pago automático y el desbloqueo instantáneo.'
-                    : 'Click the checkout simulation trigger below to see how your customers automatically pay and instantly unlock content.'}
+                    ? 'Recibe notificaciones instantáneas con el hash y monto cada vez que realices una venta.'
+                    : 'Get real-time message reports containing hash values and sales totals on every transaction.'}
                 </p>
               </div>
 
-              {/* Interactive Mock Container */}
-              <div className="bg-[#090909] border border-white/5 p-4 rounded-2xl relative overflow-hidden flex-1 flex flex-col justify-between min-h-[220px]">
+            </div>
+
+            {/* COLUMN 2: Real-time Rendered Customer Preview - 7 Columns */}
+            <div className="lg:col-span-7 bg-[#121212] border border-white/5 rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
+              
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-1.5">
+                  <Eye className="w-4 h-4 text-[#8B5CF6]" />
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">
+                    {isEs ? '4. Previsualización del Cliente' : '4. Live Customer Preview'}
+                  </span>
+                </div>
+                <span className="text-[9px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-mono font-bold border border-emerald-500/20">
+                  {isEs ? 'Vista en Vivo' : 'Live Preview'}
+                </span>
+              </div>
+
+              {/* Real-time Render Frame */}
+              <div className="bg-[#090909] border border-white/5 p-4 rounded-2xl relative overflow-hidden flex-1 flex flex-col justify-between min-h-[250px]">
                 
-                {/* Mock target website background info */}
-                <div className="border-b border-white/5 pb-2 mb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                    <span className="text-[9px] text-gray-500 font-mono font-bold uppercase tracking-wider">
-                      THE BLOCKCHAIN LAB (MOCK SAAS)
+                {/* Simulated Customer Checkout */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
+                    <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#8B5CF6] animate-pulse" />
+                      Sovereign Digital Store
+                    </span>
+                    <span className="text-[9px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded-full font-mono font-bold">
+                      USDT BEP-20
                     </span>
                   </div>
-                  <span className="text-[9px] text-gray-500">premium_course.zip</span>
-                </div>
 
-                {/* Simulated locked state vs unlocked state */}
-                <div className="flex-1 flex flex-col justify-center items-center py-4 space-y-3">
-                  
-                  {demoStep === 'locked' && (
-                    <div className="text-center space-y-2">
-                      <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400 mx-auto">
-                        <Lock className="w-5 h-5" />
-                      </div>
+                  {demoState !== 'success' ? (
+                    <div className="space-y-3.5">
                       <div>
-                        <p className="text-xs font-bold text-white">{isEs ? 'Contenido Premium Bloqueado' : 'Premium Content Locked'}</p>
-                        <p className="text-[10px] text-gray-500">{isEs ? 'Adquiere tu licencia para descargar los archivos inmediatamente' : 'Acquire your license to unlock files download instantly'}</p>
+                        <h4 className="text-xs sm:text-sm font-bold text-white leading-snug">
+                          Curso Completo de Web3 & Smart Contracts
+                        </h4>
+                        <p className="text-[10px] text-gray-400 leading-relaxed mt-1">
+                          Acceso instantáneo a 12 módulos en HD, repositorio privado de GitHub y comunidad exclusiva.
+                        </p>
                       </div>
+
+                      {/* Price tag */}
+                      <div className="bg-[#121212] border border-white/5 rounded-xl p-3 flex justify-between items-center">
+                        <span className="text-[10px] text-gray-400">{isEs ? 'Precio Fijo' : 'Fixed Price'}</span>
+                        <span className="text-xs sm:text-sm font-black text-white">$49.00 <span className="text-[9px] text-gray-400 font-normal">USDT</span></span>
+                      </div>
+
+                      {/* Interactive Button */}
+                      <button
+                        onClick={handleSimulate}
+                        className={`w-full py-2.5 sm:py-3 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${activeColor.bg} ${activeColor.text} ${activeColor.hover} ${activeColor.glow}`}
+                      >
+                        {demoState === 'simulating' ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            <span>{isEs ? 'Verificando en Blockchain...' : 'Verifying Transaction...'}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                            <span>DESBLOQUEAR ACCESO CON USDT</span>
+                          </>
+                        )}
+                      </button>
                     </div>
-                  )}
-
-                  {demoStep === 'connecting' && (
-                    <div className="text-center space-y-2">
-                      <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 mx-auto animate-bounce">
-                        <Sparkles className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-white">{isEs ? 'Conectando Wallet Simulada...' : 'Connecting Simulated Wallet...'}</p>
-                        <p className="text-[10px] text-gray-500">{isEs ? 'Iniciando conexión BSC segura' : 'Initializing secure BSC link'}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {demoStep === 'paying' && (
-                    <div className="text-center space-y-2">
-                      <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400 mx-auto animate-pulse">
-                        <Terminal className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-white">{isEs ? 'Verificando Transferencia en Blockchain...' : 'Verifying Transfer on Blockchain...'}</p>
-                        <p className="text-[10px] text-gray-500">{isEs ? 'Confirmación automática de hash en 2 segundos' : 'Automatic hash confirmation in 2 seconds'}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {demoStep === 'unlocked' && (
-                    <div className="text-center space-y-2">
-                      <div className="w-10 h-10 rounded-full bg-[#00C853]/10 flex items-center justify-center text-[#00C853] mx-auto">
-                        <Unlock className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-[#00C853]">{isEs ? '¡Desbloqueo Exitoso!' : 'Successfully Unlocked!'}</p>
-                        <p className="text-[10px] text-gray-400">{isEs ? 'Los archivos del producto final están listos para guardar.' : 'Final product files are now ready to download.'}</p>
-                      </div>
-                    </div>
-                  )}
-
-                </div>
-
-                {/* Primary simulator interaction buttons (explicitly declared fake) */}
-                <div className="mt-3">
-                  {demoStep === 'locked' ? (
-                    <button
-                      onClick={handleSimulateWorkflow}
-                      className="w-full py-2.5 sm:py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold rounded-xl transition-all shadow-[0_4px_12px_rgba(255,184,0,0.15)] active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer text-xs"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-black" />
-                      <span>{isEs ? 'Iniciar Simulación de Pago (29 USDT)' : 'Start Payment Simulation (29 USDT)'}</span>
-                    </button>
                   ) : (
-                    <button
-                      onClick={() => setDemoStep('locked')}
-                      className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-semibold rounded-xl text-xs transition-all cursor-pointer"
-                    >
-                      {isEs ? 'Reiniciar Demostración' : 'Reset Demonstration'}
-                    </button>
+                    <div className="text-center py-6 space-y-3.5 animate-in zoom-in-95 duration-200">
+                      <div className="w-12 h-12 rounded-full bg-[#00C853]/10 text-[#00C853] border border-[#00C853]/20 flex items-center justify-center mx-auto">
+                        <CheckCircle2 className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-black text-[#00C853]">
+                          {isEs ? '¡Compra Exitosa!' : 'Successful Purchase!'}
+                        </h4>
+                        <p className="text-[10px] text-gray-400 max-w-xs mx-auto leading-relaxed mt-1">
+                          {isEs 
+                            ? 'El pago fue procesado correctamente. Los archivos del curso se desbloquearon para descargar.'
+                            : 'Your payment was confirmed. The digital files were unlocked and are now ready to save.'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setDemoState('idle')}
+                        className="text-[10px] text-gray-500 hover:text-white underline font-mono cursor-pointer"
+                      >
+                        {isEs ? 'Simular de nuevo' : 'Simulate again'}
+                      </button>
+                    </div>
+                  )}
+
+                  {demoState !== 'success' && (
+                    <p className="text-[9px] text-gray-500 text-center">
+                      ⚡ {isEs ? 'Verificación multi-nodo BSC en ~3 segundos' : 'Multi-node BSC verification in ~3 seconds'}
+                    </p>
                   )}
                 </div>
 
               </div>
 
-              {/* Security Audit Badge */}
-              <div className="mt-4 p-3 bg-white/5 border border-white/5 rounded-xl flex items-center gap-2.5">
-                <ShieldCheck className="w-5 h-5 text-[#00C853] shrink-0" />
-                <div className="text-[10px] leading-snug">
-                  <span className="font-bold text-white block">
-                    {isEs ? 'Directo y Sin Intermediarios' : 'Direct & Zero Middlemen'}
-                  </span>
-                  <span className="text-gray-400 block">
-                    {isEs ? 'Los USDT van de la wallet de tu cliente a tu wallet directa, sin custodia intermedia.' : 'USDT flow is direct from client wallet to yours, zero custody/escrow risk.'}
+              {/* Simulated copy snippet panel */}
+              <div className="mt-3.5 p-3 bg-white/5 border border-white/5 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Terminal className="w-4 h-4 text-sky-400" />
+                  <span className="text-[10px] font-mono text-gray-300">
+                    {isEs ? 'Código de Integración Generado' : 'Integration Code Output'}
                   </span>
                 </div>
+                <span className="text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-1.5 py-0.5 rounded-full font-mono font-bold">
+                  {isEs ? '1 Clic' : '1 Click'}
+                </span>
               </div>
 
             </div>
 
-          </div>
-
-          {/* Interactive Confidence / Visual Guarantee Banner */}
-          <div className="bg-[#111111] border border-white/10 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-            <div className="space-y-1">
-              <span className="font-bold text-white block">
-                {isEs ? '¿Qué contiene el kit final de descarga?' : 'What does the final deliverable kit contain?'}
-              </span>
-              <p className="text-[11px] text-gray-400 leading-relaxed">
-                {isEs 
-                  ? 'Recibirás el código fuente documentado completo (React frontend + Node/Express backend), variables de entorno configuradas, guía rápida de despliegue y soporte directo.'
-                  : 'You will receive the full documented source code (React frontend + Node/Express backend), configured environment files, visual setup guide, and direct updates.'}
-              </p>
-            </div>
           </div>
 
         </div>
@@ -357,11 +344,11 @@ DATABASE_URL="d1://volt-cache-production"`
         {/* Footer Actions */}
         <div className="p-4 border-t border-white/5 bg-[#111111] flex flex-col sm:flex-row justify-between items-center gap-3 text-[10px] sm:text-xs">
           <span className="text-gray-500 font-mono text-center sm:text-left">
-            {isEs ? 'VOLT Paywall Kit v4.0 · Comprobación Determinista' : 'VOLT Paywall Kit v4.0 · Deterministic Validation'}
+            VOLT Studio · {isEs ? 'Estudio de Monetización No-Código' : 'No-Code Monetization Studio'}
           </span>
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-black rounded-xl transition-colors cursor-pointer text-center"
+            className="w-full sm:w-auto px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-black rounded-xl transition-colors cursor-pointer text-center text-xs"
           >
             {isEs ? 'Entendido / Cerrar' : 'Got it / Close'}
           </button>
