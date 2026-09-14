@@ -17,7 +17,7 @@ import {
 const mockOrdersStore: Map<string, Order> = new Map();
 
 /**
- * Generates an exact amount as a string with strictly 4 decimal places between 39.0001 and 39.9999 USDT
+ * Generates an exact amount as a string with strictly 4 decimal places between 29.0001 and 29.9999 USDT
  */
 function generateSimulatedAmount(basePrice: number): string {
   const randomFraction = Math.floor(Math.random() * 9999) + 1;
@@ -61,8 +61,8 @@ export const mockApi: ApiClient = {
       let expectedUnitsStr: string;
 
       if (paymentMode === 'wallet') {
-        amountExactStr = '39';
-        expectedUnitsStr = '39000000000000000000';
+        amountExactStr = '29';
+        expectedUnitsStr = '29000000000000000000';
       } else {
         amountExactStr = generateSimulatedAmount(PRODUCT_INFO.basePrice);
         // Multiply by 10^18 using BigInt

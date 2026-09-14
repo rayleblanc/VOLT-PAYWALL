@@ -51,7 +51,7 @@ npm --prefix worker run test
   {
     "orderId": "volt_ord_8f3a9e1c4b2d",
     "productId": "creator-pack",
-    "amount": "39.4271",
+    "amount": "29.4271",
     "currency": "USDT",
     "network": "BSC",
     "chainId": 97,
@@ -77,7 +77,7 @@ curl -X POST http://localhost:8787/api/orders \
   {
     "orderId": "volt_ord_8f3a9e1c4b2d",
     "status": "PENDING",
-    "amount": "39.4271",
+    "amount": "29.4271",
     "currency": "USDT",
     "network": "BSC",
     "chainId": 97,
@@ -120,7 +120,7 @@ To switch back to standalone demo mode without backend dependencies:
 
 ## 🔒 Security & Server Authority
 - **Price & Amount Authority**: Client cannot specify or override price, chainId, recipient, or amount. Any extra fields sent in POST body are strictly discarded server-side.
-- **Exact Amounts**: USDT amounts are calculated using CSPRNG integer arithmetic (`39.0001` - `39.9999` with 4 decimal places) and stored in D1 as `TEXT` to prevent float precision loss.
+- **Exact Amounts**: USDT amounts are calculated using CSPRNG integer arithmetic (`29.0001` - `29.9999` with 4 decimal places) and stored in D1 as `TEXT` to prevent float precision loss.
 - **No Secrets**: Development fallback recipient `DEV_PAYMENT_RECIPIENT` is used locally. Production recipient is configured via Cloudflare environment variable `PAYMENT_RECIPIENT`.
 
 ---

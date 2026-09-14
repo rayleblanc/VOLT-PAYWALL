@@ -55,6 +55,8 @@ export async function createOrderInD1(
   const createdAtIso = new Date(nowMs).toISOString();
   const expiresAtIso = new Date(nowMs + ORDER_TTL_MS).toISOString();
 
+  const activeChainId = env.CHAIN_ID ? parseInt(env.CHAIN_ID, 10) : 56;
+
   // Obtain block number via RPC if configured (Objetivo 3 & Audit hardening)
   let createdBlock: number | null = null;
   const rpcConfigured = Boolean(
@@ -65,8 +67,8 @@ export async function createOrderInD1(
     // Real/Testnet blockchain flow: RPC is configured, so we MUST successfully fetch chainId and blockNumber
     try {
       const chainId = await getChainId(env);
-      if (chainId !== 97) {
-        throw new Error(`Chain ID mismatch! Expected 97, got ${chainId}`);
+      if (chainId !== activeChainId) {
+        throw new Error(`Chain ID mismatch! Expected ${activeChainId}, got ${chainId}`);
       }
       createdBlock = await getBlockNumber(env);
       if (typeof createdBlock !== 'number' || createdBlock < 0) {
@@ -103,7 +105,7 @@ export async function createOrderInD1(
       expectedUnits,
       PRODUCT.currency,
       PRODUCT.network,
-      PRODUCT.chainId,
+      activeChainId,
       recipient,
       'PENDING',
       createdAtIso,
@@ -122,7 +124,7 @@ export async function createOrderInD1(
     expectedUnits,
     currency: PRODUCT.currency,
     network: PRODUCT.network,
-    chainId: PRODUCT.chainId,
+    chainId: activeChainId as 56 | 97,
     recipient,
     expiresAt: expiresAtIso,
     status: 'PENDING',

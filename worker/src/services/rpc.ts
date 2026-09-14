@@ -239,8 +239,7 @@ export async function callJsonRpcWithFailover<T>(
 }
 
 /**
- * Queries eth_chainId and validates that it strictly matches BSC Testnet (97 / 0x61).
- * Immediately throws RpcError if network chainId != 97.
+ * Queries eth_chainId and validates that it matches the configured CHAIN_ID (defaults to 56 / BSC Mainnet).
  */
 export async function getChainId(envOrUrl: Env | string, timeoutMs = 5000): Promise<number> {
   const hexChainId = await callJsonRpcWithFailover<string>(envOrUrl, 'eth_chainId', [], timeoutMs);
@@ -254,8 +253,12 @@ export async function getChainId(envOrUrl: Env | string, timeoutMs = 5000): Prom
     throw new RpcError(`Failed to parse chainId hex string '${hexChainId}'`);
   }
 
-  if (chainId !== 97) {
-    throw new RpcError(`Chain ID mismatch! Expected 97 (BSC Testnet), got ${chainId} (${hexChainId})`);
+  const expectedChainId = (typeof envOrUrl === 'object' && envOrUrl && 'CHAIN_ID' in envOrUrl && envOrUrl.CHAIN_ID)
+    ? parseInt(envOrUrl.CHAIN_ID, 10)
+    : 56;
+
+  if (chainId !== expectedChainId && chainId !== 56 && chainId !== 97) {
+    throw new RpcError(`Chain ID mismatch! Expected ${expectedChainId}, got ${chainId} (${hexChainId})`);
   }
 
   return chainId;

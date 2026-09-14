@@ -6,10 +6,10 @@ import { ProductConfig } from './types';
 export const PRODUCT: ProductConfig = {
   id: 'creator-pack',
   name: 'All-in-One Creator Pack',
-  price: '39',
+  price: '29',
   currency: 'USDT',
   network: 'BSC',
-  chainId: 97, // BNB Smart Chain Testnet by default, configurable via env.CHAIN_ID
+  chainId: 56, // BNB Smart Chain Mainnet by default, configurable via env.CHAIN_ID
 };
 
 // Fallback payment receiver address for local dev (Overridden by env.PAYMENT_RECIPIENT in production)
@@ -63,10 +63,10 @@ export function usdtToTokenUnits(amountStr: string): string {
 }
 
 /**
- * Generates an exact payment amount between 39.0001 and 39.9999 USDT with 4 decimal places.
+ * Generates an exact payment amount between 29.0001 and 29.9999 USDT with 4 decimal places.
  * Uses integer arithmetic and CSPRNG crypto.getRandomValues to prevent JavaScript floating point inaccuracies.
  */
-export function generateExactAmount(basePriceInteger: number = 39): string {
+export function generateExactAmount(basePriceInteger: number = 29): string {
   // Base in 10,000ths (e.g. 39 * 10,000 = 390,000)
   const baseUnits = basePriceInteger * 10000;
 

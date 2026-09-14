@@ -12,7 +12,7 @@ VOLT Paywall is a production-ready, self-hosted, non-custodial Web3 payment gate
 1. **Frontend (React 18 + Vite + Tailwind CSS)**:
    - High-conversion landing page with real-time order generation (USDT BEP-20).
    - Dynamic QR Code generator for mobile wallet transfers.
-   - Dual payment support: Direct Web3 Wallet connection (MetaMask, Trust Wallet, Rabby, Binance Wallet) or manual transfer with unique fractional amounts (39.XXXX USDT) for instant automated matching.
+   - Dual payment support: Direct Web3 Wallet connection (MetaMask, Trust Wallet, Rabby, Binance Wallet) or manual transfer with unique fractional amounts (29.XXXX USDT) for instant automated matching.
    - Responsive design with dark/light mode accents and bilingual i18n support.
    - Zero-UI embed code generator for any external website.
 
@@ -54,7 +54,7 @@ VOLT Paywall es una pasarela de pago Web3 autocustodiada y lista para producció
 1. **Frontend (React 18 + Vite + Tailwind CSS)**:
    - Interfaz de alta conversión con generación de órdenes en tiempo real (USDT BEP-20).
    - Generador de código QR para transferencias desde billeteras móviles.
-   - Modo dual de pago: conexión directa Web3 (MetaMask, Trust Wallet, Rabby, Binance Wallet) o transferencia manual con monto fraccionario único (39.XXXX USDT) para conciliación automática.
+   - Modo dual de pago: conexión directa Web3 (MetaMask, Trust Wallet, Rabby, Binance Wallet) o transferencia manual con monto fraccionario único (29.XXXX USDT) para conciliación automática.
    - Diseño responsivo, soporte bilingüe (EN/ES) y generador de código embed.
 
 2. **Backend (Cloudflare Worker con Hono.js)**:

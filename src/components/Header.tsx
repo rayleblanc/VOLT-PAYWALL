@@ -1,5 +1,5 @@
 import React from 'react';
-import { RotateCcw, Server, Wallet, Code, Globe } from 'lucide-react';
+import { RotateCcw, Server, Wallet, Code, Globe, Play } from 'lucide-react';
 import { APP_NAME, APP_MODE } from '../config';
 import { useWallet } from '../hooks/useWallet';
 import { formatAddress } from '../services/walletService';
@@ -66,26 +66,27 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* No-Code Integration Embed Button */}
+          {/* Live Demo Button */}
           {onOpenEmbedModal && (
             <button
               onClick={onOpenEmbedModal}
               className="bg-[#FFB800]/10 hover:bg-[#FFB800]/20 border border-[#FFB800]/40 text-[#FFB800] px-2 sm:px-3 py-1 sm:py-1.5 rounded-full flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-bold transition-all duration-200 cursor-pointer shadow-[0_0_12px_rgba(255,184,0,0.1)] active:scale-95 shrink-0"
-              title={t.nav.integrateNoCode}
-              aria-label={t.nav.integrateNoCode}
+              title={language === 'ES' ? 'Ver Live Demo' : 'Live Demo'}
+              aria-label={language === 'ES' ? 'Ver Live Demo' : 'Live Demo'}
             >
-              <Code className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#FFB800]" />
-              <span className="hidden sm:inline">{t.nav.integrateNoCode}</span>
-              <span className="sm:hidden">No-Code</span>
+              <Play className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#FFB800] fill-[#FFB800]" />
+              <span>{language === 'ES' ? 'Ver Live Demo' : 'Live Demo'}</span>
             </button>
           )}
 
-          <div className="hidden lg:flex bg-[#141414] border border-white/5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full items-center gap-1.5 sm:gap-2 shrink-0">
-            <Server className="w-3.5 h-3.5 text-[#FFB800]" />
-            <span className="text-xs font-mono font-semibold text-gray-300">
-              {APP_MODE === 'demo' ? t.nav.modeDemo : APP_MODE === 'local' ? t.nav.modeLocal : t.nav.modeProd}
-            </span>
-          </div>
+          {APP_MODE === 'demo' && (
+            <div className="hidden lg:flex bg-[#141414] border border-white/5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full items-center gap-1.5 sm:gap-2 shrink-0">
+              <Server className="w-3.5 h-3.5 text-[#FFB800]" />
+              <span className="text-xs font-mono font-semibold text-gray-300">
+                {t.nav.modeDemo}
+              </span>
+            </div>
+          )}
 
           {walletState.account && (
             <div className="bg-[#141414] border border-white/10 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full flex items-center gap-1.5 text-[10px] sm:text-xs font-mono font-bold text-white shrink-0">
@@ -96,10 +97,10 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div className="hidden md:flex bg-[#141414] border border-white/5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full items-center gap-1.5 sm:gap-2 shrink-0">
             <div className="w-2 h-2 rounded-full bg-[#00C853] shadow-[0_0_8px_#00C853]" />
-            <span className="text-xs font-medium text-gray-300">BSC Testnet (97)</span>
+            <span className="text-xs font-medium text-gray-300">BSC Mainnet (56)</span>
           </div>
 
-          {showReset && onResetDemo && (
+          {APP_MODE === 'demo' && showReset && onResetDemo && (
             <button
               onClick={onResetDemo}
               className="bg-[#141414] hover:bg-[#1f1f1f] border border-white/10 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-semibold text-gray-300 hover:text-[#FFB800] transition-colors duration-200 cursor-pointer shrink-0"

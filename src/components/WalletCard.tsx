@@ -16,7 +16,7 @@ export const WalletCard: React.FC = () => {
   const { walletState, connect, switchNetwork, disconnect } = useWallet();
   const [copied, setCopied] = useState(false);
 
-  const targetNetworkLabel = DEFAULT_CHAIN_ID === 56 ? 'BSC Mainnet (56)' : 'BSC Testnet (97)';
+  const targetNetworkLabel = 'BSC Mainnet (56)';
 
   const handleCopy = async () => {
     if (!walletState.account) return;
@@ -49,7 +49,7 @@ export const WalletCard: React.FC = () => {
           }`}
         >
           {walletState.status === 'connected'
-            ? walletState.isBscMainnet ? 'BSC Mainnet' : 'BSC Testnet'
+            ? 'BSC Mainnet'
             : walletState.status === 'wrong_network'
             ? 'Red Incorrecta'
             : walletState.status === 'connecting'
@@ -105,7 +105,7 @@ export const WalletCard: React.FC = () => {
                 </span>
                 <span className="text-[10px] font-mono text-[#00C853] flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
-                  <span>{walletState.isBscMainnet ? 'BSC Mainnet (56)' : 'BSC Testnet (97)'}</span>
+                  <span>BSC Mainnet (56)</span>
                 </span>
               </div>
 

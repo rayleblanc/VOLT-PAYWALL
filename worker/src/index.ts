@@ -51,10 +51,11 @@ app.options('/api/*', (c) => {
 // Health & Configuration Endpoints
 // ----------------------------------------------------------------------------
 app.get('/api/health', (c) => {
+  const chainId = c.env.CHAIN_ID ? parseInt(c.env.CHAIN_ID, 10) : 56;
   return c.json({
     status: 'ok',
     network: 'BSC',
-    chainId: PRODUCT.chainId,
+    chainId,
     service: 'VOLT Paywall BSC USDT Engine',
     version: '4.0.0',
     timestamp: new Date().toISOString(),
@@ -62,13 +63,14 @@ app.get('/api/health', (c) => {
 });
 
 app.get('/api/config', (c) => {
+  const chainId = c.env.CHAIN_ID ? parseInt(c.env.CHAIN_ID, 10) : 56;
   return c.json({
     productId: PRODUCT.id,
     name: PRODUCT.name,
     price: PRODUCT.price,
     currency: PRODUCT.currency,
     network: PRODUCT.network,
-    chainId: PRODUCT.chainId,
+    chainId,
   });
 });
 

@@ -21,7 +21,7 @@
 | Variable Name | Description |
 | :--- | :--- |
 | `VITE_RECIPIENT_WALLET` | Public EVM wallet address displayed in UI & QR codes |
-| `VITE_EXPECTED_PRICE_USD` | Base product price shown to buyers ($39) |
+| `VITE_EXPECTED_PRICE_USD` | Base product price shown to buyers ($29) |
 | `VITE_API_BASE_URL` | Backend URL for payment verification (`/api` or custom domain) |
 
 ---
@@ -44,5 +44,5 @@
 | Nombre de Variable | Descripción |
 | :--- | :--- |
 | `VITE_RECIPIENT_WALLET` | Dirección pública EVM de recepción mostrada en la UI y QR |
-| `VITE_EXPECTED_PRICE_USD` | Precio base en USD mostrado al comprador ($39) |
+| `VITE_EXPECTED_PRICE_USD` | Precio base en USD mostrado al comprador ($29) |
 | `VITE_API_BASE_URL` | URL del backend para validación (`/api` o dominio propio) |

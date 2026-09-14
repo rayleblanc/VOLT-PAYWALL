@@ -61,10 +61,10 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
     // 3. Initiate payment
     setIsPaying(true);
     try {
-      const targetContract = order.tokenContract || BSC_USDT_CONTRACT;
+      const targetContract = order.chainId === 56 ? BSC_MAINNET_USDT_CONTRACT : BSC_USDT_CONTRACT;
       const txHash = await sendUsdtTransfer({
         recipient: order.recipientAddress,
-        expectedUnits: order.expectedUnits || '39000000000000000000',
+        expectedUnits: order.expectedUnits || '29000000000000000000',
         tokenContract: targetContract,
         userAddress: walletState.account,
       });
@@ -146,7 +146,7 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold text-black block">Wrong Network in Wallet</span>
-                <span className="text-gray-700">Please switch your wallet to BNB Smart Chain Testnet (Chain ID 97).</span>
+                <span className="text-gray-700">Please switch your wallet to BNB Smart Chain Mainnet (Chain ID 56).</span>
               </div>
             </div>
             <button
@@ -264,7 +264,7 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
                 ) : walletState.status === 'wrong_network' ? (
                   <>
                     <AlertTriangle className="w-4 h-4 text-amber-400 animate-pulse" />
-                    <span>Switch Network to BSC Testnet</span>
+                    <span>Switch Network to BSC Mainnet</span>
                   </>
                 ) : (
                   <>
@@ -333,24 +333,22 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
           </div>
 
           {/* Simulation / Status Controls Box */}
-          <div className="mt-1 p-3.5 sm:p-4 bg-[#181818] rounded-xl sm:rounded-2xl border border-white/5 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-[#FFB800] uppercase tracking-widest flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{APP_MODE === 'demo' ? 'DEMO MODE' : 'WORKER BACKEND'}</span>
-              </span>
-              <span className="text-[10px] text-gray-500 font-mono">
-                {APP_MODE === 'demo' ? 'Demo Mode' : APP_MODE === 'local' ? 'Worker Local' : 'Worker Prod'}
-              </span>
-            </div>
+          {APP_MODE === 'demo' && (
+            <div className="mt-1 p-3.5 sm:p-4 bg-[#181818] rounded-xl sm:rounded-2xl border border-white/5 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-[#FFB800] uppercase tracking-widest flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>DEMO MODE</span>
+                </span>
+                <span className="text-[10px] text-gray-500 font-mono">
+                  Demo Mode
+                </span>
+              </div>
 
-            <p className="text-xs text-gray-400 leading-relaxed">
-              {APP_MODE === 'demo'
-                ? 'Click below to simulate real-time blockchain payment confirmation.'
-                : 'Managed via Cloudflare Worker backend and D1 database.'}
-            </p>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Click below to simulate real-time blockchain payment confirmation.
+              </p>
 
-            {APP_MODE === 'demo' ? (
               <button
                 onClick={onSimulatePayment}
                 disabled={isSimulating}
@@ -369,12 +367,8 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
                   </>
                 )}
               </button>
-            ) : (
-              <div className="p-3 bg-white/5 rounded-xl text-center text-xs text-gray-400 font-mono">
-                Simulation disabled in real Worker mode.
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* EIP-1193 Wallet Bento Card */}
@@ -402,12 +396,14 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
               <span className="font-bold text-gray-300 font-mono">~0.0002 BNB (~$0.02)</span>
             </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-400 font-medium">Order Mode</span>
-              <span className="font-bold text-[#FFB800] font-mono text-xs">
-                {APP_MODE === 'demo' ? 'Demo Simulation' : APP_MODE === 'local' ? 'Worker Local' : 'Worker Prod'}
-              </span>
-            </div>
+            {APP_MODE === 'demo' && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-400 font-medium">Order Mode</span>
+                <span className="font-bold text-[#FFB800] font-mono text-xs">
+                  Demo Simulation
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>

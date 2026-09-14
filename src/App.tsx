@@ -9,18 +9,19 @@ import { EmbedModal } from './components/EmbedModal';
 import { WhyUsBento } from './components/WhyUsBento';
 import { FAQ } from './components/FAQ';
 import { Order, OrderStatus } from './types';
-import { PRODUCT_ID, POLL_INTERVAL_MS, ORDER_EXPIRATION_SECONDS, API_BASE_URL } from './config';
+import { PRODUCT_ID, POLL_INTERVAL_MS, ORDER_EXPIRATION_SECONDS, API_BASE_URL, APP_MODE } from './config';
 import { api } from './services/api';
 import { useLanguage } from './i18n/LanguageContext';
-import { AlertCircle, RotateCcw, Code } from 'lucide-react';
+import { AlertCircle, RotateCcw, Code, Play, Eye } from 'lucide-react';
 
 type UiViewMode = 'IDLE' | 'CREATING_ORDER' | 'ACTIVE_ORDER' | 'ERROR';
 
 export default function App() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [order, setOrder] = useState<Order | null>(null);
   const [viewMode, setViewMode] = useState<UiViewMode>('IDLE');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'benefits' | 'comparison' | 'faq'>('benefits');
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [timeRemainingSeconds, setTimeRemainingSeconds] = useState<number>(ORDER_EXPIRATION_SECONDS);
@@ -246,10 +247,10 @@ export default function App() {
           {/* SCREEN 1: PRODUCT CARD */}
           {(viewMode === 'IDLE' || viewMode === 'CREATING_ORDER' || viewMode === 'ERROR') && (
             <ProductCard
-              onBuyNow={handleBuyNow}
+              onBuyNow={(mode) => handleBuyNow(mode)}
               isLoading={viewMode === 'CREATING_ORDER'}
               error={errorMessage}
-              onRetry={handleBuyNow}
+              onRetry={() => handleBuyNow('wallet')}
             />
           )}
 
@@ -324,11 +325,67 @@ export default function App() {
               </div>
             )}
 
-          {/* VALUE PROPOSITION & COMPARISON BENTO GRID */}
-          <WhyUsBento />
+          {/* HORIZONTAL TABS TO REDUCE SCROLL ON MOBILE */}
+          <div className="w-full max-w-5xl mx-auto mt-12 sm:mt-16 border-b border-white/10">
+            <div className="flex justify-around sm:justify-start gap-4 sm:gap-8 overflow-x-auto pb-px">
+              <button
+                onClick={() => setActiveTab('benefits')}
+                className={`pb-4 px-1 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all relative cursor-pointer whitespace-nowrap ${
+                  activeTab === 'benefits'
+                    ? 'text-[#FFB800]'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {language === 'ES' ? 'Beneficios' : 'Why VOLT'}
+                {activeTab === 'benefits' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FFB800] rounded-full" />
+                )}
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('comparison')}
+                className={`pb-4 px-1 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all relative cursor-pointer whitespace-nowrap ${
+                  activeTab === 'comparison'
+                    ? 'text-[#FFB800]'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {language === 'ES' ? 'Comparativa' : 'Comparison'}
+                {activeTab === 'comparison' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FFB800] rounded-full" />
+                )}
+              </button>
 
-          {/* INTERACTIVE CONVERSION FAQ SECTION */}
-          <FAQ />
+              <button
+                onClick={() => setActiveTab('faq')}
+                className={`pb-4 px-1 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all relative cursor-pointer whitespace-nowrap ${
+                  activeTab === 'faq'
+                    ? 'text-[#FFB800]'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                FAQ
+                {activeTab === 'faq' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FFB800] rounded-full" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* TAB CONTENT AREA */}
+          <div className="mt-8">
+            {activeTab === 'benefits' && (
+              <WhyUsBento showBentoOnly={true} />
+            )}
+            
+            {activeTab === 'comparison' && (
+              <WhyUsBento showTableOnly={true} />
+            )}
+
+            {activeTab === 'faq' && (
+              <FAQ />
+            )}
+          </div>
         </div>
       </main>
 
@@ -342,12 +399,12 @@ export default function App() {
               onClick={() => setIsEmbedModalOpen(true)}
               className="text-[#FFB800] hover:underline flex items-center gap-1 cursor-pointer font-bold"
             >
-              <Code className="w-3 h-3" />
-              <span>{t.footer.generateEmbed}</span>
+              <Eye className="w-3 h-3" />
+              <span>{language === 'ES' ? 'Ver Live Demo del Producto' : 'Product Live Demo'}</span>
             </button>
           </div>
           <div className="flex items-center gap-4 text-gray-400">
-            <span>0x8f3a...demo-hash</span>
+            {APP_MODE === 'demo' && <span>0x8f3a...demo-hash</span>}
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#00C853]" />
               <span>{t.footer.serverOnline}</span>

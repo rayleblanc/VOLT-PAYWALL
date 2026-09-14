@@ -7,11 +7,11 @@ export type AppMode = 'demo' | 'local' | 'production';
  * Default is 'demo' for instant out-of-the-box frontend demonstration.
  * Set VITE_APP_MODE=local or update here to 'local' to connect with Cloudflare Worker local.
  */
-export const APP_MODE: AppMode = (import.meta.env.VITE_APP_MODE as AppMode) || 'demo';
+export const APP_MODE = 'production' as AppMode;
 
 /**
  * Cloudflare Worker API Base URL resolution
- * Defaults to http://localhost:8787 when APP_MODE is 'local'.
+ * Defaults to the same domain host in production, or localhost in local dev mode.
  */
 const resolveApiBaseUrl = (): string => {
   if (import.meta.env.VITE_API_BASE_URL) {
@@ -19,6 +19,9 @@ const resolveApiBaseUrl = (): string => {
   }
   if (APP_MODE === 'local') {
     return 'http://localhost:8787';
+  }
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
   }
   return '';
 };
@@ -85,10 +88,10 @@ export const APP_SUBTITLE = 'BSC USDT';
 
 export const PRODUCT_INFO = {
   id: PRODUCT_ID,
-  name: 'All-in-One Creator Pack',
+  name: 'VOLT Paywall V1 — Commercial Kit',
   tagline: 'Todo lo necesario para comenzar.',
   description: 'Código completo + guía + licencia comercial. Entrega digital.',
-  basePrice: 39,
+  basePrice: 29,
   currency: 'USDT' as const,
   network: 'BNB Smart Chain' as const,
   networkBadge: 'BSC USDT',

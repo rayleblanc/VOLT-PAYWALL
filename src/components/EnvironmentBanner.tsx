@@ -11,8 +11,8 @@ export interface EnvironmentBannerProps {
 export const EnvironmentBanner: React.FC<EnvironmentBannerProps> = ({ onDismiss }) => {
   const { language } = useLanguage();
   const [isDismissed, setIsDismissed] = useState(false);
-  const [detectedChainId, setDetectedChainId] = useState<number | string>(DEFAULT_CHAIN_ID);
-  const [isWalletTestnet, setIsWalletTestnet] = useState<boolean>(DEFAULT_CHAIN_ID === 97);
+  const [detectedChainId, setDetectedChainId] = useState<number | string>(56);
+  const [isWalletTestnet, setIsWalletTestnet] = useState<boolean>(false);
   const [hasWallet, setHasWallet] = useState<boolean>(false);
 
   // Inspect environment and wallet RPC / chain
@@ -21,10 +21,7 @@ export const EnvironmentBanner: React.FC<EnvironmentBannerProps> = ({ onDismiss 
       const provider = getEthereumProvider();
       if (!provider) {
         setHasWallet(false);
-        // Fallback to configured default
-        const isTest = DEFAULT_CHAIN_ID === BSC_TESTNET_CHAIN_ID_DECIMAL;
-        setIsWalletTestnet(isTest);
-        setDetectedChainId(DEFAULT_CHAIN_ID);
+        setDetectedChainId(56);
         return;
       }
 
@@ -32,8 +29,6 @@ export const EnvironmentBanner: React.FC<EnvironmentBannerProps> = ({ onDismiss 
       try {
         const rawChain = (await provider.request({ method: 'eth_chainId' })) as string;
         if (rawChain) {
-          const isTest = isBscTestnetChain(rawChain);
-          setIsWalletTestnet(isTest);
           const dec = parseInt(rawChain, 16);
           setDetectedChainId(isNaN(dec) ? rawChain : dec);
         }
@@ -48,8 +43,6 @@ export const EnvironmentBanner: React.FC<EnvironmentBannerProps> = ({ onDismiss 
     if (provider && provider.on) {
       const handleChainChange = (newChain: unknown) => {
         const hex = String(newChain);
-        const isTest = isBscTestnetChain(hex);
-        setIsWalletTestnet(isTest);
         const dec = parseInt(hex, 16);
         setDetectedChainId(isNaN(dec) ? hex : dec);
       };

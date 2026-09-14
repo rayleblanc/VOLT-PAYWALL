@@ -11,7 +11,7 @@ import worker from '../src/index';
 import { Env, D1OrderRecord } from '../src/types';
 
 describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', () => {
-  it('1. Orden wallet = 39 USDT exactos y expected_units = "39000000000000000000"', async () => {
+  it('1. Orden wallet = 29 USDT exactos y expected_units = "29000000000000000000"', async () => {
     let insertedRecord: Record<string, unknown> = {};
 
     const mockEnv: Env = {
@@ -51,39 +51,39 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     };
 
     assert.equal(data.paymentMode, 'wallet');
-    assert.equal(data.amount, '39');
-    assert.equal(data.expectedAmount, '39');
-    assert.equal(data.expectedUnits, '39000000000000000000'); // 39 * 10^18 wei
+    assert.equal(data.amount, '29');
+    assert.equal(data.expectedAmount, '29');
+    assert.equal(data.expectedUnits, '29000000000000000000'); // 29 * 10^18 wei
 
     assert.equal(insertedRecord.payment_mode, 'wallet');
-    assert.equal(insertedRecord.amount, '39');
-    assert.equal(insertedRecord.expected_units, '39000000000000000000');
+    assert.equal(insertedRecord.amount, '29');
+    assert.equal(insertedRecord.expected_units, '29000000000000000000');
   });
 
-  it('2. Orden manual = monto entre 39.0001 y 39.9999', () => {
+  it('2. Orden manual = monto entre 29.0001 y 29.9999', () => {
     for (let i = 0; i < 100; i++) {
-      const amountStr = generateExactAmount(39);
+      const amountStr = generateExactAmount(29);
       const val = parseFloat(amountStr);
-      assert.ok(val >= 39.0001 && val <= 39.9999, `Monto ${amountStr} fuera de rango`);
+      assert.ok(val >= 29.0001 && val <= 29.9999, `Monto ${amountStr} fuera de rango`);
     }
   });
 
   it('3. Manual siempre tiene exactamente 4 decimales en string', () => {
     for (let i = 0; i < 100; i++) {
-      const amountStr = generateExactAmount(39);
-      assert.match(amountStr, /^39\.\d{4}$/, `Monto ${amountStr} debe coincidir con formato exacto de 4 decimales`);
+      const amountStr = generateExactAmount(29);
+      assert.match(amountStr, /^29\.\d{4}$/, `Monto ${amountStr} debe coincidir con formato exacto de 4 decimales`);
     }
   });
 
   it('4. expected_units es un cálculo exacto en BigInt sin precisión flotante', () => {
-    // 39 USDT -> 39000000000000000000
-    assert.equal(usdtToTokenUnits('39'), '39000000000000000000');
-    // 39.4271 USDT -> 39427100000000000000
-    assert.equal(usdtToTokenUnits('39.4271'), '39427100000000000000');
-    // 39.0001 USDT -> 39000100000000000000
-    assert.equal(usdtToTokenUnits('39.0001'), '39000100000000000000');
-    // 39.9999 USDT -> 39999900000000000000
-    assert.equal(usdtToTokenUnits('39.9999'), '39999900000000000000');
+    // 29 USDT -> 29000000000000000000
+    assert.equal(usdtToTokenUnits('29'), '29000000000000000000');
+    // 29.4271 USDT -> 29427100000000000000
+    assert.equal(usdtToTokenUnits('29.4271'), '29427100000000000000');
+    // 29.0001 USDT -> 29000100000000000000
+    assert.equal(usdtToTokenUnits('29.0001'), '29000100000000000000');
+    // 29.9999 USDT -> 29999900000000000000
+    assert.equal(usdtToTokenUnits('29.9999'), '29999900000000000000');
   });
 
   it('5 - 12. Cliente NO puede modificar price, amount, expected_units, recipient, chainId, expiresAt, status ni txHash', async () => {
@@ -113,6 +113,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
         }),
       } as unknown as D1Database,
       APP_ENV: 'development',
+      CHAIN_ID: '97',
     };
 
     const maliciousBody = {
@@ -147,8 +148,8 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     assert.equal(data.status, 'PENDING');
     assert.equal(data.chainId, 97);
     assert.equal(data.recipient, DEV_PAYMENT_RECIPIENT);
-    assert.match(data.amount, /^39\.\d{4}$/);
-    assert.match(data.expectedUnits, /^39\d{18}$/);
+    assert.match(data.amount, /^29\.\d{4}$/);
+    assert.match(data.expectedUnits, /^29\d{18}$/);
 
     assert.equal(insertedRecord.status, 'PENDING');
     assert.equal(insertedRecord.chain_id, 97);
@@ -190,9 +191,9 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       id: 'volt_ord_6f1234567890abcd',
       product_id: 'creator-pack',
       payment_mode: 'manual',
-      amount: '39.5000',
-      expected_amount: '39.5000',
-      expected_units: '39500000000000000000',
+      amount: '29.5000',
+      expected_amount: '29.5000',
+      expected_units: '29500000000000000000',
       currency: 'USDT',
       network: 'BSC',
       chain_id: 97,
@@ -385,6 +386,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       } as unknown as D1Database,
       APP_ENV: 'development',
       BSC_RPC_URL: 'http://mock-rpc',
+      CHAIN_ID: '97',
     };
 
     try {
@@ -454,6 +456,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
         }),
       } as unknown as D1Database,
       APP_ENV: 'development',
+      CHAIN_ID: '97',
     };
 
     const req = new Request('http://localhost:8787/api/orders', {
@@ -595,15 +598,15 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     const tokenContract = '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd';
     const buyer = '0x2222222222222222222222222222222222222222';
     const txHash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890';
-    const expectedUnitsHex = '0x' + BigInt('39000000000000000000').toString(16);
+    const expectedUnitsHex = '0x' + BigInt('29000000000000000000').toString(16);
 
     let dbRecord: any = {
       id: 'volt_ord_test1',
       product_id: 'creator-pack',
       payment_mode: 'wallet',
-      amount: '39',
-      expected_amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_amount: '29',
+      expected_units: '29000000000000000000',
       currency: 'USDT',
       network: 'BSC',
       chain_id: 97,
@@ -723,15 +726,15 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     const tokenContract = '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd';
     const buyer = '0x2222222222222222222222222222222222222222';
     const txHash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef123456789011';
-    const expectedUnitsHex = '0x' + BigInt('39000000000000000000').toString(16);
+    const expectedUnitsHex = '0x' + BigInt('29000000000000000000').toString(16);
 
     let dbRecord: any = {
       id: 'volt_ord_late1',
       product_id: 'creator-pack',
       payment_mode: 'wallet',
-      amount: '39',
-      expected_amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_amount: '29',
+      expected_units: '29000000000000000000',
       currency: 'USDT',
       network: 'BSC',
       chain_id: 97,
@@ -833,15 +836,15 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     const tokenContract = '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd';
     const buyer = '0x2222222222222222222222222222222222222222';
     const txHash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567891';
-    const expectedUnitsHex = '0x' + BigInt('39000000000000000000').toString(16);
+    const expectedUnitsHex = '0x' + BigInt('29000000000000000000').toString(16);
 
     let dbRecord: any = {
       id: 'volt_ord_direct1',
       product_id: 'creator-pack',
       payment_mode: 'wallet',
-      amount: '39',
-      expected_amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_amount: '29',
+      expected_units: '29000000000000000000',
       currency: 'USDT',
       network: 'BSC',
       chain_id: 97,
@@ -953,15 +956,15 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     const tokenContract = '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd';
     const buyer = '0x2222222222222222222222222222222222222222';
     const txHash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567891';
-    const expectedUnitsHex = '0x' + BigInt('39000000000000000000').toString(16);
+    const expectedUnitsHex = '0x' + BigInt('29000000000000000000').toString(16);
 
     let dbRecord: any = {
       id: 'volt_ord_conf1',
       product_id: 'creator-pack',
       payment_mode: 'wallet',
-      amount: '39',
-      expected_amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_amount: '29',
+      expected_units: '29000000000000000000',
       currency: 'USDT',
       network: 'BSC',
       chain_id: 97,
@@ -1065,15 +1068,15 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     const tokenContract = '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd';
     const buyer = '0x2222222222222222222222222222222222222222';
     const txHash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567891';
-    const expectedUnitsHex = '0x' + BigInt('39000000000000000000').toString(16);
+    const expectedUnitsHex = '0x' + BigInt('29000000000000000000').toString(16);
 
     let dbRecord: any = {
       id: 'volt_ord_paid12',
       product_id: 'creator-pack',
       payment_mode: 'wallet',
-      amount: '39',
-      expected_amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_amount: '29',
+      expected_units: '29000000000000000000',
       currency: 'USDT',
       network: 'BSC',
       chain_id: 97,
@@ -1179,9 +1182,9 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       id: 'volt_ord_fail_rpc',
       product_id: 'creator-pack',
       payment_mode: 'wallet',
-      amount: '39',
-      expected_amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_amount: '29',
+      expected_units: '29000000000000000000',
       currency: 'USDT',
       network: 'BSC',
       chain_id: 97,
@@ -1209,7 +1212,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       batch: async () => [{ success: true }],
     } as unknown as D1Database;
 
-    const expectedUnitsHex = '0x' + BigInt('39000000000000000000').toString(16);
+    const expectedUnitsHex = '0x' + BigInt('29000000000000000000').toString(16);
 
     globalThis.fetch = async (_url: any, init: any) => {
       const body = JSON.parse(init.body);
@@ -1276,9 +1279,9 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       id: 'volt_ord_status0',
       product_id: 'creator-pack',
       payment_mode: 'wallet',
-      amount: '39',
-      expected_amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_amount: '29',
+      expected_units: '29000000000000000000',
       currency: 'USDT',
       network: 'BSC',
       chain_id: 97,
@@ -1435,15 +1438,15 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     const tokenContract = '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd';
     const buyer = '0x2222222222222222222222222222222222222222';
     const txHash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567895';
-    const expectedUnitsHex = '0x' + BigInt('39000000000000000000').toString(16);
+    const expectedUnitsHex = '0x' + BigInt('29000000000000000000').toString(16);
 
     let dbRecord: any = {
       id: 'volt_ord_finality_ok',
       product_id: 'creator-pack',
       payment_mode: 'wallet',
-      amount: '39',
-      expected_amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_amount: '29',
+      expected_units: '29000000000000000000',
       currency: 'USDT',
       network: 'BSC',
       chain_id: 97,
@@ -1550,15 +1553,15 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     const tokenContract = '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd';
     const buyer = '0x2222222222222222222222222222222222222222';
     const txHash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567896';
-    const expectedUnitsHex = '0x' + BigInt('39000000000000000000').toString(16);
+    const expectedUnitsHex = '0x' + BigInt('29000000000000000000').toString(16);
 
     let dbRecord: any = {
       id: 'volt_ord_not_final',
       product_id: 'creator-pack',
       payment_mode: 'wallet',
-      amount: '39',
-      expected_amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_amount: '29',
+      expected_units: '29000000000000000000',
       currency: 'USDT',
       network: 'BSC',
       chain_id: 97,
@@ -1665,15 +1668,15 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     const tokenContract = '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd';
     const buyer = '0x2222222222222222222222222222222222222222';
     const txHash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567897';
-    const expectedUnitsHex = '0x' + BigInt('39000000000000000000').toString(16);
+    const expectedUnitsHex = '0x' + BigInt('29000000000000000000').toString(16);
 
     let dbRecord: any = {
       id: 'volt_ord_no_final_support',
       product_id: 'creator-pack',
       payment_mode: 'wallet',
-      amount: '39',
-      expected_amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_amount: '29',
+      expected_units: '29000000000000000000',
       currency: 'USDT',
       network: 'BSC',
       chain_id: 97,
@@ -1782,9 +1785,9 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       id: 'volt_ord_rpc_down',
       product_id: 'creator-pack',
       payment_mode: 'wallet',
-      amount: '39',
-      expected_amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_amount: '29',
+      expected_units: '29000000000000000000',
       currency: 'USDT',
       network: 'BSC',
       chain_id: 97,
@@ -1845,8 +1848,8 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
                 id: args[0],
                 status: 'PENDING',
                 created_block: 1000,
-                amount: '39',
-                expected_units: '39000000000000000000',
+                amount: '29',
+                expected_units: '29000000000000000000',
                 created_at: new Date(Date.now() - 60000).toISOString(),
                 expires_at: new Date(Date.now() + 3600000).toISOString(),
                 recipient,
@@ -1993,8 +1996,8 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
           first: async () => ({
             id: 'volt_ord_already_paid',
             status: 'PAID',
-            amount: '39',
-            expected_units: '39000000000000000000',
+            amount: '29',
+            expected_units: '29000000000000000000',
             recipient,
             expires_at: new Date(Date.now() + 3600000).toISOString(),
           }),
@@ -2021,8 +2024,8 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       id: 'volt_ord_idempotent',
       status: 'CONFIRMING',
       created_block: 1000,
-      amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_units: '29000000000000000000',
       recipient,
       tx_hash: txHash,
       created_at: new Date(Date.now() - 60000).toISOString(),
@@ -2118,8 +2121,8 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       id: 'volt_ord_1111222233334449',
       status: 'EXPIRED',
       created_block: 1000,
-      amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_units: '29000000000000000000',
       recipient,
       created_at: new Date(expiresAtMs - 1000000).toISOString(),
       expires_at: new Date(expiresAtMs).toISOString(),
@@ -2169,7 +2172,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
                 '0x0000000000000000000000002222222222222222222222222222222222222222',
                 '0x0000000000000000000000001111111111111111111111111111111111111111'
               ],
-              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              data: '0x0000000000000000000000000000000000000000000000019274b259f6540000',
               blockNumber: '0x3e8',
             }],
           },
@@ -2208,8 +2211,8 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       id: 'volt_ord_1111222233334500',
       status: 'PENDING',
       created_block: 1000,
-      amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_units: '29000000000000000000',
       recipient,
       created_at: new Date(Date.now() - 60000).toISOString(),
       expires_at: new Date(Date.now() + 3600000).toISOString(),
@@ -2258,8 +2261,8 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       id: 'volt_ord_1111222233334511',
       status: 'PENDING',
       created_block: 1000,
-      amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_units: '29000000000000000000',
       recipient,
       created_at: new Date(Date.now() - 60000).toISOString(),
       expires_at: new Date(Date.now() + 3600000).toISOString(),
@@ -2314,7 +2317,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
                 '0x0000000000000000000000002222222222222222222222222222222222222222',
                 '0x0000000000000000000000001111111111111111111111111111111111111111'
               ],
-              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              data: '0x0000000000000000000000000000000000000000000000019274b259f6540000',
               blockNumber: '0x3e8',
             }],
           },
@@ -2401,10 +2404,10 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     const data = await res.json() as any;
 
     assert.equal(data.status, 'PENDING');
-    assert.equal(data.amount, '39');
+    assert.equal(data.amount, '29');
     assert.equal(data.recipient, '0x000000000000000000000000000000000000dEaD');
     assert.equal(insertedData.status, 'PENDING');
-    assert.equal(insertedData.amount, '39');
+    assert.equal(insertedData.amount, '29');
   });
 
   it('53. Assets Routing - Solicitudes no /api/* son servidas via env.ASSETS.fetch', async () => {
@@ -2442,8 +2445,8 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       id: 'volt_ord_1111222233334544',
       status: 'PENDING',
       created_block: null, // Null to trigger rescue
-      amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_units: '29000000000000000000',
       recipient,
       created_at: new Date(Date.now() - 30000).toISOString(),
       expires_at: new Date(Date.now() + 3600000).toISOString(),
@@ -2491,7 +2494,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
                 '0x0000000000000000000000002222222222222222222222222222222222222222',
                 '0x0000000000000000000000001111111111111111111111111111111111111111'
               ],
-              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              data: '0x0000000000000000000000000000000000000000000000019274b259f6540000',
               blockNumber: '0x3e8',
             }],
           },
@@ -2538,8 +2541,8 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       id: 'volt_ord_bug_test_old_tx',
       status: 'PENDING',
       created_block: null, // Null to simulate missing block
-      amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_units: '29000000000000000000',
       recipient,
       created_at: orderCreatedAt.toISOString(),
       expires_at: new Date(orderCreatedAtMs + 3600000).toISOString(),
@@ -2589,7 +2592,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
                 '0x0000000000000000000000002222222222222222222222222222222222222222',
                 '0x0000000000000000000000001111111111111111111111111111111111111111',
               ],
-              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              data: '0x0000000000000000000000000000000000000000000000019274b259f6540000',
               blockNumber: '0x1f4',
             }],
           },
@@ -2638,8 +2641,8 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       id: 'volt_ord_new_valid_tx',
       status: 'PENDING',
       created_block: null,
-      amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_units: '29000000000000000000',
       recipient,
       created_at: orderCreatedAt.toISOString(),
       expires_at: new Date(Date.now() + 3600000).toISOString(),
@@ -2690,7 +2693,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
                 '0x0000000000000000000000002222222222222222222222222222222222222222',
                 '0x0000000000000000000000001111111111111111111111111111111111111111',
               ],
-              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              data: '0x0000000000000000000000000000000000000000000000019274b259f6540000',
               blockNumber: '0x3fc',
             }],
           },
@@ -2740,8 +2743,8 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       id: 'volt_ord_path_b_filtering',
       status: 'PENDING',
       created_block: null,
-      amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_units: '29000000000000000000',
       recipient,
       created_at: orderCreatedAt.toISOString(),
       expires_at: new Date(Date.now() + 3600000).toISOString(),
@@ -2791,7 +2794,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
                 '0x0000000000000000000000002222222222222222222222222222222222222222',
                 '0x0000000000000000000000001111111111111111111111111111111111111111',
               ],
-              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              data: '0x0000000000000000000000000000000000000000000000019274b259f6540000',
               blockNumber: '0x3e8', // Block 1000 (old)
               transactionHash: oldTx,
             },
@@ -2802,7 +2805,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
                 '0x0000000000000000000000002222222222222222222222222222222222222222',
                 '0x0000000000000000000000001111111111111111111111111111111111111111',
               ],
-              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              data: '0x0000000000000000000000000000000000000000000000019274b259f6540000',
               blockNumber: '0x400', // Block 1024 (valid, post-creation)
               transactionHash: validTx,
             },
@@ -2826,7 +2829,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
                 '0x0000000000000000000000002222222222222222222222222222222222222222',
                 '0x0000000000000000000000001111111111111111111111111111111111111111',
               ],
-              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              data: '0x0000000000000000000000000000000000000000000000019274b259f6540000',
               blockNumber: isOld ? '0x3e8' : '0x400',
             }],
           },
@@ -2880,8 +2883,8 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       id: 'volt_ord_path_b_only_old',
       status: 'PENDING',
       created_block: null,
-      amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_units: '29000000000000000000',
       recipient,
       created_at: orderCreatedAt.toISOString(),
       expires_at: new Date(Date.now() + 3600000).toISOString(),
@@ -2918,7 +2921,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
               '0x0000000000000000000000002222222222222222222222222222222222222222',
               '0x0000000000000000000000001111111111111111111111111111111111111111',
             ],
-            data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+            data: '0x0000000000000000000000000000000000000000000000019274b259f6540000',
             blockNumber: '0x3e8',
             transactionHash: oldTx,
           }],
@@ -2937,7 +2940,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
                 '0x0000000000000000000000002222222222222222222222222222222222222222',
                 '0x0000000000000000000000001111111111111111111111111111111111111111',
               ],
-              data: '0x0000000000000000000000000000000000000000000000021d3bd55e803c0000',
+              data: '0x0000000000000000000000000000000000000000000000019274b259f6540000',
               blockNumber: '0x3e8',
             }],
           },
@@ -2980,8 +2983,8 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
       id: 'volt_ord_corrupted_created_at',
       status: 'PENDING',
       created_block: 1000,
-      amount: '39',
-      expected_units: '39000000000000000000',
+      amount: '29',
+      expected_units: '29000000000000000000',
       recipient,
       created_at: 'NOT_A_VALID_DATE_STRING', // Corrupted timestamp
       expires_at: new Date(Date.now() + 3600000).toISOString(),
