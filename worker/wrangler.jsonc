@@ -19,8 +19,8 @@
   ],
   "kv_namespaces": [
     {
-      "binding": "PRODUCT_PAYLOAD_KV",
-      "id": "13b740c4c9b944408b236b8e96d2c9e8""
+      "binding": "VOLT_PAYMENTS",
+      "id": "13b740c4c9b9444408b236b8e96d2c9e8"
     }
   ],
   "vars": {
