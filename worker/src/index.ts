@@ -7,7 +7,7 @@ import { Hono } from 'hono';
 import { Env } from './types';
 import { PRODUCT } from './config';
 import { createOrderInD1, getOrderStatusFromD1 } from './services/orders';
-import { getProjectBDeliverableFiles, buildZipArchive } from './services/zipBuilder';
+import { checkRateLimit } from './services/rateLimiter';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -78,6 +78,13 @@ app.get('/api/config', (c) => {
 // Order Management Endpoints
 // ----------------------------------------------------------------------------
 app.post('/api/orders', async (c) => {
+  const ip = c.req.header('cf-connecting-ip') || '127.0.0.1';
+  const rateLimit = await checkRateLimit(c.env, ip, 'create_order', 20);
+  if (!rateLimit.isAllowed) {
+    c.header('Retry-After', String(rateLimit.retryAfter));
+    return c.json({ error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Rate limit exceeded. Please try again later.' } }, 429);
+  }
+
   try {
     let body: any = {};
     try {
@@ -96,6 +103,13 @@ app.post('/api/orders', async (c) => {
 });
 
 app.get('/api/status', async (c) => {
+  const ip = c.req.header('cf-connecting-ip') || '127.0.0.1';
+  const rateLimit = await checkRateLimit(c.env, ip, 'verify_payment', 30);
+  if (!rateLimit.isAllowed) {
+    c.header('Retry-After', String(rateLimit.retryAfter));
+    return c.json({ error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Rate limit exceeded. Please try again later.' } }, 429);
+  }
+
   const orderId = c.req.query('orderId');
   const txHash = c.req.query('txHash');
 
@@ -231,22 +245,44 @@ app.get('/api/download', async (c) => {
   let zipData: ArrayBuffer | null = null;
   if (kv) {
     try {
-      zipData = await kv.get('volt-studio.zip', { type: 'arrayBuffer' })
-        || await kv.get('volt-paywall-engine.zip', { type: 'arrayBuffer' })
-        || await kv.get('zip_content', { type: 'arrayBuffer' });
+      // Fetch as text first to check for URL or Base64 encoding
+      const textVal = await kv.get('volt-studio.zip', { type: 'text' })
+        || await kv.get('volt-paywall-engine.zip', { type: 'text' })
+        || await kv.get('zip_content', { type: 'text' });
+
+      if (textVal) {
+        const trimmed = textVal.trim();
+        if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+          // Robust URL-based fetching fallback (perfect for mobile upload via URL)
+          const resp = await fetch(trimmed);
+          if (resp.ok) {
+            zipData = await resp.arrayBuffer();
+          }
+        } else if (trimmed.startsWith('data:application/zip;base64,') || /^[A-Za-z0-9+/=]+$/.test(trimmed)) {
+          // Base64-encoded string fallback
+          const base64Str = trimmed.startsWith('data:') ? trimmed.split(',')[1] : trimmed;
+          const binaryString = atob(base64Str);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          zipData = bytes.buffer;
+        }
+      }
+
+      // If text-based formats weren't detected or failed, load as raw binary ArrayBuffer
+      if (!zipData) {
+        zipData = await kv.get('volt-studio.zip', { type: 'arrayBuffer' })
+          || await kv.get('volt-paywall-engine.zip', { type: 'arrayBuffer' })
+          || await kv.get('zip_content', { type: 'arrayBuffer' });
+      }
     } catch {
       // KV lookup error
     }
   }
 
   if (!zipData) {
-    if (isProduction) {
-      return c.json({ error: 'ASSET_UNAVAILABLE', message: 'Asset storage is unprovisioned or unavailable in production.' }, 500);
-    }
-    // In development / demo: generate dynamic uncompressed ZIP
-    const files = getProjectBDeliverableFiles(tokenRecord.order_id, new Date(now).toISOString());
-    const archive = buildZipArchive(files);
-    zipData = archive.buffer.slice(archive.byteOffset, archive.byteOffset + archive.byteLength) as ArrayBuffer;
+    return c.text('ASSET_UNAVAILABLE', 500);
   }
 
   return new Response(zipData, {

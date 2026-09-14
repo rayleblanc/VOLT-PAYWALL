@@ -22,6 +22,7 @@ export interface Env {
   RPC_CHUNK_SIZE?: string;
   ASSETS_KV?: KVNamespace;
   PRODUCT_PAYLOAD_KV?: KVNamespace; // Namespace for Project B ZIP delivery
+  RATE_LIMIT_KV?: KVNamespace;
   ASSETS?: Fetcher;
 }
 
