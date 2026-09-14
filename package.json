@@ -10,8 +10,8 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "test": "tsx --test worker/tests/worker.test.ts",
-    "build:worker": "npx wrangler deploy --dry-run -c worker/wrangler.jsonc",
-    "deploy": "npx wrangler deploy -c worker/wrangler.jsonc"
+    "build:worker": "npm run build && npx wrangler deploy --dry-run -c worker/wrangler.jsonc",
+    "deploy": "npm run build && npx wrangler deploy -c worker/wrangler.jsonc"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

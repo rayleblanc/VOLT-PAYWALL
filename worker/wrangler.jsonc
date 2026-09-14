@@ -28,7 +28,7 @@
     "BSC_RPC_URL": "https://bsc-dataseed.binance.org/,https://bsc-dataseed1.defibit.io/,https://binance.llamarpc.com",
     "USDT_CONTRACT_ADDRESS": "0x55d398326f99059fF775485246999027B3197955",
     "CHAIN_ID": "56",
-    "ALLOWED_ORIGINS": "https://voltpaywall.com,http://localhost:3000,http://127.0.0.1:3000",
+    "ALLOWED_ORIGINS": "*",
     "APP_ENV": "production"
   }
 }

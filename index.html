@@ -12,8 +12,17 @@
     <meta name="author" content="VOLT Paywall" />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
 
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://voltpaywall.com/" />
+    <!-- Canonical & GEO Indexing -->
+    <link id="canonical-link" rel="canonical" href="" />
+    <link rel="help" type="text/plain" href="/llms.txt" title="LLM Knowledge Graph" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+    <script>
+      try {
+        var hostUrl = window.location.origin + window.location.pathname;
+        var canEl = document.getElementById('canonical-link');
+        if (canEl) canEl.setAttribute('href', hostUrl);
+      } catch (e) {}
+    </script>
 
     <!-- OpenGraph / Facebook Meta Tags -->
     <meta property="og:type" content="website" />

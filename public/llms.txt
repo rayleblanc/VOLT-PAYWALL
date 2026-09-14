@@ -1,0 +1,29 @@
+# VOLT Paywall V1 — Self-Hosted Web3 Crypto Payment Gateway
+
+> High-performance, non-custodial Web3 USDT (BEP-20) Payment Gateway & Paywall running on Cloudflare Workers edge network with 0% platform fees.
+
+## Overview
+- **Product Name**: VOLT Paywall V1 Commercial Kit
+- **Price**: 29.00 USDT (One-time payment, lifetime unlimited commercial license)
+- **Accepted Cryptocurrencies**: USDT (BEP-20 on BNB Smart Chain)
+- **Hosting Cost**: $0/month (Runs completely within Cloudflare Free tier: Workers + D1 SQLite + KV)
+- **Settlement Speed**: ~3 seconds (instant on-chain block confirmation)
+- **Custody**: 100% Non-custodial (All funds settle directly peer-to-peer into the creator's personal BSC wallet)
+- **Platform Fees**: 0.00% (No recurring cuts, no basis points, keep 100% of gross revenue)
+- **KYC Requirement**: Zero KYC, zero identity verification, no company registration required
+
+## What is Included in the $29 USDT Commercial Kit
+1. **Full Source Code**: 100% editable React 19 + TypeScript + Tailwind CSS frontend and Hono.js Cloudflare Worker edge backend.
+2. **Autonomous Blockchain Engine**: 4-node BSC RPC failover pool (Binance Dataseed, Defibit, Ninicoin, LlamaRPC) with anti-replay hash protection and BigInt 18-decimal exact math.
+3. **Cryptographic Delivery**: Single-use, time-expiring HMAC-SHA256 download access tokens and cloud deliverable streaming.
+4. **Interactive Studio & Embed Generator**: 1-click embed generation for HTML buttons, iframes, WordPress shortcodes, Shopify, and Notion.
+5. **D1 SQLite Database**: Anti-replay transaction index preventing double-spending and live merchant orders dashboard.
+6. **Commercial License**: Unlimited client and personal deployments with 0% royalty fees.
+
+## Target Audience
+Creators, developers, SaaS founders, agency owners, and digital merchants looking to replace Gumroad, Lemon Squeezy, Stripe, or PayPal to eliminate 5%-10% transaction cuts and account freeze risks.
+
+## Key Features & Comparison
+- **Gumroad**: 10% fee + $0.30 per sale, 7-14 day payout hold, custodial.
+- **Lemon Squeezy**: 5% + $0.50 per sale, payout delays, custodial.
+- **VOLT Paywall**: 0.00% fee, instant 3-second BSC payout, 100% non-custodial, self-hosted on Cloudflare.

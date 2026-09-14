@@ -253,11 +253,14 @@ app.get('/api/download', async (c) => {
       if (textVal) {
         const trimmed = textVal.trim();
         if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-          // Robust URL-based fetching fallback (perfect for mobile upload via URL)
-          const resp = await fetch(trimmed);
-          if (resp.ok) {
-            zipData = await resp.arrayBuffer();
+          // Check for Google Drive links and convert to direct download stream/redirect
+          let targetUrl = trimmed;
+          const driveMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || trimmed.match(/id=([a-zA-Z0-9_-]+)/);
+          if (driveMatch && driveMatch[1]) {
+            targetUrl = `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
           }
+          // Redirect buyer's browser directly to the cloud deliverable URL
+          return c.redirect(targetUrl, 302);
         } else if (trimmed.startsWith('data:application/zip;base64,') || /^[A-Za-z0-9+/=]+$/.test(trimmed)) {
           // Base64-encoded string fallback
           const base64Str = trimmed.startsWith('data:') ? trimmed.split(',')[1] : trimmed;
@@ -282,7 +285,17 @@ app.get('/api/download', async (c) => {
   }
 
   if (!zipData) {
-    return c.text('ASSET_UNAVAILABLE', 500);
+    if (!isProduction) {
+      // In local dev/testing mode without KV binding, provide minimal valid ZIP payload
+      const dummyBuffer = new Uint8Array([
+        0x50, 0x4b, 0x05, 0x06, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+      ]);
+      zipData = dummyBuffer.buffer;
+    } else {
+      return c.json({ error: 'ASSET_UNAVAILABLE' }, 500);
+    }
   }
 
   return new Response(zipData, {

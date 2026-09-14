@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, ShieldCheck, AlertCircle, Loader2, Check, Wallet, Smartphone, Zap } from 'lucide-react';
+import { ShoppingCart, ShieldCheck, AlertCircle, Loader2, Check, Wallet, Smartphone, Zap, ExternalLink } from 'lucide-react';
 import { PRODUCT_INFO } from '../config';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -117,10 +117,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Network Selection Pill */}
         <div className="mt-3 flex items-center justify-between text-[10px] sm:text-xs text-gray-400 bg-[#161616] border border-white/5 p-2 rounded-xl">
           <span className="font-mono text-gray-400">Payment Network:</span>
-          <span className="font-mono text-[#00C853] font-bold flex items-center gap-1">
+          <a
+            href="https://bscscan.com/token/0x55d398326f99059fF775485246999027B3197955"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-[#00C853] hover:underline font-bold flex items-center gap-1"
+            title="Ver contrato oficial USDT en BscScan"
+          >
             <span className="w-2 h-2 rounded-full bg-[#00C853] animate-pulse" />
-            BNB Smart Chain (BEP-20)
-          </span>
+            <span>BNB Smart Chain (BEP-20)</span>
+            <ExternalLink className="w-3 h-3 text-gray-400" />
+          </a>
         </div>
       </div>
 

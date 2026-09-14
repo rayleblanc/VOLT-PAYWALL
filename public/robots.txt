@@ -1,0 +1,31 @@
+# Robots.txt for VOLT Paywall (SEO & GEO Optimized for 2026 AI Crawlers)
+User-agent: *
+Allow: /
+Disallow: /api/admin/
+
+# AI Search Engines & GEO Indexers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+Sitemap: /sitemap.xml

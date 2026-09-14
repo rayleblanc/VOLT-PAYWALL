@@ -399,12 +399,11 @@ export default function App() {
               onClick={() => setIsEmbedModalOpen(true)}
               className="text-[#FFB800] hover:underline flex items-center gap-1 cursor-pointer font-bold"
             >
-              <Eye className="w-3 h-3" />
-              <span>{language === 'ES' ? 'Ver Live Demo del Producto' : 'Product Live Demo'}</span>
+              <Code className="w-3 h-3" />
+              <span>{language === 'ES' ? 'Generar Código Embed para tu Web' : 'Embed Paywall Button'}</span>
             </button>
           </div>
           <div className="flex items-center gap-4 text-gray-400">
-            {APP_MODE === 'demo' && <span>0x8f3a...demo-hash</span>}
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#00C853]" />
               <span>{t.footer.serverOnline}</span>

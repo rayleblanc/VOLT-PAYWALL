@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Clock, Sparkles, ShieldCheck, Loader2, AlertTriangle, Send, Wallet, RefreshCw, RotateCcw } from 'lucide-react';
+import { Copy, Check, Clock, Sparkles, ShieldCheck, Loader2, AlertTriangle, Send, Wallet, RefreshCw, RotateCcw, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { Order } from '../types';
 import { QRCodeView } from './QRCodeView';
 import { WalletCard } from './WalletCard';
@@ -332,43 +332,21 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
             </div>
           </div>
 
-          {/* Simulation / Status Controls Box */}
-          {APP_MODE === 'demo' && (
-            <div className="mt-1 p-3.5 sm:p-4 bg-[#181818] rounded-xl sm:rounded-2xl border border-white/5 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-[#FFB800] uppercase tracking-widest flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>DEMO MODE</span>
-                </span>
-                <span className="text-[10px] text-gray-500 font-mono">
-                  Demo Mode
-                </span>
-              </div>
-
-              <p className="text-xs text-gray-400 leading-relaxed">
-                Click below to simulate real-time blockchain payment confirmation.
-              </p>
-
-              <button
-                onClick={onSimulatePayment}
-                disabled={isSimulating}
-                aria-label="Simulate payment confirmation"
-                className="w-full bg-[#FFB800] text-black py-3 sm:py-3.5 rounded-xl text-xs font-bold hover:bg-[#FFC107] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {isSimulating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin text-black" />
-                    <span>{t.checkout.simulating}</span>
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="w-4 h-4 text-black" />
-                    <span>{t.checkout.simulatePaymentDemo}</span>
-                  </>
-                )}
-              </button>
+          {/* Live Trust Box */}
+          <div className="mt-1 p-3.5 sm:p-4 bg-[#181818] rounded-xl sm:rounded-2xl border border-emerald-500/20 space-y-2">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#00C853]" />
+                <span>DIRECT P2P SETTLEMENT</span>
+              </span>
+              <span className="text-[10px] text-gray-400">
+                0% Platform Fees
+              </span>
             </div>
-          )}
+            <p className="text-[11px] text-gray-400 leading-relaxed">
+              Funds transfer directly on-chain to the merchant wallet without custody holds or third-party delays.
+            </p>
+          </div>
         </div>
 
         {/* EIP-1193 Wallet Bento Card */}
@@ -392,18 +370,30 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
             </div>
 
             <div className="flex items-center justify-between pb-2 border-b border-white/5">
+              <span className="text-xs text-gray-400 font-medium">Official Contract</span>
+              <a
+                href="https://bscscan.com/token/0x55d398326f99059fF775485246999027B3197955"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-[#FFB800] hover:underline font-mono text-xs flex items-center gap-1"
+                title="Verify USDT Contract on BscScan"
+              >
+                <span>0x55d3...7955</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+
+            <div className="flex items-center justify-between pb-2 border-b border-white/5">
               <span className="text-xs text-gray-400 font-medium">Est. Network Gas</span>
               <span className="font-bold text-gray-300 font-mono">~0.0002 BNB (~$0.02)</span>
             </div>
 
-            {APP_MODE === 'demo' && (
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400 font-medium">Order Mode</span>
-                <span className="font-bold text-[#FFB800] font-mono text-xs">
-                  Demo Simulation
-                </span>
-              </div>
-            )}
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-400 font-medium">Verification Engine</span>
+              <span className="font-bold text-[#00C853] font-mono text-xs">
+                4-Node Failover RPC
+              </span>
+            </div>
           </div>
         </div>
       </div>

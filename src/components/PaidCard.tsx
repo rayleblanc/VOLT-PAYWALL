@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Download, Copy, Check, FileCode, ShieldCheck, Clock, HelpCircle, Mail } from 'lucide-react';
+import { CheckCircle2, Download, Copy, Check, FileCode, ShieldCheck, Clock, HelpCircle, Mail, ExternalLink } from 'lucide-react';
 import { Order } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -9,9 +9,10 @@ interface PaidCardProps {
 }
 
 export const PaidCard: React.FC<PaidCardProps> = ({ order, onDownloadClick }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [copiedTx, setCopiedTx] = useState(false);
   const isLate = order.status === 'PAID_LATE';
+  const isSpanish = language === 'ES';
 
   const handleCopyTx = async () => {
     if (!order.txHash) return;
@@ -89,7 +90,7 @@ export const PaidCard: React.FC<PaidCardProps> = ({ order, onDownloadClick }) =>
         <div className="flex items-center justify-between pb-3 border-b border-white/5 text-sm">
           <span className="text-gray-400 font-medium">Status</span>
           <span className={`font-mono font-bold text-xs ${isLate ? 'text-amber-400' : 'text-[#00C853]'}`}>
-            {isLate ? 'PAID_LATE' : 'PAID (On-Chain Confirmed)'}
+            {isLate ? 'PAID_LATE (Granted)' : 'PAID (On-Chain Confirmed)'}
           </span>
         </div>
 
@@ -103,18 +104,30 @@ export const PaidCard: React.FC<PaidCardProps> = ({ order, onDownloadClick }) =>
               <span className="font-mono text-xs text-gray-300 truncate">
                 {order.txHash}
               </span>
-              <button
-                onClick={handleCopyTx}
-                aria-label="Copy Tx Hash"
-                className="p-1.5 rounded-lg text-xs font-medium bg-[#222222] hover:bg-[#333333] text-gray-200 transition-colors cursor-pointer shrink-0"
-                title="Copy Hash"
-              >
-                {copiedTx ? (
-                  <Check className="w-3.5 h-3.5 text-[#00C853]" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5" />
-                )}
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <a
+                  href={`https://bscscan.com/tx/${order.txHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1.5 px-2.5 rounded-lg text-xs font-mono font-bold bg-[#222222] hover:bg-[#333333] text-[#FFB800] transition-colors inline-flex items-center gap-1"
+                  title="Ver en BscScan"
+                >
+                  <span>BscScan</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                <button
+                  onClick={handleCopyTx}
+                  aria-label="Copy Tx Hash"
+                  className="p-1.5 rounded-lg text-xs font-medium bg-[#222222] hover:bg-[#333333] text-gray-200 transition-colors cursor-pointer"
+                  title="Copy Hash"
+                >
+                  {copiedTx ? (
+                    <Check className="w-3.5 h-3.5 text-[#00C853]" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -126,12 +139,12 @@ export const PaidCard: React.FC<PaidCardProps> = ({ order, onDownloadClick }) =>
           <FileCode className="w-5 h-5" />
         </div>
         <div className="text-xs text-gray-300">
-          <span className="font-bold text-white block">Creator Pack Access</span>
-          <span>Full Source Code + PDF Guide + Commercial License</span>
+          <span className="font-bold text-white block">VOLT Paywall V1 Commercial Package</span>
+          <span>Full Source Code + PDF Owner Guides + Commercial License</span>
         </div>
       </div>
 
-      {/* PAID_LATE Integrated Support Bento Box */}
+      {/* PAID_LATE Support Box */}
       {isLate && (
         <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-2">
           <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
@@ -139,15 +152,8 @@ export const PaidCard: React.FC<PaidCardProps> = ({ order, onDownloadClick }) =>
             <span>Late Payment Support</span>
           </div>
           <p className="text-xs text-amber-200/90 leading-relaxed">
-            Your payment was registered as <span className="font-mono font-bold text-white">PAID_LATE</span>. Your access is fully granted. If you need support, contact us with reference #{order.orderId}.
+            Your payment was registered as <span className="font-mono font-bold text-white">PAID_LATE</span>. Your access is fully unlocked.
           </p>
-          <div className="pt-2 flex items-center gap-2 text-xs font-mono text-gray-300">
-            <Mail className="w-3.5 h-3.5 text-[#FFB800]" />
-            <a href="mailto:support@voltpaywall.com" className="text-[#FFB800] hover:underline font-bold">
-              support@voltpaywall.com
-            </a>
-            <span className="text-gray-500">· Ref #{order.orderId}</span>
-          </div>
         </div>
       )}
 
@@ -162,9 +168,9 @@ export const PaidCard: React.FC<PaidCardProps> = ({ order, onDownloadClick }) =>
           <span>{t.paid.downloadProduct}</span>
         </button>
 
-        <p className="text-center text-xs text-gray-500 flex items-center justify-center gap-1">
+        <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-[#00C853]" />
-          <span>{t.paid.instantDeliveryNotice}</span>
+          <span>{isSpanish ? 'Entrega digital instantánea verificada on-chain' : 'Instant digital delivery verified on-chain'}</span>
         </p>
       </div>
     </div>
