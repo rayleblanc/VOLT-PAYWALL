@@ -177,10 +177,10 @@ export const WalletCard: React.FC = () => {
             <div className="p-3 bg-white/5 border border-white/10 rounded-2xl space-y-2">
               <div className="flex items-center gap-2 text-gray-300">
                 <AlertTriangle className="w-4 h-4 text-[#FFB800] shrink-0" />
-                <span className="text-xs font-bold">Proveedor Web3 No Encontrado</span>
+                <span className="text-xs font-bold">Navegador Móvil / Sin Extensión Web3</span>
               </div>
               <p className="text-xs text-gray-400 leading-relaxed">
-                No se detectó un navegador con wallet Web3 (MetaMask, Trust Wallet, Coinbase Wallet).
+                Estás en un navegador estándar. Puedes pagar fácilmente escaneando el QR o copiando la dirección receptora de arriba desde Binance, Trust Wallet, MetaMask o cualquier app cripto.
               </p>
             </div>
             <button

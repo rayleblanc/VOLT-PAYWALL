@@ -24,10 +24,11 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
   onWalletPaymentSent,
 }) => {
   const { walletState, connect, switchNetwork } = useWallet();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const isEs = language === 'ES';
 
   const handleExecuteWalletPayment = async () => {
     if (isPaying || timeRemainingSeconds <= 0) return;
@@ -326,8 +327,8 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
                 {isExpired
                   ? t.checkout.expiredDesc
                   : order.status === 'CONFIRMING'
-                  ? 'Verifying confirmations on BNB Smart Chain...'
-                  : 'Monitoring BNB Smart Chain network...'}
+                  ? (isEs ? 'Verificando confirmaciones en BNB Smart Chain...' : 'Verifying confirmations on BNB Smart Chain...')
+                  : (isEs ? 'Monitoreando la red BNB Smart Chain...' : 'Monitoring BNB Smart Chain network...')}
               </p>
             </div>
           </div>
@@ -337,14 +338,16 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="text-emerald-400 font-bold flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#00C853]" />
-                <span>DIRECT P2P SETTLEMENT</span>
+                <span>{isEs ? 'LIQUIDACIÓN P2P DIRECTA' : 'DIRECT P2P SETTLEMENT'}</span>
               </span>
               <span className="text-[10px] text-gray-400">
-                0% Platform Fees
+                {isEs ? '0% Comisión' : '0% Platform Fees'}
               </span>
             </div>
             <p className="text-[11px] text-gray-400 leading-relaxed">
-              Funds transfer directly on-chain to the merchant wallet without custody holds or third-party delays.
+              {isEs
+                ? 'Los fondos se transfieren directamente on-chain a la wallet del comercio sin retenciones de custodia ni intermediarios.'
+                : 'Funds transfer directly on-chain to the merchant wallet without custody holds or third-party delays.'}
             </p>
           </div>
         </div>
@@ -355,28 +358,28 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
         {/* Details Bento Card */}
         <div className="bg-[#111111] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-6 flex-1 text-white space-y-4">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 sm:mb-4">
-            TRANSACTION DETAILS
+            {isEs ? 'DETALLES DE LA TRANSACCIÓN' : 'TRANSACTION DETAILS'}
           </h3>
 
           <div className="space-y-3 text-xs sm:text-sm">
             <div className="flex items-center justify-between pb-2 border-b border-white/5">
-              <span className="text-xs text-gray-400 font-medium">Token Asset</span>
+              <span className="text-xs text-gray-400 font-medium">{isEs ? 'Activo Token' : 'Token Asset'}</span>
               <span className="font-bold text-white font-mono">USDT (BEP-20)</span>
             </div>
 
             <div className="flex items-center justify-between pb-2 border-b border-white/5">
-              <span className="text-xs text-gray-400 font-medium">Payment Network</span>
+              <span className="text-xs text-gray-400 font-medium">{isEs ? 'Red de Pago' : 'Payment Network'}</span>
               <span className="font-bold text-white font-mono">BNB Smart Chain</span>
             </div>
 
             <div className="flex items-center justify-between pb-2 border-b border-white/5">
-              <span className="text-xs text-gray-400 font-medium">Official Contract</span>
+              <span className="text-xs text-gray-400 font-medium">{isEs ? 'Contrato Oficial' : 'Official Contract'}</span>
               <a
                 href="https://bscscan.com/token/0x55d398326f99059fF775485246999027B3197955"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-bold text-[#FFB800] hover:underline font-mono text-xs flex items-center gap-1"
-                title="Verify USDT Contract on BscScan"
+                title={isEs ? 'Verificar contrato USDT en BscScan' : 'Verify USDT Contract on BscScan'}
               >
                 <span>0x55d3...7955</span>
                 <ExternalLink className="w-3 h-3" />
@@ -384,12 +387,12 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
             </div>
 
             <div className="flex items-center justify-between pb-2 border-b border-white/5">
-              <span className="text-xs text-gray-400 font-medium">Est. Network Gas</span>
+              <span className="text-xs text-gray-400 font-medium">{isEs ? 'Gas de Red Est.' : 'Est. Network Gas'}</span>
               <span className="font-bold text-gray-300 font-mono">~0.0002 BNB (~$0.02)</span>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-400 font-medium">Verification Engine</span>
+              <span className="text-xs text-gray-400 font-medium">{isEs ? 'Motor de Verificación' : 'Verification Engine'}</span>
               <span className="font-bold text-[#00C853] font-mono text-xs">
                 4-Node Failover RPC
               </span>
