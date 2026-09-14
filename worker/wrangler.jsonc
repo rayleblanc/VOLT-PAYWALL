@@ -14,13 +14,13 @@
     {
       "binding": "DB",
       "database_name": "volt-paywall-db",
-      "database_id": "volt-paywall-db-id"
+      "database_id": "c9e2a3d2-5326-4fa8-b118-2fe8b9c6a1e7"
     }
   ],
   "kv_namespaces": [
     {
       "binding": "PRODUCT_PAYLOAD_KV",
-      "id": "volt-product-payload-kv-id"
+      "id": "13b740c4c9b9444408b236b8e96d2c9e8"
     }
   ],
   "vars": {
