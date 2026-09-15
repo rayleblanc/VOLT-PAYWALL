@@ -1,0 +1,7 @@
+.wrangler/
+.wrangler/state/
+dist/
+node_modules/
+.env*
+!.env.example
+*.log

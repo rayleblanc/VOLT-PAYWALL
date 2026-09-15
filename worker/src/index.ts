@@ -15,26 +15,28 @@ const app = new Hono<{ Bindings: Env }>();
 // CORS Middleware for API routes
 // ----------------------------------------------------------------------------
 app.use('/api/*', async (c, next) => {
-  const allowedOriginsStr = c.env.ALLOWED_ORIGINS || '*';
+  const allowedOriginsStr = c.env.ALLOWED_ORIGINS || 'https://volt-paywall.rainerblanco405.workers.dev';
   const origins = allowedOriginsStr.split(',').map((s) => s.trim());
   const originHeader = c.req.header('Origin') || '';
-  const isAllowed = origins.includes('*') || origins.includes(originHeader);
-  const allowOrigin = isAllowed ? (originHeader || '*') : (origins[0] || '*');
+  const isAllowed = origins.includes('*') || origins.includes(originHeader) || !originHeader;
+  const allowOrigin = isAllowed ? (originHeader || origins[0]) : origins[0];
 
   await next();
 
-  c.res.headers.set('Access-Control-Allow-Origin', allowOrigin);
-  c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  c.res.headers.set('Access-Control-Max-Age', '86400');
+  if (allowOrigin) {
+    c.res.headers.set('Access-Control-Allow-Origin', allowOrigin);
+    c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    c.res.headers.set('Access-Control-Max-Age', '86400');
+  }
 });
 
 app.options('/api/*', (c) => {
-  const allowedOriginsStr = c.env.ALLOWED_ORIGINS || '*';
+  const allowedOriginsStr = c.env.ALLOWED_ORIGINS || 'https://volt-paywall.rainerblanco405.workers.dev';
   const origins = allowedOriginsStr.split(',').map((s) => s.trim());
   const originHeader = c.req.header('Origin') || '';
-  const isAllowed = origins.includes('*') || origins.includes(originHeader);
-  const allowOrigin = isAllowed ? (originHeader || '*') : (origins[0] || '*');
+  const isAllowed = origins.includes('*') || origins.includes(originHeader) || !originHeader;
+  const allowOrigin = isAllowed ? (originHeader || origins[0]) : origins[0];
 
   return new Response(null, {
     status: 204,

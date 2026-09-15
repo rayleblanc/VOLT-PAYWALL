@@ -6,3 +6,12 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Cloudflare Wrangler local state & caches
+.wrangler/
+**/.wrangler/
+**/.wrangler/state/
+.cache/
+.vite/
+.turbo/
+*.local
