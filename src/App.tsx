@@ -7,12 +7,13 @@ import { PaidCard } from './components/PaidCard';
 import { DownloadModal } from './components/DownloadModal';
 import { EmbedModal } from './components/EmbedModal';
 import { WhyUsBento } from './components/WhyUsBento';
+import { PackContents } from './components/PackContents';
 import { FAQ } from './components/FAQ';
 import { Order, OrderStatus } from './types';
 import { PRODUCT_ID, POLL_INTERVAL_MS, ORDER_EXPIRATION_SECONDS, API_BASE_URL, APP_MODE } from './config';
 import { api } from './services/api';
 import { useLanguage } from './i18n/LanguageContext';
-import { AlertCircle, RotateCcw, Code, Play, Eye } from 'lucide-react';
+import { AlertCircle, RotateCcw, Code, Play, Eye, Layers } from 'lucide-react';
 
 type UiViewMode = 'IDLE' | 'CREATING_ORDER' | 'ACTIVE_ORDER' | 'ERROR';
 
@@ -21,7 +22,7 @@ export default function App() {
   const [order, setOrder] = useState<Order | null>(null);
   const [viewMode, setViewMode] = useState<UiViewMode>('IDLE');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'benefits' | 'comparison' | 'faq'>('benefits');
+  const [activeTab, setActiveTab] = useState<'pack' | 'benefits' | 'comparison' | 'faq'>('pack');
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [timeRemainingSeconds, setTimeRemainingSeconds] = useState<number>(ORDER_EXPIRATION_SECONDS);
@@ -327,7 +328,22 @@ export default function App() {
 
           {/* HORIZONTAL TABS TO REDUCE SCROLL ON MOBILE */}
           <div className="w-full max-w-5xl mx-auto mt-12 sm:mt-16 border-b border-white/10">
-            <div className="flex justify-around sm:justify-start gap-4 sm:gap-8 overflow-x-auto pb-px">
+            <div className="flex justify-start gap-4 sm:gap-8 overflow-x-auto pb-px scrollbar-none">
+              <button
+                onClick={() => setActiveTab('pack')}
+                className={`pb-4 px-1 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all relative cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  activeTab === 'pack'
+                    ? 'text-[#FFB800]'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Layers className="w-4 h-4" />
+                <span>{language === 'ES' ? '¿Qué incluye el Pack?' : "What's Included"}</span>
+                {activeTab === 'pack' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FFB800] rounded-full" />
+                )}
+              </button>
+
               <button
                 onClick={() => setActiveTab('benefits')}
                 className={`pb-4 px-1 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all relative cursor-pointer whitespace-nowrap ${
@@ -336,7 +352,7 @@ export default function App() {
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                {language === 'ES' ? 'Beneficios' : 'Why VOLT'}
+                {language === 'ES' ? 'Beneficios & ROI' : 'Why VOLT'}
                 {activeTab === 'benefits' && (
                   <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FFB800] rounded-full" />
                 )}
@@ -374,6 +390,10 @@ export default function App() {
 
           {/* TAB CONTENT AREA */}
           <div className="mt-8">
+            {activeTab === 'pack' && (
+              <PackContents />
+            )}
+
             {activeTab === 'benefits' && (
               <WhyUsBento showBentoOnly={true} />
             )}

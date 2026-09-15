@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { ChevronDown, HelpCircle, ShieldCheck, Zap, Cloud, DollarSign, Code, RefreshCw } from 'lucide-react';
+import { ChevronDown, HelpCircle, ShieldCheck, Zap, Cloud, DollarSign, Code, Send, Globe } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
 export const FAQ: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isEs = language === 'ES';
   const [openIndex, setOpenIndex] = useState<number | null>(0); // First FAQ open by default
 
   const faqItems = [
@@ -31,6 +32,11 @@ export const FAQ: React.FC = () => {
       question: t.faq.q5,
       answer: t.faq.a5,
       icon: <ShieldCheck className="w-5 h-5 text-indigo-400" />
+    },
+    {
+      question: t.faq.q6,
+      answer: t.faq.a6,
+      icon: <Globe className="w-5 h-5 text-rose-400" />
     }
   ];
 
@@ -39,7 +45,7 @@ export const FAQ: React.FC = () => {
   };
 
   return (
-    <section className="w-full max-w-4xl mx-auto mt-16 sm:mt-24 px-4 space-y-8" aria-label="Frequently Asked Questions">
+    <section className="w-full max-w-4xl mx-auto mt-4 px-4 space-y-8" aria-label="Frequently Asked Questions">
       {/* FAQ Header */}
       <div className="text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-300 text-xs font-bold uppercase tracking-wider">
@@ -69,7 +75,7 @@ export const FAQ: React.FC = () => {
             >
               <button
                 onClick={() => toggleAccordion(index)}
-                className="w-full text-left p-5 sm:p-6 flex items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFB800]"
+                className="w-full text-left p-5 sm:p-6 flex items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFB800] cursor-pointer"
                 aria-expanded={isOpen}
               >
                 <div className="flex items-center gap-3.5">
@@ -106,19 +112,25 @@ export const FAQ: React.FC = () => {
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white">¿Tienes más dudas antes de comprar?</h3>
-            <p className="text-xs text-gray-400">Verificación On-chain directa sin sorpresas. Soporte post-venta incluido.</p>
+            <h3 className="text-sm font-bold text-white">
+              {isEs ? '¿Tienes más dudas técnicas antes de comprar?' : 'Have any technical questions before purchasing?'}
+            </h3>
+            <p className="text-xs text-gray-400">
+              {isEs ? 'Verificación On-chain directa sin sorpresas. Soporte post-venta incluido.' : 'Direct on-chain verification with zero surprises. Post-sale support included.'}
+            </p>
           </div>
         </div>
         <a
           href="https://t.me/"
           target="_blank"
           rel="noopener noreferrer"
-          className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white rounded-xl transition-all whitespace-nowrap"
+          className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5"
         >
-          Soporte en Telegram &rarr;
+          <Send className="w-3.5 h-3.5 text-cyan-400" />
+          <span>{isEs ? 'Soporte en Telegram' : 'Telegram Support'} &rarr;</span>
         </a>
       </div>
     </section>
   );
 };
+
