@@ -21,32 +21,33 @@ export async function createOrderInD1(
   paymentMode: 'wallet' | 'manual' = 'manual',
   env: Env
 ): Promise<CreateOrderSuccessResponse> {
-  if (productId !== PRODUCT.id) {
+  if (productId !== PRODUCT.id && productId !== 'volt-founding-kit') {
     throw new Error(`INVALID_PRODUCT_ID: Product '${productId}' is not supported.`);
   }
 
   const orderId = generateOrderId();
-  const recipient = env.PAYMENT_RECIPIENT || DEV_PAYMENT_RECIPIENT;
+  const recipient = (env.PAYMENT_RECIPIENT || '').trim();
 
-  if (!isValidEvmAddress(recipient)) {
-    throw new Error(`INVALID_PAYMENT_RECIPIENT: Recipient address '${recipient}' is not a valid 42-character EVM address.`);
+  // Strict anti-placeholder checks: prevent deploying or processing orders with fake/dead wallets
+  const isPlaceholderOrDead = (addr: string): boolean => {
+    const lower = addr.toLowerCase();
+    if (!lower || lower.length !== 42) return true;
+    if (lower === '0x0000000000000000000000000000000000000000') return true;
+    if (lower === '0x000000000000000000000000000000000000dead') return true;
+    if (/^0x(.)\1{39}$/i.test(lower)) return true; // e.g. 0x111111... or 0xaaaaaa...
+    if (lower === '0x1234567890123456789012345678901234567890') return true;
+    return false;
+  };
+
+  if (!recipient || !isValidEvmAddress(recipient) || isPlaceholderOrDead(recipient)) {
+    throw new Error(
+      `INSECURE_RECIPIENT: Set your real personal BSC/EVM wallet address in PAYMENT_RECIPIENT before accepting real payments. Placeholder or dead addresses ('${recipient}') are strictly blocked.`
+    );
   }
 
-  const appEnv = (env.APP_ENV || 'development').toLowerCase();
-  if (appEnv === 'production' && recipient === DEV_PAYMENT_RECIPIENT) {
-    throw new Error(`INSECURE_RECIPIENT: Cannot use development placeholder recipient in production environment.`);
-  }
-
-  let amount: string;
-  let expectedAmount: string;
-
-  if (paymentMode === 'wallet') {
-    amount = PRODUCT.price; // Exact "39" USDT
-    expectedAmount = PRODUCT.price;
-  } else {
-    amount = generateExactAmount(parseInt(PRODUCT.price, 10)); // "39.XXXX"
-    expectedAmount = amount;
-  }
+  // Price is strictly 29 USDT server-side authoritative
+  const amount = PRODUCT.price; // "29" USDT
+  const expectedAmount = PRODUCT.price;
 
   // Exact BigInt calculation of 18-decimal token units (no floating point)
   const expectedUnits = usdtToTokenUnits(expectedAmount);

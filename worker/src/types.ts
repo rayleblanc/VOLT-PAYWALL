@@ -24,15 +24,24 @@ export interface Env {
   PRODUCT_PAYLOAD_KV?: KVNamespace; // Namespace for Project B ZIP delivery
   RATE_LIMIT_KV?: KVNamespace;
   ASSETS?: Fetcher;
+  JWT_SECRET?: string;
+  DRIVE_DELIVERY_URL?: string;
+  DEFAULT_DELIVERY_URL?: string;
+  SECRET_CONTENT_URL?: string;
+  DRIVE_URL?: string;
+  GOOGLE_DRIVE_URL?: string;
 }
 
 export interface ProductConfig {
   id: string;
   name: string;
-  price: string; // Base integer price as string e.g. "39"
+  price: string; // Base integer price as string e.g. "29"
   currency: 'USDT';
   network: 'BSC';
   chainId: 56 | 97;
+  active: boolean;
+  tagline?: string;
+  description?: string;
 }
 
 export interface CreateOrderRequest {

@@ -4,6 +4,7 @@ import { Order } from '../types';
 import { QRCodeView } from './QRCodeView';
 import { WalletCard } from './WalletCard';
 import { APP_MODE, BSC_USDT_CONTRACT, BSC_MAINNET_USDT_CONTRACT } from '../config';
+import { api } from '../services/api';
 import { sendUsdtTransfer } from '../services/walletService';
 import { useWallet } from '../hooks/useWallet';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -28,7 +29,39 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
   const [copied, setCopied] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [manualTxHash, setManualTxHash] = useState('');
+  const [isVerifyingManual, setIsVerifyingManual] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [showManualInput, setShowManualInput] = useState(order.paymentMode === 'manual');
   const isEs = language === 'ES';
+
+  const handleVerifyManualTx = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanHash = manualTxHash.trim();
+    if (!cleanHash || !cleanHash.startsWith('0x') || cleanHash.length !== 66) {
+      setVerifyError(
+        isEs
+          ? 'Ingresa un hash de transacción EVM válido (formato 0x... de 66 caracteres).'
+          : 'Please enter a valid 66-character EVM transaction hash starting with 0x.'
+      );
+      return;
+    }
+    setVerifyError(null);
+    setIsVerifyingManual(true);
+    try {
+      if (onWalletPaymentSent) {
+        onWalletPaymentSent(cleanHash);
+      }
+      const res = await api.verifyPayment(order.orderId, cleanHash);
+      if (!res.success && res.error) {
+        setVerifyError(res.error.message || 'Error al verificar la transacción on-chain.');
+      }
+    } catch (err: any) {
+      setVerifyError(err.message || 'Error de conexión con el nodo de verificación.');
+    } finally {
+      setIsVerifyingManual(false);
+    }
+  };
 
   const handleExecuteWalletPayment = async () => {
     if (isPaying || timeRemainingSeconds <= 0) return;
@@ -296,6 +329,73 @@ export const CheckoutCard: React.FC<CheckoutCardProps> = ({
                     </button>
                   </div>
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Manual Tx Hash Verification Form (For manual mode or wallet fallback) */}
+          {(order.status === 'PENDING' || order.status === 'CONFIRMING') && !isExpired && (
+            <div className="w-full mt-2 pt-3 border-t border-black/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-gray-700">
+                  {isEs ? '¿Ya enviaste el pago?' : 'Already sent the USDT?'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowManualInput(!showManualInput)}
+                  className="text-[11px] font-bold text-black hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <span>{showManualInput ? (isEs ? 'Ocultar' : 'Hide') : (isEs ? 'Ingresar Hash Tx' : 'Enter Tx Hash')}</span>
+                </button>
+              </div>
+
+              {showManualInput && (
+                <form onSubmit={handleVerifyManualTx} className="space-y-2 animate-fade-in">
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      value={manualTxHash}
+                      onChange={(e) => setManualTxHash(e.target.value)}
+                      placeholder="0x..."
+                      className="flex-1 bg-white border border-gray-300 focus:border-black rounded-xl px-3 py-2 text-xs font-mono text-black placeholder:text-gray-400 outline-none transition-all shadow-sm"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isVerifyingManual || !manualTxHash.trim()}
+                      className="px-3.5 py-2 bg-black hover:bg-gray-800 disabled:bg-gray-300 disabled:text-gray-500 text-white font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shrink-0 shadow-sm"
+                    >
+                      {isVerifyingManual ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>{isEs ? 'Verificando...' : 'Checking...'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="w-3.5 h-3.5 text-[#FFB800]" />
+                          <span>{isEs ? 'Verificar' : 'Verify'}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {verifyError && (
+                    <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs space-y-1 text-rose-900 animate-fade-in">
+                      <div className="flex items-start gap-1.5 font-bold text-rose-950">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-600 mt-0.5" />
+                        <span>{isEs ? 'Error de Verificación On-Chain' : 'On-Chain Verification Error'}</span>
+                      </div>
+                      <p className="text-[11px] text-rose-800 pl-5 leading-relaxed">
+                        {verifyError}
+                      </p>
+                    </div>
+                  )}
+
+                  <p className="text-[10px] text-gray-500 leading-tight">
+                    {isEs
+                      ? 'El Worker verificará en BNB Smart Chain que el hash corresponda a una transferencia de 29 USDT hacia la wallet del comercio.'
+                      : 'The Worker will verify on BNB Smart Chain that this transaction transferred 29 USDT to the merchant wallet.'}
+                  </p>
+                </form>
               )}
             </div>
           )}

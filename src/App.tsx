@@ -1,28 +1,38 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { EnvironmentBanner } from './components/EnvironmentBanner';
 import { Header } from './components/Header';
+import { HeroSection } from './components/HeroSection';
 import { ProductCard } from './components/ProductCard';
+import { PainSection } from './components/PainSection';
+import { HowItWorks } from './components/HowItWorks';
+import { WhatYouGet } from './components/WhatYouGet';
+import { WhatYouDoNotGet } from './components/WhatYouDoNotGet';
+import { ComparisonSection } from './components/ComparisonSection';
+import { FutureCatalogSection } from './components/FutureCatalogSection';
+import { FAQ } from './components/FAQ';
 import { CheckoutCard } from './components/CheckoutCard';
 import { PaidCard } from './components/PaidCard';
 import { DownloadModal } from './components/DownloadModal';
 import { EmbedModal } from './components/EmbedModal';
-import { WhyUsBento } from './components/WhyUsBento';
-import { PackContents } from './components/PackContents';
-import { FAQ } from './components/FAQ';
+import { InteractiveDemo } from './components/InteractiveDemo';
+import { NavigationTabs, MainNavTab } from './components/NavigationTabs';
+import { MobileFloatingDock } from './components/MobileFloatingDock';
 import { Order, OrderStatus } from './types';
 import { PRODUCT_ID, POLL_INTERVAL_MS, ORDER_EXPIRATION_SECONDS, API_BASE_URL, APP_MODE } from './config';
 import { api } from './services/api';
+import { mockApi } from './services/mockApi';
 import { useLanguage } from './i18n/LanguageContext';
-import { AlertCircle, RotateCcw, Code, Play, Eye, Layers } from 'lucide-react';
+import { AlertCircle, RotateCcw, Code, ArrowLeft, ShoppingCart, ShieldCheck, Zap } from 'lucide-react';
 
 type UiViewMode = 'IDLE' | 'CREATING_ORDER' | 'ACTIVE_ORDER' | 'ERROR';
 
 export default function App() {
   const { t, language } = useLanguage();
+  const isEs = language === 'ES';
   const [order, setOrder] = useState<Order | null>(null);
   const [viewMode, setViewMode] = useState<UiViewMode>('IDLE');
+  const [activeTab, setActiveTab] = useState<MainNavTab>('checkout');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'pack' | 'benefits' | 'comparison' | 'faq'>('pack');
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
   const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [timeRemainingSeconds, setTimeRemainingSeconds] = useState<number>(ORDER_EXPIRATION_SECONDS);
@@ -63,6 +73,7 @@ export default function App() {
         const expireMs = new Date(response.order.expiresAt).getTime();
         const remaining = Math.max(0, Math.floor((expireMs - Date.now()) / 1000));
         setTimeRemainingSeconds(remaining);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         setErrorMessage(response.error?.message || 'No se pudo crear la orden.');
         setViewMode('ERROR');
@@ -73,7 +84,30 @@ export default function App() {
     }
   };
 
-  // Simulate payment confirmation handler (Demo Mode)
+  // Interactive Demo Handler - allows visitors to test the sandbox before buying
+  const handleTryDemo = () => {
+    setActiveTab('demo');
+    setTimeout(() => {
+      const demoElem = document.getElementById('interactive-demo');
+      if (demoElem) {
+        demoElem.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 50);
+  };
+
+  const scrollToPricing = () => {
+    setActiveTab('checkout');
+    setTimeout(() => {
+      const pricingElem = document.getElementById('pricing-block');
+      if (pricingElem) {
+        pricingElem.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        handleBuyNow('wallet');
+      }
+    }, 50);
+  };
+
+  // Simulate payment confirmation handler (for demo testing)
   const handleSimulatePayment = async () => {
     if (!order || isSimulatingPayment) return;
 
@@ -93,19 +127,18 @@ export default function App() {
     }
   };
 
-  // Reset demo handler
-  const handleResetDemo = async () => {
+  // Reset / Return to landing page
+  const handleReset = async () => {
     clearTimers();
     if (order?.orderId) {
-      await api.resetDemoOrder(order.orderId);
-    } else {
-      await api.resetDemoOrder();
+      await api.resetDemoOrder(order.orderId).catch(() => {});
     }
     setOrder(null);
     setViewMode('IDLE');
     setErrorMessage(null);
     setIsDownloadModalOpen(false);
     setTimeRemainingSeconds(ORDER_EXPIRATION_SECONDS);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Handle product download - triggers commercial zip package /volt-paywall-kit.zip
@@ -117,21 +150,22 @@ export default function App() {
         const token = res.data.token;
         if (token.startsWith('mock_tok_')) {
           // Direct download of commercial starter pack zip
-          const element = document.createElement("a");
-          element.href = "/volt-paywall-kit.zip";
-          element.download = "volt-paywall-kit.zip";
+          const element = document.createElement('a');
+          element.href = '/volt-paywall-kit.zip';
+          element.download = 'volt-paywall-kit.zip';
+          element.style.display = 'none';
           document.body.appendChild(element);
           element.click();
-          document.body.removeChild(element);
+          setTimeout(() => document.body.removeChild(element), 1000);
         } else {
-          // Production server-side tokenized download route
+          // Production server-side tokenized download route (triggers direct download or Google Drive 302 redirect)
           const downloadUrl = `${API_BASE_URL || ''}/api/download?token=${encodeURIComponent(token)}`;
-          window.location.href = downloadUrl;
+          window.location.assign(downloadUrl);
         }
       } else {
         alert(res.error?.message || 'No se pudo obtener el token de descarga.');
       }
-    } catch (err) {
+    } catch {
       alert('Error de conexión al solicitar la descarga.');
     }
   };
@@ -232,33 +266,43 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#080808] text-white flex flex-col font-sans selection:bg-[#FFB800]/30 selection:text-[#FFB800]">
-      {/* Network Environment Indicator Banner (Testnet vs Mainnet) */}
+      {/* Network Environment Indicator Banner */}
       <EnvironmentBanner />
 
       {/* Header */}
       <Header
-        onResetDemo={handleResetDemo}
+        onResetDemo={handleReset}
         showReset={viewMode !== 'IDLE'}
         onOpenEmbedModal={() => setIsEmbedModalOpen(true)}
+        onTryDemo={handleTryDemo}
       />
 
-      {/* Main Body */}
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full">
-          {/* SCREEN 1: PRODUCT CARD */}
-          {(viewMode === 'IDLE' || viewMode === 'CREATING_ORDER' || viewMode === 'ERROR') && (
-            <ProductCard
-              onBuyNow={(mode) => handleBuyNow(mode)}
-              isLoading={viewMode === 'CREATING_ORDER'}
-              error={errorMessage}
-              onRetry={() => handleBuyNow('wallet')}
-            />
-          )}
+      {/* Main Content Area */}
+      <main className="flex-1 w-full pb-20 md:pb-0">
+        {/* ============================================================ */}
+        {/* CHECKOUT / ACTIVE ORDER SCREEN (When an order is in progress) */}
+        {/* ============================================================ */}
+        {viewMode === 'ACTIVE_ORDER' && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+            {/* Back to Landing Navigation Bar */}
+            <div className="mb-6 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={handleReset}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>{isEs ? 'Volver a la tienda' : 'Back to Store'}</span>
+              </button>
 
-          {/* SCREEN 2: CHECKOUT BENTO GRID (PENDING or CONFIRMING) */}
-          {viewMode === 'ACTIVE_ORDER' &&
-            order &&
-            (order.status === 'PENDING' || order.status === 'CONFIRMING') && (
+              <div className="flex items-center gap-2 text-xs font-mono text-gray-400">
+                <span className="w-2 h-2 rounded-full bg-[#00C853] animate-pulse" />
+                <span>BSC BEP-20 Checkout</span>
+              </div>
+            </div>
+
+            {/* PENDING / CONFIRMING CHECKOUT */}
+            {order && (order.status === 'PENDING' || order.status === 'CONFIRMING') && (
               <CheckoutCard
                 order={order}
                 timeRemainingSeconds={timeRemainingSeconds}
@@ -268,40 +312,37 @@ export default function App() {
               />
             )}
 
-          {/* SCREEN 3: PAID CONFIRMED CARD (PAID or PAID_LATE) */}
-          {viewMode === 'ACTIVE_ORDER' &&
-            order &&
-            (order.status === 'PAID' || order.status === 'PAID_LATE') && (
+            {/* PAID / PAID_LATE CARD */}
+            {order && (order.status === 'PAID' || order.status === 'PAID_LATE') && (
               <PaidCard
                 order={order}
                 onDownloadClick={handleDownload}
               />
             )}
 
-          {/* EXPIRED ORDER STATE */}
-          {viewMode === 'ACTIVE_ORDER' && order && order.status === 'EXPIRED' && (
-            <div className="w-full max-w-md mx-auto bg-[#111111] border border-white/10 rounded-3xl p-6 sm:p-8 text-center space-y-4">
-              <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
-                <AlertCircle className="w-6 h-6" />
+            {/* EXPIRED STATE */}
+            {order && order.status === 'EXPIRED' && (
+              <div className="w-full max-w-md mx-auto bg-[#111111] border border-white/10 rounded-3xl p-6 sm:p-8 text-center space-y-4">
+                <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                <h2 className="text-xl font-bold text-white">{t.checkout.expiredTitle}</h2>
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  {t.checkout.expiredDesc}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="w-full py-3.5 px-4 bg-[#FFB800] hover:bg-[#FFC107] text-black font-bold text-sm rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>{t.checkout.createNewOrder}</span>
+                </button>
               </div>
-              <h2 className="text-xl font-bold text-white">{t.checkout.expiredTitle}</h2>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                {t.checkout.expiredDesc}
-              </p>
-              <button
-                onClick={handleResetDemo}
-                className="w-full py-3.5 px-4 bg-[#FFB800] hover:bg-[#FFC107] text-black font-bold text-sm rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>{t.checkout.createNewOrder}</span>
-              </button>
-            </div>
-          )}
+            )}
 
-          {/* CANCELLED OR MANUAL REVIEW STATE */}
-          {viewMode === 'ACTIVE_ORDER' &&
-            order &&
-            (order.status === 'CANCELLED' || order.status === 'MANUAL_REVIEW') && (
+            {/* CANCELLED STATE */}
+            {order && (order.status === 'CANCELLED' || order.status === 'MANUAL_REVIEW') && (
               <div className="w-full max-w-md mx-auto bg-[#111111] border border-white/10 rounded-3xl p-6 sm:p-8 text-center space-y-4">
                 <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
                   <AlertCircle className="w-6 h-6" />
@@ -317,7 +358,8 @@ export default function App() {
                     : t.checkout.cancelledDesc}
                 </p>
                 <button
-                  onClick={handleResetDemo}
+                  type="button"
+                  onClick={handleReset}
                   className="w-full py-3.5 px-4 bg-[#FFB800] hover:bg-[#FFC107] text-black font-bold text-sm rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
                   <RotateCcw className="w-4 h-4" />
@@ -325,108 +367,165 @@ export default function App() {
                 </button>
               </div>
             )}
-
-          {/* HORIZONTAL TABS TO REDUCE SCROLL ON MOBILE */}
-          <div className="w-full max-w-5xl mx-auto mt-12 sm:mt-16 border-b border-white/10">
-            <div className="flex justify-start gap-4 sm:gap-8 overflow-x-auto pb-px scrollbar-none">
-              <button
-                onClick={() => setActiveTab('pack')}
-                className={`pb-4 px-1 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all relative cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                  activeTab === 'pack'
-                    ? 'text-[#FFB800]'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                <Layers className="w-4 h-4" />
-                <span>{language === 'ES' ? '¿Qué incluye el Pack?' : "What's Included"}</span>
-                {activeTab === 'pack' && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FFB800] rounded-full" />
-                )}
-              </button>
-
-              <button
-                onClick={() => setActiveTab('benefits')}
-                className={`pb-4 px-1 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all relative cursor-pointer whitespace-nowrap ${
-                  activeTab === 'benefits'
-                    ? 'text-[#FFB800]'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                {language === 'ES' ? 'Beneficios & ROI' : 'Why VOLT'}
-                {activeTab === 'benefits' && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FFB800] rounded-full" />
-                )}
-              </button>
-              
-              <button
-                onClick={() => setActiveTab('comparison')}
-                className={`pb-4 px-1 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all relative cursor-pointer whitespace-nowrap ${
-                  activeTab === 'comparison'
-                    ? 'text-[#FFB800]'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                {language === 'ES' ? 'Comparativa' : 'Comparison'}
-                {activeTab === 'comparison' && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FFB800] rounded-full" />
-                )}
-              </button>
-
-              <button
-                onClick={() => setActiveTab('faq')}
-                className={`pb-4 px-1 text-xs sm:text-sm font-bold tracking-wider uppercase transition-all relative cursor-pointer whitespace-nowrap ${
-                  activeTab === 'faq'
-                    ? 'text-[#FFB800]'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                FAQ
-                {activeTab === 'faq' && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FFB800] rounded-full" />
-                )}
-              </button>
-            </div>
           </div>
+        )}
 
-          {/* TAB CONTENT AREA */}
-          <div className="mt-8">
-            {activeTab === 'pack' && (
-              <PackContents />
+        {/* ============================================================ */}
+        {/* PUBLIC STORE / MARKETING LANDING (Tab-Driven Mobile-First UI) */}
+        {/* ============================================================ */}
+        {viewMode !== 'ACTIVE_ORDER' && (
+          <div className="w-full">
+            {/* Top Navigation Tabs - Eliminates endless mobile scroll */}
+            <NavigationTabs
+              activeTab={activeTab}
+              onSelectTab={(tab) => setActiveTab(tab)}
+            />
+
+            {/* TAB 1: CHECKOUT & STORE (Default High-Converting View) */}
+            {(activeTab === 'checkout' || activeTab === 'all') && (
+              <div>
+                {/* 1) Hero Section */}
+                <HeroSection
+                  onBuyNow={handleBuyNow}
+                  onTryDemo={handleTryDemo}
+                  isLoading={viewMode === 'CREATING_ORDER'}
+                />
+
+                {/* Pricing & Checkout Box */}
+                <section className="w-full px-4 sm:px-6 pb-12 sm:pb-16">
+                  <ProductCard
+                    onBuyNow={handleBuyNow}
+                    onTryDemo={handleTryDemo}
+                    isLoading={viewMode === 'CREATING_ORDER'}
+                    error={errorMessage}
+                    onRetry={() => handleBuyNow('wallet')}
+                  />
+                </section>
+
+                {/* Quick highlights when inside checkout tab */}
+                {activeTab === 'checkout' && (
+                  <div className="space-y-6">
+                    <WhatYouGet />
+                    <WhatYouDoNotGet />
+                  </div>
+                )}
+              </div>
             )}
 
-            {activeTab === 'benefits' && (
-              <WhyUsBento showBentoOnly={true} />
-            )}
-            
-            {activeTab === 'comparison' && (
-              <WhyUsBento showTableOnly={true} />
+            {/* TAB 2: INTERACTIVE DEMO PLAYGROUND */}
+            {(activeTab === 'demo' || activeTab === 'all') && (
+              <div className="py-2">
+                <InteractiveDemo onBuyFullKit={scrollToPricing} />
+              </div>
             )}
 
-            {activeTab === 'faq' && (
-              <FAQ />
+            {/* TAB 3: WHAT'S INSIDE / KIT SPECIFICATIONS */}
+            {(activeTab === 'kit' || activeTab === 'all') && (
+              <div>
+                {activeTab === 'kit' && (
+                  <div className="text-center py-6 px-4">
+                    <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+                      {isEs ? 'Qué Incluye el Commercial Kit' : 'What’s Inside the Commercial Kit'}
+                    </h2>
+                    <p className="text-xs sm:text-sm text-gray-400 mt-2 max-w-xl mx-auto">
+                      {isEs
+                        ? 'Todo el código fuente listo para producción, backend Cloudflare Worker, verificación RPC y generador de embeds.'
+                        : 'Production-ready source code, Cloudflare Worker backend, RPC verification engine, and embed generator.'}
+                    </p>
+                  </div>
+                )}
+                <WhatYouGet />
+                <WhatYouDoNotGet />
+                <HowItWorks />
+              </div>
             )}
+
+            {/* TAB 4: COMPARISON VS GUMROAD / LEMON SQUEEZY */}
+            {(activeTab === 'comparison' || activeTab === 'all') && (
+              <div>
+                <PainSection />
+                <ComparisonSection />
+              </div>
+            )}
+
+            {/* TAB 5: FAQ & ROADMAP */}
+            {(activeTab === 'faq' || activeTab === 'all') && (
+              <div>
+                <FAQ />
+                <FutureCatalogSection />
+              </div>
+            )}
+
+            {/* Floating Re-Anchor Buy CTA Banner (Shown on tab 'all' or bottom of individual tabs) */}
+            <section className="w-full py-10 sm:py-16 bg-gradient-to-b from-[#090909] to-[#080808] border-t border-white/5 text-center px-4">
+              <div className="max-w-2xl mx-auto space-y-5 sm:space-y-6">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] text-xs font-mono font-bold uppercase">
+                  <Zap className="w-3.5 h-3.5 fill-[#FFB800]" />
+                  <span>Founding / launch · 29 USDT</span>
+                </div>
+                <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight leading-tight">
+                  {isEs
+                    ? 'Empieza a recibir pagos USDT directos en tu wallet hoy'
+                    : 'Start receiving direct USDT payments straight to your wallet today'}
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
+                  {isEs
+                    ? '0% comisión de intermediarios. Código fuente completo + generador de embeds + licencia comercial ilimitada.'
+                    : '0% platform fees. Full source code + embed generator + unlimited commercial license.'}
+                </p>
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('checkout');
+                      scrollToPricing();
+                    }}
+                    className="w-full sm:w-auto px-8 py-4 bg-[#FFB800] hover:bg-[#FFC107] text-black font-black text-sm sm:text-base rounded-2xl transition-all shadow-xl shadow-[#FFB800]/20 inline-flex items-center justify-center gap-2.5 cursor-pointer active:scale-95"
+                  >
+                    <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-black" />
+                    <span>{t.hero.ctaPrimary}</span>
+                  </button>
+                </div>
+              </div>
+            </section>
           </div>
-        </div>
+        )}
       </main>
 
+      {/* Floating Thumb Dock for Mobile View */}
+      {viewMode !== 'ACTIVE_ORDER' && (
+        <MobileFloatingDock
+          activeTab={activeTab}
+          onSelectTab={(tab) => {
+            setActiveTab(tab);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onBuyNow={() => {
+            setActiveTab('checkout');
+            scrollToPricing();
+          }}
+          isCreatingOrder={viewMode === 'CREATING_ORDER'}
+        />
+      )}
 
       {/* Footer */}
-      <footer className="py-6 border-t border-white/5 text-[11px] text-gray-500 font-mono">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-3 text-center sm:text-left">
+      <footer className="py-8 border-t border-white/5 text-[11px] text-gray-400 font-mono bg-[#070707]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
-            <span>{t.footer.poweredBy}</span>
+            <span className="text-gray-300 font-semibold">{t.footer.poweredBy}</span>
             <button
+              type="button"
               onClick={() => setIsEmbedModalOpen(true)}
               className="text-[#FFB800] hover:underline flex items-center gap-1 cursor-pointer font-bold"
             >
-              <Code className="w-3 h-3" />
-              <span>{language === 'ES' ? 'Generar Código Embed para tu Web' : 'Embed Paywall Button'}</span>
+              <Code className="w-3.5 h-3.5" />
+              <span>{isEs ? 'Generar Código Embed para tu Web' : 'Embed Paywall Button'}</span>
             </button>
           </div>
           <div className="flex items-center gap-4 text-gray-400">
             <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00C853]" />
-              <span>{t.footer.serverOnline}</span>
+              <span className="w-2 h-2 rounded-full bg-[#00C853] shadow-[0_0_6px_#00C853]" />
+              <span>BNB Smart Chain (BEP-20)</span>
             </span>
           </div>
         </div>

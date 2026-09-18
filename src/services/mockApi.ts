@@ -17,12 +17,10 @@ import {
 const mockOrdersStore: Map<string, Order> = new Map();
 
 /**
- * Generates an exact amount as a string with strictly 4 decimal places between 29.0001 and 29.9999 USDT
+ * Generates exact amount as a string strictly 29.00 USDT
  */
 function generateSimulatedAmount(basePrice: number): string {
-  const randomFraction = Math.floor(Math.random() * 9999) + 1;
-  const amount = basePrice + randomFraction / 10000;
-  return amount.toFixed(4); // Returns string with exactly 4 decimal places
+  return `${basePrice}.00`;
 }
 
 /**
@@ -60,17 +58,8 @@ export const mockApi: ApiClient = {
       let amountExactStr: string;
       let expectedUnitsStr: string;
 
-      if (paymentMode === 'wallet') {
-        amountExactStr = '29';
-        expectedUnitsStr = '29000000000000000000';
-      } else {
-        amountExactStr = generateSimulatedAmount(PRODUCT_INFO.basePrice);
-        // Multiply by 10^18 using BigInt
-        const integerPart = BigInt(PRODUCT_INFO.basePrice);
-        const fractionalPartStr = amountExactStr.split('.')[1] || '0000';
-        const rawUnits = integerPart * 1000000000000000000n + BigInt(fractionalPartStr) * 100000000000000n;
-        expectedUnitsStr = rawUnits.toString();
-      }
+      amountExactStr = '29.00';
+      expectedUnitsStr = '29000000000000000000';
 
       const expiresAtIso = new Date(Date.now() + ORDER_EXPIRATION_SECONDS * 1000).toISOString();
 
@@ -151,6 +140,39 @@ export const mockApi: ApiClient = {
       success: true,
       statusResponse,
       order: { ...order },
+    };
+  },
+
+  /**
+   * Simulates payment verification with txHash
+   */
+  async verifyPayment(orderId: string, txHash: string): Promise<ApiClientResponse<OrderStatusResponse>> {
+    await delay(500);
+    const order = mockOrdersStore.get(orderId);
+    if (!order) {
+      return {
+        success: false,
+        error: { code: 'ORDER_NOT_FOUND', message: 'Orden no encontrada.' },
+      };
+    }
+    order.status = 'PAID';
+    order.txHash = txHash;
+    order.confirmations = 3;
+    mockOrdersStore.set(orderId, order);
+    return {
+      success: true,
+      statusResponse: {
+        orderId: order.orderId,
+        status: 'PAID',
+        amount: order.amount,
+        currency: 'USDT',
+        network: 'BSC',
+        chainId: order.chainId,
+        recipient: order.recipientAddress,
+        expiresAt: order.expiresAt,
+        txHash,
+        confirmations: 3,
+      },
     };
   },
 

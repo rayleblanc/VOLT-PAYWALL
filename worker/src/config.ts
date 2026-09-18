@@ -2,18 +2,48 @@
 
 import { ProductConfig } from './types';
 
-// Server-side authoritative product specification (BSC Mainnet default)
-export const PRODUCT: ProductConfig = {
-  id: 'creator-pack',
-  name: 'All-in-One Creator Pack',
-  price: '29',
-  currency: 'USDT',
-  network: 'BSC',
-  chainId: 56, // BNB Smart Chain Mainnet by default, configurable via env.CHAIN_ID
-};
+// Server-side authoritative products catalog
+export const PRODUCTS: ProductConfig[] = [
+  {
+    id: 'creator-pack',
+    name: 'VOLT Paywall V1 — Commercial Kit',
+    price: '29',
+    currency: 'USDT',
+    network: 'BSC',
+    chainId: 56,
+    active: true,
+    tagline: 'Self-Hosted USDT Checkout Engine',
+    description: 'Complete source code + Cloudflare Worker backend + unlimited commercial license.',
+  },
+  {
+    id: 'volt-affiliates',
+    name: 'VOLT Affiliates — On-Chain Referral Splitter',
+    price: '49',
+    currency: 'USDT',
+    network: 'BSC',
+    chainId: 56,
+    active: false,
+    tagline: 'Coming soon',
+    description: 'Automated on-chain revenue sharing and affiliate payouts for digital merchants.',
+  },
+  {
+    id: 'volt-subscriptions',
+    name: 'VOLT Subscriptions — Token-Gated Recurring Access',
+    price: '59',
+    currency: 'USDT',
+    network: 'BSC',
+    chainId: 56,
+    active: false,
+    tagline: 'Coming soon',
+    description: 'Time-expiring cryptographic passes and periodic renewal checks without custodian.',
+  },
+];
 
-// Fallback payment receiver address for local dev (Overridden by env.PAYMENT_RECIPIENT in production)
-export const DEV_PAYMENT_RECIPIENT = '0x000000000000000000000000000000000000dEaD';
+// Active single product specification (BSC Mainnet default)
+export const PRODUCT: ProductConfig = PRODUCTS[0];
+
+// Fallback payment receiver address (Matches production recipient: 0x1750C0c093650C36DcF45843446567FF3f50cC5A)
+export const DEV_PAYMENT_RECIPIENT = '0x1750C0c093650C36DcF45843446567FF3f50cC5A';
 
 // BSC Mainnet & Testnet Constants
 export const BSC_MAINNET_CHAIN_ID = 56;

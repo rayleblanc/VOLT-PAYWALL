@@ -157,6 +157,18 @@ export const PaidCard: React.FC<PaidCardProps> = ({ order, onDownloadClick }) =>
         </div>
       )}
 
+      {/* Limited Time Notice */}
+      <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-center">
+        <p className="text-xs text-amber-300 font-medium flex items-center justify-center gap-1.5">
+          <Clock className="w-4 h-4 text-[#FFB800] shrink-0" />
+          <span>
+            {isSpanish
+              ? 'Descarga y acceso disponible por tiempo limitado (token criptográfico de un solo uso válido por 1 hora).'
+              : 'Download / access available for a limited time (one-time signed token valid for 1 hour).'}
+          </span>
+        </p>
+      </div>
+
       {/* Download Action */}
       <div className="space-y-3">
         <button

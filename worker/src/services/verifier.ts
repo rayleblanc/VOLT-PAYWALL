@@ -130,53 +130,105 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
 
   // Path A: Direct validation if a client txHash is provided (EIP-1193 direct flow)
   if (clientTxHash && typeof clientTxHash === 'string' && clientTxHash.startsWith('0x') && clientTxHash.length === 66) {
+    // 1. Anti-replay check: ensure txHash has never been assigned to any other order in D1
+    const isDupeOrder = await env.DB.prepare(
+      `SELECT id FROM orders WHERE tx_hash = ? AND id != ? LIMIT 1`
+    ).bind(clientTxHash, orderId).first();
+    const isDupePayment = await env.DB.prepare(
+      `SELECT id FROM payments WHERE tx_hash = ? AND order_id != ? LIMIT 1`
+    ).bind(clientTxHash, orderId).first();
+
+    if (isDupeOrder || isDupePayment) {
+      const error: any = new Error('Este hash de transacción ya fue utilizado en otra orden.');
+      error.code = 'TRANSACTION_ALREADY_USED';
+      error.status = 409;
+      throw error;
+    }
+
     try {
       const receipt = await getTransactionReceipt(env, clientTxHash);
       if (receipt) {
         const isSuccess = receipt.status === '0x1' || receipt.status === '0x01' || (receipt as any).status === true;
-        if (isSuccess) {
-          const logs = receipt.logs || [];
-          for (const log of logs) {
-            // A. Verify contract address
-            if (!log.address || log.address.toLowerCase() !== tokenContract.toLowerCase()) {
-              continue;
-            }
-            // B. Verify Transfer event topic
-            if (!log.topics || log.topics[0] !== TRANSFER_EVENT_TOPIC) {
-              continue;
-            }
-            // C. Verify recipient ("to" address in topics[2])
-            const toAddr = decodeTopicAddress(log.topics[2]);
-            if (!toAddr || toAddr !== recipient.toLowerCase()) {
-              continue;
-            }
-            // D. Verify amount value
-            const valBigInt = decodeHexUint256(log.data);
-            if (valBigInt !== expectedUnitsBigInt) {
-              continue;
-            }
-            // E. Verify block number >= resolvedCreatedBlock
-            const blockNum = parseInt(log.blockNumber || receipt.blockNumber, 16);
-            if (isNaN(blockNum) || blockNum < resolvedCreatedBlock) {
-              continue;
-            }
+        if (!isSuccess) {
+          const error: any = new Error('La transacción falló o fue revertida en la blockchain.');
+          error.code = 'TRANSACTION_FAILED_ON_CHAIN';
+          error.status = 400;
+          throw error;
+        }
 
-            const fromAddr = decodeTopicAddress(log.topics[1]) || receipt.from || '0x0000000000000000000000000000000000000000';
-            const confirmations = Math.max(0, currentBlock - blockNum + 1);
+        const logs = receipt.logs || [];
+        let foundTransfer = false;
+        let invalidRecipientFound = false;
+        let amountTooLowFound = false;
 
-            validCandidate = {
-              txHash: clientTxHash,
-              fromAddress: fromAddr,
-              toAddress: recipient.toLowerCase(),
-              amountUnits: expectedUnits,
-              blockNumber: blockNum,
-              confirmations,
-            };
-            break;
+        for (const log of logs) {
+          // A. Verify contract address
+          if (!log.address || log.address.toLowerCase() !== tokenContract.toLowerCase()) {
+            continue;
           }
+          // B. Verify Transfer event topic
+          if (!log.topics || log.topics[0] !== TRANSFER_EVENT_TOPIC) {
+            continue;
+          }
+          foundTransfer = true;
+
+          // C. Verify recipient ("to" address in topics[2])
+          const toAddr = decodeTopicAddress(log.topics[2]);
+          if (!toAddr || toAddr !== recipient.toLowerCase()) {
+            invalidRecipientFound = true;
+            continue;
+          }
+          // D. Verify amount value
+          const valBigInt = decodeHexUint256(log.data);
+          if (valBigInt < expectedUnitsBigInt) {
+            amountTooLowFound = true;
+            continue;
+          }
+          // E. Verify block number >= resolvedCreatedBlock
+          const blockNum = parseInt(log.blockNumber || receipt.blockNumber, 16);
+          if (isNaN(blockNum) || blockNum < resolvedCreatedBlock) {
+            continue;
+          }
+
+          const fromAddr = decodeTopicAddress(log.topics[1]) || receipt.from || '0x0000000000000000000000000000000000000000';
+          const confirmations = Math.max(0, currentBlock - blockNum + 1);
+
+          validCandidate = {
+            txHash: clientTxHash,
+            fromAddress: fromAddr,
+            toAddress: recipient.toLowerCase(),
+            amountUnits: expectedUnits,
+            blockNumber: blockNum,
+            confirmations,
+          };
+          break;
+        }
+
+        if (!validCandidate && foundTransfer) {
+          if (amountTooLowFound) {
+            const error: any = new Error('Monto pagado inferior al precio requerido (29 USDT).');
+            error.code = 'INSUFFICIENT_AMOUNT';
+            error.status = 400;
+            throw error;
+          }
+          if (invalidRecipientFound) {
+            const error: any = new Error('La transacción no transfirió los fondos a la wallet de cobro del comercio.');
+            error.code = 'WRONG_RECIPIENT';
+            error.status = 400;
+            throw error;
+          }
+        } else if (!validCandidate && !foundTransfer && logs.length > 0) {
+          // If logs exist but none for USDT contract
+          const error: any = new Error('El token transferido no corresponde al contrato oficial de USDT (BEP-20) en BSC.');
+          error.code = 'WRONG_TOKEN';
+          error.status = 400;
+          throw error;
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.code) {
+        throw err;
+      }
       console.warn(`Direct tx receipt verification failed for ${clientTxHash}:`, err);
     }
   }

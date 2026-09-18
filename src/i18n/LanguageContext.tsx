@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type Language = 'EN' | 'ES';
 
 export interface Translations {
-  // Header & General
+  // Navigation & General Header
   nav: {
     title: string;
     modeDemo: string;
@@ -13,7 +13,119 @@ export interface Translations {
     resetDemo: string;
   };
 
-  // Product Card
+  // 1) Hero Section
+  hero: {
+    headline: string;
+    sub: string;
+    ctaPrimary: string;
+    ctaSecondary: string;
+    launchBadge: string;
+    badgeZeroFee: string;
+    badgeNonCustodial: string;
+    badgeNetwork: string;
+    tagline: string;
+    runsOnCloudflare: string;
+  };
+
+  // 2) Pain Section
+  pain: {
+    badge: string;
+    heading: string;
+    subheading: string;
+    card1Title: string;
+    card1Desc: string;
+    card2Title: string;
+    card2Desc: string;
+    card3Title: string;
+    card3Desc: string;
+    card4Title: string;
+    card4Desc: string;
+  };
+
+  // 3) How It Works Section
+  howItWorks: {
+    badge: string;
+    heading: string;
+    subheading: string;
+    step1Badge: string;
+    step1Title: string;
+    step1Desc: string;
+    step2Badge: string;
+    step2Title: string;
+    step2Desc: string;
+    step3Badge: string;
+    step3Title: string;
+    step3Desc: string;
+  };
+
+  // 4) What You Get (Concreto)
+  whatYouGet: {
+    badge: string;
+    heading: string;
+    subheading: string;
+    item1Title: string;
+    item1Desc: string;
+    item2Title: string;
+    item2Desc: string;
+    item3Title: string;
+    item3Desc: string;
+    item4Title: string;
+    item4Desc: string;
+    item5Title: string;
+    item5Desc: string;
+    item6Title: string;
+    item6Desc: string;
+    item7Title: string;
+    item7Desc: string;
+  };
+
+  // 5) What You Do NOT Get (Confianza / Honestidad)
+  whatYouDoNotGet: {
+    badge: string;
+    heading: string;
+    subheading: string;
+    item1Title: string;
+    item1Desc: string;
+    item2Title: string;
+    item2Desc: string;
+    item3Title: string;
+    item3Desc: string;
+    item4Title: string;
+    item4Desc: string;
+  };
+
+  // 6) Comparison vs Gumroad / Lemon Squeezy
+  comparison: {
+    badge: string;
+    heading: string;
+    subheading: string;
+    colFeature: string;
+    colGumroad: string;
+    colLemon: string;
+    colVolt: string;
+    rowFee: string;
+    gumroadFee: string;
+    lemonFee: string;
+    voltFee: string;
+    rowCustody: string;
+    gumroadCustody: string;
+    lemonCustody: string;
+    voltCustody: string;
+    rowPayout: string;
+    gumroadPayout: string;
+    lemonPayout: string;
+    voltPayout: string;
+    rowChargebacks: string;
+    gumroadChargebacks: string;
+    lemonChargebacks: string;
+    voltChargebacks: string;
+    rowCost: string;
+    gumroadCost: string;
+    lemonCost: string;
+    voltCost: string;
+  };
+
+  // 7) Pricing & Product Card
   product: {
     paywallTag: string;
     noFeesTag: string;
@@ -42,9 +154,11 @@ export interface Translations {
     retry: string;
     connectionError: string;
     urgencyBadge: string;
+    directBscText: string;
+    demoButton: string;
   };
 
-  // Checkout Card
+  // Active Checkout Card
   checkout: {
     activeOrder: string;
     timeRemaining: string;
@@ -69,7 +183,7 @@ export interface Translations {
     backToStart: string;
   };
 
-  // Paid Card
+  // Paid Confirmation Card
   paid: {
     paymentConfirmed: string;
     latePaymentConfirmed: string;
@@ -81,69 +195,41 @@ export interface Translations {
     confirmationsCount: string;
   };
 
-  // Why Us Bento
-  whyUs: {
+  // 8) FAQ Section
+  faq: {
     badge: string;
     heading: string;
     subheading: string;
-    valueSectionBadge: string;
-    valueSectionHeading: string;
-    valueSectionSubheading: string;
-    roiTitle: string;
-    roiSubtitle: string;
-    roiMathGumroad: string;
-    roiMathLemon: string;
-    roiMathVolt: string;
-    roiMathSaved: string;
-    card1Title: string;
-    card1Sub: string;
-    card1Desc: string;
-    tradGatewaysFee: string;
-    voltFee: string;
-    card2Title: string;
-    card2Desc: string;
-    card2Foot: string;
-    card3Title: string;
-    card3Desc: string;
-    card3Foot: string;
-    card4Title: string;
-    card4Sub: string;
-    card4Desc: string;
-    noKyc: string;
-    walletQrSupport: string;
-    globalBorderless: string;
-    tableHeading: string;
-    tableSub: string;
-    colFeature: string;
-    colStripe: string;
-    colGumroad: string;
-    colCryptoCentralized: string;
-    colVolt: string;
-    rowFee: string;
-    stripeFeeVal: string;
-    gumroadFeeVal: string;
-    cryptoFeeVal: string;
-    voltFeeVal: string;
-    rowCustody: string;
-    stripeCustodyVal: string;
-    gumroadCustodyVal: string;
-    cryptoCustodyVal: string;
-    voltCustodyVal: string;
-    rowPayout: string;
-    stripePayoutVal: string;
-    gumroadPayoutVal: string;
-    cryptoPayoutVal: string;
-    voltPayoutVal: string;
-    rowChargebacks: string;
-    stripeChargebackVal: string;
-    gumroadChargebackVal: string;
-    cryptoChargebackVal: string;
-    voltChargebackVal: string;
-    rowKyc: string;
-    stripeKycVal: string;
-    gumroadKycVal: string;
-    cryptoKycVal: string;
-    voltKycVal: string;
+    q1: string;
+    a1: string;
+    q2: string;
+    a2: string;
+    q3: string;
+    a3: string;
+    q4: string;
+    a4: string;
+    q5: string;
+    a5: string;
+  };
+
+  // 9) Future Catalog / Coming Next
+  catalog: {
+    badge: string;
+    title: string;
+    sub: string;
+    startsCopy: string;
+    comingSoonTag: string;
+  };
+
+  // Mobile & Desktop Navigation Tabs
+  navTabs: {
+    checkout: string;
+    demo: string;
+    kit: string;
+    comparison: string;
+    faq: string;
+    all: string;
+    buyNowFloating: string;
   };
 
   // Embed Modal
@@ -175,32 +261,76 @@ export interface Translations {
     close: string;
   };
 
-  // FAQ Section
-  faq: {
-    badge: string;
-    heading: string;
-    subheading: string;
-    q1: string;
-    a1: string;
-    q2: string;
-    a2: string;
-    q3: string;
-    a3: string;
-    q4: string;
-    a4: string;
-    q5: string;
-    a5: string;
-    q6: string;
-    a6: string;
-    supportNotice: string;
-    supportAction: string;
-  };
-
   // Footer
   footer: {
     poweredBy: string;
     generateEmbed: string;
     serverOnline: string;
+  };
+
+  // Interactive Demo Sandbox
+  demoPlayground: {
+    badge: string;
+    heading: string;
+    subheading: string;
+    bannerNotice: string;
+    ctaFixed: string;
+    tabCheckout: string;
+    tabBrand: string;
+    tabSavings: string;
+    tabWorkerChecks: string;
+    checkoutBadge: string;
+    checkoutTitle: string;
+    sampleToyPrice: string;
+    sampleToyDisclaimer: string;
+    copyAddress: string;
+    copiedAddress: string;
+    networkNotice: string;
+    btnSimulateWallet: string;
+    btnSimulateManual: string;
+    btnResetDemo: string;
+    verifyingTitle: string;
+    verifyingStep1: string;
+    verifyingStep2: string;
+    verifyingStep3: string;
+    successTitle: string;
+    successDesc: string;
+    sampleDownloadBtn: string;
+    sampleFileNotice: string;
+    brandTitle: string;
+    brandDesc: string;
+    storeNameLabel: string;
+    productNameLabel: string;
+    priceLabel: string;
+    colorLabel: string;
+    copyEmbedCode: string;
+    copiedEmbedCode: string;
+    livePreviewTag: string;
+    savingsTitle: string;
+    savingsDesc: string;
+    monthlySalesLabel: string;
+    productPriceLabel: string;
+    gumroadLoss: string;
+    lemonLoss: string;
+    voltPlatformCut: string;
+    netAnnualSavings: string;
+    netMonthlySavings: string;
+    estimateDisclaimer: string;
+    workerChecksTitle: string;
+    workerChecksDesc: string;
+    check1Title: string;
+    check1Detail: string;
+    check2Title: string;
+    check2Detail: string;
+    check3Title: string;
+    check3Detail: string;
+    check4Title: string;
+    check4Detail: string;
+    check5Title: string;
+    check5Detail: string;
+    provableThingsTitle: string;
+    provableThingsSubtitle: string;
+    provableThingsList: Array<{ title: string; desc: string; badge: string }>;
   };
 }
 
@@ -214,43 +344,145 @@ export const translations: Record<Language, Translations> = {
       integrateNoCode: 'Integrate No-Code',
       resetDemo: 'Reset Demo',
     },
+    hero: {
+      headline: 'Self-hosted USDT checkout for digital products',
+      sub: 'Accept USDT (BEP-20) on BNB Smart Chain straight to your wallet. 0% platform fee. Full source code.',
+      ctaPrimary: 'Buy the Kit — 29 USDT',
+      ctaSecondary: 'Try interactive demo',
+      launchBadge: 'Founding / Launch Offer',
+      badgeZeroFee: '0% Platform Fee',
+      badgeNonCustodial: '100% Non-Custodial',
+      badgeNetwork: 'BNB Smart Chain (BEP-20)',
+      tagline: 'Direct P2P crypto payments for creators, developers & digital products',
+      runsOnCloudflare: 'Runs on Cloudflare. Add your own domain later.',
+    },
+    pain: {
+      badge: 'THE PROBLEM WITH LEGACY PLATFORMS',
+      heading: 'Stop Sacrificing 10% of Your Revenue to Intermediaries',
+      subheading: 'Why creators and digital sellers are ditching Gumroad, Lemon Squeezy, and Stripe',
+      card1Title: '10% Gumroad & Lemon Squeezy Fees',
+      card1Desc: 'Gumroad takes 10% + $0.30 and Lemon Squeezy takes 5% + $0.50 on every single sale. On $5,000 of digital products, you bleed $250 - $530+ to a middleman.',
+      card2Title: '90-Day Rolling Reserves & Holds',
+      card2Desc: 'Custodial platforms arbitrarily lock 10% of your earnings for 90 days under the pretext of risk management, strangling your operating cash flow.',
+      card3Title: 'Stripe Denials & Chargeback Disputes',
+      card3Desc: 'Sudden account terminations, steep $15 dispute fees on fraudulent chargebacks, and strict geographic restrictions locking out international buyers.',
+      card4Title: 'No Need for Another Crypto SaaS',
+      card4Desc: 'Why pay $29/mo or $99/mo to a third-party crypto gateway that holds your funds and can change their terms overnight? Own your infrastructure for life.',
+    },
+    howItWorks: {
+      badge: '3-STEP PROCESS',
+      heading: 'How It Works',
+      subheading: 'From zero to receiving payments directly in your wallet in less than 2 minutes',
+      step1Badge: 'STEP 1',
+      step1Title: 'Deploy on Cloudflare',
+      step1Desc: 'Run our 1-click setup script or wrangler deploy to publish on Cloudflare Workers ($0/mo on the free tier, 100k requests/day).',
+      step2Badge: 'STEP 2',
+      step2Title: 'Customer pays USDT to your wallet',
+      step2Desc: 'Your customer transfers USDT (BEP-20) directly to your personal EVM address. 100% peer-to-peer, zero intermediary custody.',
+      step3Badge: 'STEP 3',
+      step3Title: 'Worker verifies on-chain and unlocks access',
+      step3Desc: 'The Worker detects the on-chain transfer event (~3s), validates the exact amount, and unlocks the tokenized download immediately.',
+    },
+    whatYouGet: {
+      badge: 'EVERYTHING INCLUDED',
+      heading: 'What You Get in the Commercial Kit',
+      subheading: 'A complete, production-ready software package to sell digital products with crypto',
+      item1Title: 'Source Worker + Frontend',
+      item1Desc: 'Full editable stack with React 18, Vite, Tailwind CSS, and Cloudflare Worker API (Hono + TypeScript). Clean, modular, and unbloated.',
+      item2Title: 'Studio & Embed Generator',
+      item2Desc: 'Visual generator to produce responsive iframe embed snippets and direct checkout links ready for WordPress, Webflow, Shopify, Notion, or custom sites.',
+      item3Title: 'Automated On-Chain Verification',
+      item3Desc: 'Multi-node RPC failover engine that monitors Binance-Peg USDT BEP-20 transfer events with real-time settlement (~3s finality).',
+      item4Title: 'Anti-Replay Architecture',
+      item4Desc: 'Idempotent payment ledger, block range validation, and single-use txHash checking to strictly prevent double-spending and replay attacks.',
+      item5Title: 'Unlimited Commercial License',
+      item5Desc: 'Deploy on unlimited personal stores, SaaS products, or client projects. Zero recurring fees, zero restrictions, and zero royalties forever.',
+      item6Title: 'Beginner-Friendly Documentation',
+      item6Desc: 'Step-by-step PDF & Markdown deployment guides with complete environment variables reference and 1-click setup.sh script.',
+      item7Title: 'Optional Telegram Alerts',
+      item7Desc: 'Pre-configured native webhook that pings your phone or private channel the instant a sale is confirmed on-chain.',
+    },
+    whatYouDoNotGet: {
+      badge: 'RADICAL HONESTY & TRUST',
+      heading: 'What You Do NOT Get',
+      subheading: 'Honest boundaries so you know exactly what you are purchasing with zero false promises',
+      item1Title: 'No File DRM',
+      item1Desc: 'Files are delivered as clean standard digital downloads (ZIP). We do not inject invasive DRM, telemetry, or proprietary reader locks into your customer’s files.',
+      item2Title: 'No Managed Customer File Hosting',
+      item2Desc: 'You host your digital files wherever you prefer (Cloudflare R2, AWS S3, Google Drive, or your own server). VOLT manages checkout and tokenized access.',
+      item3Title: 'No Multi-Chain in v1',
+      item3Desc: 'Engineered strictly for BNB Smart Chain (BEP-20) to maintain sub-cent gas fees (~$0.01-$0.03) and ~3-second block times without multi-chain complexity.',
+      item4Title: 'Network Gas is Separate',
+      item4Desc: 'Buyers pay their own standard microscopic BSC network gas (~$0.01-$0.03) directly via their wallet, just like any standard on-chain transfer.',
+    },
+    comparison: {
+      badge: 'COMMISSIONS & MONEY CONTROL',
+      heading: 'VOLT Paywall vs. Gumroad & Lemon Squeezy',
+      subheading: 'Commissions and money control compared side-by-side',
+      colFeature: 'Feature',
+      colGumroad: 'Gumroad',
+      colLemon: 'Lemon Squeezy',
+      colVolt: 'VOLT Paywall',
+      rowFee: 'Platform Fee',
+      gumroadFee: '10% + $0.30 per sale',
+      lemonFee: '5% + $0.50 per sale',
+      voltFee: '0% (0.00% Platform Fee)',
+      rowCustody: 'Fund Custody',
+      gumroadCustody: 'Platform retains your balance',
+      lemonCustody: 'Platform retains your balance',
+      voltCustody: '100% Direct to Your Wallet',
+      rowPayout: 'Payout Timing',
+      gumroadPayout: 'Weekly delayed payouts',
+      lemonPayout: '90-Day Rolling Reserve (10%)',
+      voltPayout: 'Instant (~3 seconds on BSC)',
+      rowChargebacks: 'Chargeback & Ban Risk',
+      gumroadChargebacks: 'High (account bans & dispute fees)',
+      lemonChargebacks: 'High (card disputes & holds)',
+      voltChargebacks: '0% (Crypto payments are final)',
+      rowCost: 'Platform Cost',
+      gumroadCost: 'Revenue cut forever',
+      lemonCost: 'Revenue cut forever',
+      voltCost: '29 USDT one-time ($0/mo hosting)',
+    },
     product: {
       paywallTag: 'VOLT PAYWALL',
-      noFeesTag: '0% FEES',
+      noFeesTag: '0% PLATFORM FEE',
       nonCustodialTag: 'Non-Custodial USDT',
-      heroHeadline: 'Your own crypto gateway on Cloudflare Free.',
-      heroSubheadline: '0% fees, direct wallet payouts, total control.',
-      title: 'All-in-One\nCreator Pack',
-      tagline: 'USDT BEP-20 Payment Gateway (0% Intermediary Fees)',
-      description: 'Complete editable source code + VOLT Studio + No-Code embeds + Telegram alerts + unlimited commercial license + step-by-step setup guide. Instant digital delivery upon on-chain confirmation.',
-      feature1: 'Full-stack editable code (React + Vite + Tailwind + Cloudflare Worker)',
-      feature2: 'VOLT Studio & No-Code embed / direct payment link generator',
-      feature3: 'Automated Telegram alerts + real-time BSC on-chain verification (~3s)',
-      feature4: 'Unlimited commercial license + 2-min setup guide ($0/mo hosting)',
+      heroHeadline: 'Self-hosted USDT checkout for digital products',
+      heroSubheadline: 'Accept USDT (BEP-20) on BNB Smart Chain straight to your wallet. 0% platform fee. Full source code.',
+      title: 'Commercial Kit — Full Access',
+      tagline: 'Self-Hosted USDT BEP-20 Checkout (0% Intermediary Fees)',
+      description: 'Complete editable source code + VOLT Studio + No-Code embeds + Telegram alerts + unlimited commercial license + beginner setup docs. Instant digital delivery upon on-chain confirmation.',
+      feature1: 'Source Worker + Frontend (React 18 + Vite + Tailwind + Cloudflare Worker)',
+      feature2: 'VOLT Studio: Visual generator for iframe embeds & direct payment links',
+      feature3: 'On-chain verification engine (~3s) with anti-replay idempotency design',
+      feature4: 'Commercial license: unlimited personal & client projects (0% royalties)',
       originalPrice: '$99.00 USD',
-      discountBadge: '70% OFF · SAVE $70',
-      totalPrice: 'DIRECT LICENSE PRICE',
+      discountBadge: 'FOUNDING LAUNCH · SAVE 70%',
+      totalPrice: 'ONE-TIME PAYMENT',
       paymentMethod: 'PAYMENT METHOD',
       payWithWallet: 'Pay with Wallet',
       manualPayment: 'Manual Payment / QR',
-      walletMethodSub: 'Exact payment of 29.00 USDT via Web3 Wallet on BNB Smart Chain (BEP-20).',
-      manualMethodSub: 'Direct transfer with unique micro-decimals for automated verification without connecting a wallet.',
-      buyNowWallet: 'Get Creator Pack — 29.00 USDT',
+      walletMethodSub: 'Exact transfer of 29.00 USDT via Web3 Wallet on BNB Smart Chain (BEP-20).',
+      manualMethodSub: 'Direct transfer with automated on-chain verification without connecting your wallet.',
+      buyNowWallet: 'Buy the Kit — 29 USDT',
       buyNowManual: 'Proceed with Manual Payment',
       creatingOrder: 'Generating payment order...',
       secureNotice: 'Instant digital delivery upon on-chain confirmation',
       retry: 'Retry',
       connectionError: 'Connection error while creating order.',
-      urgencyBadge: 'PERPETUAL LICENSE · ANCHOR $99 → $29 USDT',
+      urgencyBadge: 'Founding / launch',
+      directBscText: 'Direct BSC payment. No VOLT per-sale fee.',
+      demoButton: 'Try interactive demo',
     },
     checkout: {
-      activeOrder: 'ORDER CREATED',
+      activeOrder: 'ACTIVE PAYMENT ORDER',
       timeRemaining: 'TIME REMAINING',
       orderId: 'Order ID',
       amountToPay: 'Amount to Transfer',
       recipientAddress: 'Recipient Wallet Address',
-      network: 'Network',
-      statusPending: 'Awaiting Payment...',
+      network: 'Payment Network',
+      statusPending: 'Awaiting On-Chain Payment...',
       statusConfirming: 'Confirming On-Chain...',
       copyAddress: 'Copy Address',
       addressCopied: 'Address Copied!',
@@ -258,7 +490,7 @@ export const translations: Record<Language, Translations> = {
       txSentConfirming: 'Transaction Broadcasted - Confirming...',
       simulatePaymentDemo: 'Simulate Payment Confirmation (Demo Mode)',
       simulating: 'Simulating payment...',
-      manualInstructions: 'Send the exact amount shown above to the recipient address. Verification is performed automatically in real-time.',
+      manualInstructions: 'Send the exact amount shown above to the recipient address on BNB Smart Chain. Verification is performed automatically in real-time.',
       expiredTitle: 'Order Has Expired',
       expiredDesc: 'The time limit to complete the payment has ended. Please create a new order.',
       createNewOrder: 'Create New Order',
@@ -267,77 +499,45 @@ export const translations: Record<Language, Translations> = {
       backToStart: 'Back to Start',
     },
     paid: {
-      paymentConfirmed: 'Payment Confirmed!',
+      paymentConfirmed: 'Payment Confirmed On-Chain!',
       latePaymentConfirmed: 'Late Payment Confirmed',
-      orderCompleted: 'Your payment was successfully verified on BNB Smart Chain.',
+      orderCompleted: 'Your payment of 29 USDT was verified on BNB Smart Chain.',
       txHashLabel: 'Transaction Hash (txHash)',
       viewOnBscScan: 'View on BscScan',
-      downloadProduct: 'Download Creator Pack',
+      downloadProduct: 'Download Commercial Kit (ZIP)',
       instantDeliveryNotice: 'Secure instant digital delivery powered by VOLT Engine.',
       confirmationsCount: 'Confirmations',
     },
-    whyUs: {
-      badge: 'Next-Gen USDT Payment Gateway',
-      heading: 'Why Creators & Developers Choose VOLT Paywall over Stripe or Gumroad?',
-      subheading: 'The fastest, non-custodial USDT BEP-20 payment gateway designed for creators, SaaS, and digital sellers seeking full revenue control.',
-      valueSectionBadge: 'WHY IT IS WORTH 10X MORE / VALUE STACK',
-      valueSectionHeading: 'Save Thousands in Platform Fees: Gumroad vs. VOLT Paywall',
-      valueSectionSubheading: 'Gumroad & Lemon Squeezy eat up to 10% of your revenue and hold reserves. VOLT Paywall gives you 100% financial independence for life.',
-      roiTitle: 'Instant ROI Calculation: Gumroad vs. VOLT Paywall',
-      roiSubtitle: 'How much money are you giving away to platform fees every time you sell $5,000 USD?',
-      roiMathGumroad: 'Gumroad Fees (10% + $0.30): You pay $500.00+ USD to intermediaries',
-      roiMathLemon: 'Lemon Squeezy (5% + $0.50 + 10% Reserve): $250+ USD held for 90 days',
-      roiMathVolt: 'VOLT Paywall ($29 USDT One-Time): $0.00 platform fees. 100% directly in your wallet',
-      roiMathSaved: 'Net Profit Saved: $500.00 USD on your first $5k sales — 17x ROI on day 1!',
-      card1Title: '0% Intermediary Fees',
-      card1Sub: 'DIRECT WALLET-TO-WALLET PAYMENTS',
-      card1Desc: 'Unlike Stripe or custodial crypto processors charging 1% to 5% per transaction, VOLT Paywall transfers 100% of USDT directly to your personal wallet. Only standard BNB chain gas (~$0.01 - $0.03) applies.',
-      tradGatewaysFee: 'Traditional Gateways',
-      voltFee: 'VOLT Paywall',
-      card2Title: '100% Self-Custodial (Non-Custodial)',
-      card2Desc: 'Your funds never touch centralized servers. Zero risk of account freezes, rolling reserves, or malicious chargebacks.',
-      card2Foot: 'Your Wallet, Your Keys',
-      card3Title: 'Automated On-Chain Verification',
-      card3Desc: 'Smart scanning of Transfer events on BNB Smart Chain with RPC failover tolerance and instant digital delivery.',
-      card3Foot: 'Instant Confirmation (~3 sec)',
-      card4Title: 'Serverless Deploy in 2 Minutes',
-      card4Sub: 'Cloudflare Workers + Vite / React + D1 SQLite',
-      card4Desc: 'Modern architecture ready to deploy on Cloudflare Workers or any Node.js server. No complex database setup required.',
-      noKyc: 'No signups or KYC',
-      walletQrSupport: 'MetaMask & QR Support',
-      globalBorderless: 'Global & Borderless',
-      tableHeading: 'Direct Gateway Cost & Risk Comparison (2026)',
-      tableSub: 'Compare key features and hidden platform fees of VOLT Paywall against market alternatives.',
-      colFeature: 'Feature',
-      colStripe: 'Stripe / Cards',
-      colGumroad: 'Gumroad / Lemon Squeezy',
-      colCryptoCentralized: 'Centralized Crypto (BitPay/Coinbase)',
-      colVolt: 'VOLT Paywall (BEP-20)',
-      rowFee: 'Transaction / Platform Fee',
-      stripeFeeVal: '2.9% + $0.30 USD',
-      gumroadFeeVal: '10.0% or 5.0% + $0.50',
-      cryptoFeeVal: '1.0% - 2.0% per tx',
-      voltFeeVal: '0.00% (0% Platform Fee)',
-      rowCustody: 'Fund Custody & Risk',
-      stripeCustodyVal: 'Centralized (Stripe Hold)',
-      gumroadCustodyVal: '10% Rolling Reserve (90 Days)',
-      cryptoCustodyVal: 'Centralized Exchange',
-      voltCustodyVal: '100% Non-Custodial (Direct P2P)',
-      rowPayout: 'Payout / Settlement',
-      stripePayoutVal: '7 - 14 Business Days',
-      gumroadPayoutVal: 'Weekly Payouts (Delayed)',
-      cryptoPayoutVal: '24 - 48 Hours',
-      voltPayoutVal: 'Instant (~3 seconds)',
-      rowChargebacks: 'Chargeback & Ban Risk',
-      stripeChargebackVal: 'High (Card Fraud / Disputes)',
-      gumroadChargebackVal: 'High (Risk of Account Bans)',
-      cryptoChargebackVal: 'Low',
-      voltChargebackVal: '0% (Impossible on Blockchain)',
-      rowKyc: 'KYC & Signup Requirements',
-      stripeKycVal: 'Mandatory & Extensive',
-      gumroadKycVal: 'Identity & Bank Verification',
-      cryptoKycVal: 'Mandatory Corporate KYC',
-      voltKycVal: 'No Signup / No KYC Required',
+    faq: {
+      badge: 'FREQUENTLY ASKED QUESTIONS',
+      heading: 'Frequently Asked Questions',
+      subheading: 'Clear, honest answers to the most important questions before buying',
+      q1: 'Does it run on the free workers.dev subdomain?',
+      a1: 'Yes, absolutely! The entire stack runs 100% within Cloudflare’s Free tier (100,000 requests/day, $0/month) on your free your-name.workers.dev subdomain. You can also connect your own custom domain (e.g., checkout.yourbrand.com) in 1 click from your Cloudflare dashboard at zero extra cost.',
+      q2: 'What happens immediately after the payment is made?',
+      a2: 'The Cloudflare Worker detects the USDT transfer event on BNB Smart Chain within ~3 seconds. Once confirmed on-chain, the screen immediately unlocks, generating a secure signed download token so you can download the complete Commercial Kit ZIP right in your browser.',
+      q3: 'What are the minimum requirements to deploy and run it?',
+      a3: 'You only need three things: 1) A free Cloudflare account, 2) Any non-custodial EVM wallet (MetaMask, Trust Wallet, Rabby, Binance Web3 Wallet, etc.) to receive your USDT on BNB Smart Chain, and 3) Basic Node.js on your computer to run the initial 2-minute deployment script.',
+      q4: 'Are crypto payments irreversible?',
+      a4: 'Yes. Unlike credit cards or PayPal where buyers can initiate fraudulent chargebacks months later and incur dispute penalties, blockchain transactions on BNB Smart Chain are mathematically final. Once verified, the funds are permanently in your wallet with zero chargeback risk.',
+      q5: 'How is the digital package delivered? Is there any DRM?',
+      a5: 'Digital access is granted immediately after verified on-chain payment. You receive an authenticated token to download the complete source code package. Downloadable files can be backed up and re-sent by you as needed (no artificial DRM or vendor lock-in).',
+    },
+    catalog: {
+      badge: 'FUTURE ROADMAP',
+      title: 'More from VOLT — coming next',
+      sub: 'VOLT starts with self-hosted USDT checkout. More tools coming.',
+      startsCopy: 'VOLT starts with self-hosted USDT checkout. More tools coming.',
+      comingSoonTag: 'Coming Soon',
+    },
+    navTabs: {
+      checkout: 'Checkout',
+      demo: 'Interactive Demo',
+      kit: 'What’s Inside',
+      comparison: 'Vs Gumroad',
+      faq: 'FAQ & Safety',
+      all: 'View All',
+      buyNowFloating: 'Buy for 29 USDT',
     },
     embed: {
       title: 'No-Code Integration & Embed Generator',
@@ -366,29 +566,99 @@ export const translations: Record<Language, Translations> = {
       copiedEnv: 'Copied!',
       close: 'Close',
     },
-    faq: {
-      badge: 'FREQUENTLY ASKED QUESTIONS',
-      heading: 'Everything You Need to Know Before Buying',
-      subheading: 'Clear answers to common questions about deployment, fees, delivery, and non-custodial ownership.',
-      q1: 'Do I need to pay monthly Cloudflare subscription fees?',
-      a1: 'No, absolutely not. The entire stack (Cloudflare Workers, KV, and D1 SQLite) operates 100% within Cloudflare’s Free tier, which includes 100,000 requests per day. Your monthly hosting cost is $0 USD.',
-      q2: 'How do I receive payments?',
-      a2: 'All transfers go direct P2P to your non-custodial Web3 wallet. VOLT Paywall never holds, touches, or freezes your funds. You get instant settlement with 0% platform fees.',
-      q3: 'What if I need help installing it?',
-      a3: 'It includes an automated 1-click ./setup.sh script and a step-by-step installation guide in both English and Spanish. Any developer or creator can deploy it to Cloudflare in under 2 minutes.',
-      q4: 'What exactly is included in the Creator Pack for 29 USDT?',
-      a4: 'You get: 1) Full editable source code (React 18 + Tailwind + Cloudflare Worker), 2) VOLT Studio for No-Code embeds and direct checkout links, 3) Real-time Telegram alert webhooks, 4) BSC On-Chain verification engine with multi-RPC failover, 5) Unlimited commercial license, and 6) Step-by-step PDF/Markdown deployment guide.',
-      q5: 'How does digital delivery work and what about URL access sharing?',
-      a5: 'Delivery is 100% automated and instant. Once your 29 USDT transfer is confirmed on BNB Smart Chain (~3 seconds), a cryptographically signed token is issued to download the full ZIP or access the direct Google Drive repository. Full transparency note: like any digital product delivered via direct download or URL, buyers gain permanent access to the files and could technically share the link; we trust our creator community and provide the official commercial license so you can monetize and deploy legally.',
-      q6: 'Can I use my own custom domain on Cloudflare Workers?',
-      a6: 'Yes, absolutely! Cloudflare Workers provides a free global edge subdomain (e.g. your-paywall.workers.dev) with ultra-fast latency across 300+ cities. You can connect your own custom domain (e.g. checkout.yourbrand.com) in 1 click from your Cloudflare dashboard at zero extra cost.',
-      supportNotice: 'Have more technical questions?',
-      supportAction: 'Read Quickstart Guide',
-    },
     footer: {
-      poweredBy: 'Powered by VOLT Engine · Secure Payment Interface',
+      poweredBy: 'Powered by VOLT Paywall · Self-Hosted Crypto Checkout',
       generateEmbed: 'Generate No-Code Embed',
       serverOnline: 'Server Status: Online',
+    },
+    demoPlayground: {
+      badge: 'INTERACTIVE DEMO PLAYGROUND',
+      heading: 'Test the Customer Checkout Flow Before Paying 29 USDT',
+      subheading: 'Try the entire buyer experience in a safe client-side sandbox. Zero real crypto required, no database orders touched.',
+      bannerNotice: 'DEMO SANDBOX · ZERO REAL FUNDS REQUIRED · TEST FREELY',
+      ctaFixed: 'Get the full kit — 29 USDT',
+      tabCheckout: '1. Checkout UX Simulation',
+      tabBrand: '2. Brand & Embed Customizer',
+      tabSavings: '3. Savings Calculator',
+      tabWorkerChecks: '4. What the Worker Checks',
+      checkoutBadge: 'DEMO MODE · ZERO-RISK TOY ORDER',
+      checkoutTitle: 'Sample Digital Checkout Simulation',
+      sampleToyPrice: '12.50 USDT',
+      sampleToyDisclaimer: 'Sample toy amount for testing (not the real 29 USDT purchase).',
+      copyAddress: 'Copy Sample Address',
+      copiedAddress: 'Copied!',
+      networkNotice: 'Simulation strictly reproduces BNB Smart Chain (BEP-20) transfers.',
+      btnSimulateWallet: 'Simulate Web3 Wallet Click',
+      btnSimulateManual: 'Simulate Manual TX Hash Input',
+      btnResetDemo: 'Reset Simulation',
+      verifyingTitle: 'Verifying Transaction on BNB Smart Chain...',
+      verifyingStep1: 'Querying BSC RPC Multi-Node endpoint...',
+      verifyingStep2: 'Parsing Transfer(from, to, value) on USDT BEP-20 contract...',
+      verifyingStep3: 'Checking block confirmations (3/3 reached)...',
+      successTitle: 'Payment Confirmed On-Chain!',
+      successDesc: 'Access immediately unlocked. Tokenized download link generated in ~2.8 seconds.',
+      sampleDownloadBtn: 'Download Sample Deliverable (.txt)',
+      sampleFileNotice: 'This sample download demonstrates how paid customers immediately unlock their digital goods.',
+      brandTitle: 'Brand Customizer & Live Embed Preview',
+      brandDesc: 'Change store name and accent color to see the widget update live.',
+      storeNameLabel: 'Your Store / Brand Name',
+      productNameLabel: 'Product Name',
+      priceLabel: 'Price (USDT)',
+      colorLabel: 'Brand Accent Color',
+      copyEmbedCode: 'Copy HTML / Iframe Snippet',
+      copiedEmbedCode: 'Copied Snippet!',
+      livePreviewTag: 'Live Frontend Preview',
+      savingsTitle: 'Revenue & Savings Calculator',
+      savingsDesc: 'See how much revenue you recover every month by removing 10% platform fees.',
+      monthlySalesLabel: 'Estimated Monthly Digital Sales ($)',
+      productPriceLabel: 'Average Product Price ($)',
+      gumroadLoss: 'Lost to Gumroad (10% + $0.30/sale)',
+      lemonLoss: 'Lost to Lemon Squeezy (5% + $0.50/sale)',
+      voltPlatformCut: 'VOLT Paywall Platform Cut',
+      netAnnualSavings: 'Estimated Net Annual Savings',
+      netMonthlySavings: 'Saved per month',
+      estimateDisclaimer: '*Estimate based on standard 10% flat fee + $0.30 transaction processing for Gumroad and 5% + $0.50 for Lemon Squeezy vs 0% platform fee with VOLT Paywall. Standard BSC network gas (~$0.02) is paid directly by buyer.',
+      workerChecksTitle: 'What the Cloudflare Worker Checks On-Chain',
+      workerChecksDesc: 'Every incoming payment must satisfy 5 strict on-chain security criteria before any download token is minted:',
+      check1Title: '1. Network Verification (Chain ID: 56)',
+      check1Detail: 'Validates that the transaction hash originated strictly on BNB Smart Chain mainnet, rejecting testnet illusions or wrong networks.',
+      check2Title: '2. Official USDT BEP-20 Contract',
+      check2Detail: 'Verifies the smart contract address is strictly BSC Tether (0x55d398326f99059fF775485246999027B3197955), ignoring fake copycat tokens.',
+      check3Title: '3. Destination Merchant Wallet',
+      check3Detail: 'Confirms that the recipient address in the transfer event strictly matches your configured merchant wallet address.',
+      check4Title: '4. Exact Amount Matching',
+      check4Detail: 'Ensures the transfer value in uint256 units (18 decimals) matches or exceeds the expected order amount.',
+      check5Title: '5. Nonce / Anti-Replay Defense',
+      check5Detail: 'Verifies in D1 SQLite that the transaction hash has never been used for any previous order, permanently preventing double-spending.',
+      provableThingsTitle: '5 Things You Can Test & Verify Right Now Without Paying',
+      provableThingsSubtitle: 'Explore every facet of the self-hosted Web3 checkout experience in your browser before investing 29 USDT:',
+      provableThingsList: [
+        {
+          title: 'Full 3-Step Checkout Experience',
+          desc: 'Walk through payment instructions, live multi-stage RPC verification simulation, and instant access unlock with a sample deliverable download.',
+          badge: 'Simulated Flow',
+        },
+        {
+          title: 'Brand & Embed Customizer',
+          desc: 'Customize your store name, product title, prices, and 5 brand color themes with instant live preview and copyable HTML iframe snippets.',
+          badge: 'Frontend Studio',
+        },
+        {
+          title: 'Real Revenue Savings Calculator',
+          desc: 'Calculate exact monthly and annual revenue recovered against Gumroad (10% + $0.30) and Lemon Squeezy (5% + $0.50) based on your digital sales volume.',
+          badge: 'ROI Estimator',
+        },
+        {
+          title: 'Worker On-Chain Security Criteria Explorer',
+          desc: 'Review the 5 strict on-chain validation rules enforced by the Cloudflare Worker: BSC network, official USDT contract, merchant recipient, exact units, and anti-replay nonce.',
+          badge: 'Security Audit',
+        },
+        {
+          title: 'Live Web3 Wallet Connectivity & Network Check',
+          desc: 'Connect MetaMask or Trust Wallet in the live checkout, verify BSC Chain ID 56 detection, and test manual/QR fallback options.',
+          badge: 'EIP-1193 Ready',
+        },
+      ],
     },
   },
 
@@ -401,43 +671,145 @@ export const translations: Record<Language, Translations> = {
       integrateNoCode: 'Integrar No-Code',
       resetDemo: 'Reiniciar Demo',
     },
+    hero: {
+      headline: 'Self-hosted USDT checkout for digital products',
+      sub: 'Acepta USDT (BEP-20) en BNB Smart Chain directo a tu wallet. 0% comisión de plataforma. Código fuente completo.',
+      ctaPrimary: 'Comprar el Kit — 29 USDT',
+      ctaSecondary: 'Probar demo interactiva',
+      launchBadge: 'Oferta de Lanzamiento / Founding',
+      badgeZeroFee: '0% Comisión de Plataforma',
+      badgeNonCustodial: '100% Autocustodia',
+      badgeNetwork: 'BNB Smart Chain (BEP-20)',
+      tagline: 'Pagos crypto P2P directos para creadores, desarrolladores y productos digitales',
+      runsOnCloudflare: 'Corre en Cloudflare. Agrega tu propio dominio más adelante.',
+    },
+    pain: {
+      badge: 'EL PROBLEMA CON LAS PLATAFORMAS TRADICIONALES',
+      heading: 'Deja de regalar hasta el 10% de tus ingresos a intermediarios',
+      subheading: 'Por qué creadores y vendedores de software abandonan Gumroad, Lemon Squeezy y Stripe',
+      card1Title: 'Comisiones del 10% en Gumroad y Lemon',
+      card1Desc: 'Gumroad cobra 10% + $0.30 y Lemon Squeezy 5% + $0.50 en cada venta. En $5,000 de ventas digitales, pierdes entre $250 y $530+ solo en comisiones de pasarela.',
+      card2Title: 'Holds y reservas retenidas por 90 días',
+      card2Desc: 'Las plataformas tradicionales retienen el 10% de tus ingresos durante 90 días por supuestas "reservas de riesgo", secuestrando tu flujo de caja.',
+      card3Title: 'Baneos de Stripe y cuentas congeladas',
+      card3Desc: 'Cierres repentinos de cuenta, cobro de $15 por cada disputa o contracargo fraudulento, y restricciones geográficas que bloquean a clientes internacionales.',
+      card4Title: 'Sin pagar otra suscripción mensual de SaaS',
+      card4Desc: '¿Por qué pagar $29 o $99 al mes a otro SaaS crypto que custodia tus fondos y puede cambiar sus reglas de la noche a la mañana? Sé dueño de tu propia pasarela.',
+    },
+    howItWorks: {
+      badge: 'CÓMO FUNCIONA EN 3 PASOS',
+      heading: 'Cómo Funciona',
+      subheading: 'De cero a recibir pagos directos en tu wallet en menos de 2 minutos',
+      step1Badge: 'PASO 1',
+      step1Title: 'Despliega en Cloudflare',
+      step1Desc: 'Ejecuta el script setup.sh o wrangler deploy para publicar en Cloudflare Workers ($0/mes en el tier gratuito, 100k peticiones/día).',
+      step2Badge: 'PASO 2',
+      step2Title: 'El cliente paga USDT directo a tu wallet',
+      step2Desc: 'Tu comprador transfiere USDT (BEP-20) directamente a tu wallet personal. 100% peer-to-peer, sin custodia de intermediarios ni retenciones.',
+      step3Badge: 'PASO 3',
+      step3Title: 'El Worker verifica on-chain y entrega acceso',
+      step3Desc: 'El Worker detecta el evento de transferencia on-chain (~3s), valida el monto exacto y desbloquea la descarga tokenizada de forma instantánea.',
+    },
+    whatYouGet: {
+      badge: 'TODO INCLUIDO',
+      heading: 'Lo que recibes en el Commercial Kit',
+      subheading: 'Un paquete de software completo y listo para producción para vender productos digitales con crypto',
+      item1Title: 'Código Fuente Worker + Frontend',
+      item1Desc: 'Stack completo y editable con React 18, Vite, Tailwind CSS y backend serverless en Cloudflare Worker (Hono + TypeScript). Código limpio y modular.',
+      item2Title: 'VOLT Studio y Generador de Embeds',
+      item2Desc: 'Herramienta visual para generar snippets de Iframe responsive y enlaces de cobro directos listos para WordPress, Webflow, Shopify, Notion o webs a medida.',
+      item3Title: 'Verificación On-Chain Automatizada',
+      item3Desc: 'Motor con failover multi-nodo que monitorea eventos de transferencia USDT BEP-20 en tiempo real con liquidación veloz (~3s).',
+      item4Title: 'Diseño Anti-Replay',
+      item4Desc: 'Ledger de órdenes idempotente, validación de rango de bloques y control de txHash único para prevenir double-spending y ataques de repetición.',
+      item5Title: 'Licencia Comercial Ilimitada',
+      item5Desc: 'Implementa en tiendas personales ilimitadas, productos SaaS o proyectos de clientes. Sin mensualidades, sin restricciones y sin regalías.',
+      item6Title: 'Documentación para Principiantes',
+      item6Desc: 'Guía de despliegue paso a paso en PDF y Markdown con referencia completa de variables de entorno y script automatizado setup.sh.',
+      item7Title: 'Alertas Opcionales a Telegram',
+      item7Desc: 'Webhook nativo preconfigurado para enviarte un mensaje instantáneo a Telegram cada vez que se confirma un pago on-chain.',
+    },
+    whatYouDoNotGet: {
+      badge: 'TRANSPARENCIA RADICAL',
+      heading: 'Lo que NO incluye (Confianza)',
+      subheading: 'Límites claros y honestos para que sepas con exactitud qué estás comprando, sin falsas promesas',
+      item1Title: 'Sin DRM de Archivos',
+      item1Desc: 'Tus archivos se entregan como descargas digitales estándar (ZIP). No inyectamos DRM invasivo, telemetría ni bloqueos propietarios en los archivos de tus clientes.',
+      item2Title: 'Sin Hosting Gestionado de Archivos',
+      item2Desc: 'Tú alojas tus archivos digitales donde prefieras (Cloudflare R2, AWS S3, Google Drive o tu servidor). VOLT gestiona el cobro y la entrega tokenizada.',
+      item3Title: 'Sin Multi-Chain en v1',
+      item3Desc: 'Diseñado exclusivamente para BNB Smart Chain (BEP-20) para aprovechar comisiones de red microscópicas (~$0.01-$0.03) y tiempos de bloque de ~3s.',
+      item4Title: 'Gas de Red Aparte',
+      item4Desc: 'El comprador paga el gas estándar microscópico de BSC (~$0.01-$0.03) directamente desde su wallet al hacer la transferencia, como en cualquier transacción blockchain.',
+    },
+    comparison: {
+      badge: 'COMISIONES Y CONTROL DEL DINERO',
+      heading: 'VOLT Paywall vs. Gumroad y Lemon Squeezy',
+      subheading: 'Comisiones y control del dinero comparados frente a frente',
+      colFeature: 'Característica',
+      colGumroad: 'Gumroad',
+      colLemon: 'Lemon Squeezy',
+      colVolt: 'VOLT Paywall',
+      rowFee: 'Comisión de Plataforma',
+      gumroadFee: '10% + $0.30 por venta',
+      lemonFee: '5% + $0.50 por venta',
+      voltFee: '0% (0.00% Comisión)',
+      rowCustody: 'Custodia de Fondos',
+      gumroadCustody: 'La plataforma retiene tu saldo',
+      lemonCustody: 'La plataforma retiene tu saldo',
+      voltCustody: '100% Directo a tu Wallet',
+      rowPayout: 'Tiempo de Liquidación',
+      gumroadPayout: 'Pagos semanales diferidos',
+      lemonPayout: 'Reserva retenida 90 días (10%)',
+      voltPayout: 'Instantáneo (~3 segundos en BSC)',
+      rowChargebacks: 'Riesgo de Disputas y Baneos',
+      gumroadChargebacks: 'Alto (disputas y baneos de cuenta)',
+      lemonChargebacks: 'Alto (disputas y retenciones)',
+      voltChargebacks: '0% (Pagos crypto irreversibles)',
+      rowCost: 'Costo de Plataforma',
+      gumroadCost: 'Comisión eterna de por vida',
+      lemonCost: 'Comisión eterna de por vida',
+      voltCost: '29 USDT pago único ($0/mes hosting)',
+    },
     product: {
       paywallTag: 'VOLT PAYWALL',
-      noFeesTag: '0% COMISIONES',
+      noFeesTag: '0% COMISIÓN',
       nonCustodialTag: 'USDT Autocustodia',
-      heroHeadline: 'Tu propia pasarela crypto en Cloudflare Free.',
-      heroSubheadline: '0% comisiones, cobros directos a tu wallet, control total.',
-      title: 'All-in-One\nCreator Pack',
-      tagline: 'Pasarela de Pagos USDT BEP-20 (Autocustodia 0% Comisiones)',
-      description: 'Código fuente editable + VOLT Studio + embeds No-Code + alertas a Telegram + licencia comercial ilimitada + guía paso a paso. Entrega digital inmediata tras confirmación on-chain.',
-      feature1: 'Código full-stack editable (React + Vite + Tailwind + Cloudflare Worker)',
-      feature2: 'VOLT Studio & generador de embeds / enlaces de cobro directos',
-      feature3: 'Alertas automatizadas a Telegram + verificación on-chain BSC (~3s)',
-      feature4: 'Licencia comercial ilimitada + guía de despliegue en 2 min ($0/mes)',
+      heroHeadline: 'Self-hosted USDT checkout for digital products',
+      heroSubheadline: 'Accept USDT (BEP-20) on BNB Smart Chain straight to your wallet. 0% platform fee. Full source code.',
+      title: 'Commercial Kit — Acceso Completo',
+      tagline: 'Checkout USDT BEP-20 Auto-alojado (0% Comisiones de Intermediarios)',
+      description: 'Código fuente editable + VOLT Studio + embeds No-Code + alertas a Telegram + licencia comercial ilimitada + documentación paso a paso. Entrega digital inmediata tras confirmación on-chain.',
+      feature1: 'Código Worker + Frontend editable (React 18 + Vite + Tailwind + Cloudflare Worker)',
+      feature2: 'VOLT Studio: Generador visual de embeds Iframe y enlaces de pago directos',
+      feature3: 'Motor de verificación on-chain (~3s) con diseño anti-replay idempotente',
+      feature4: 'Licencia comercial: proyectos personales y de clientes ilimitados (0% regalías)',
       originalPrice: '$99.00 USD',
-      discountBadge: '70% DESCUENTO · AHORRA $70',
-      totalPrice: 'PRECIO DE LICENCIA DIRECTA',
+      discountBadge: 'LANZAMIENTO FOUNDING · AHORRA 70%',
+      totalPrice: 'PAGO ÚNICO',
       paymentMethod: 'MÉTODO DE PAGO',
       payWithWallet: 'Pagar con Wallet',
       manualPayment: 'Pago Manual / QR',
       walletMethodSub: 'Transferencia exacta de 29.00 USDT vía Web3 Wallet en BNB Smart Chain (BEP-20).',
-      manualMethodSub: 'Transferencia con microdecimales de control para verificación automática sin conectar wallet.',
-      buyNowWallet: 'Comprar Creator Pack — 29.00 USDT',
+      manualMethodSub: 'Transferencia directa con verificación on-chain automática sin conectar wallet.',
+      buyNowWallet: 'Comprar el Kit — 29 USDT',
       buyNowManual: 'Proceder con Pago Manual',
       creatingOrder: 'Generando orden de pago...',
       secureNotice: 'Entrega digital inmediata al confirmar en blockchain',
       retry: 'Reintentar',
       connectionError: 'Error de conexión al crear la orden.',
-      urgencyBadge: 'LICENCIA PERPETUA · ANCLAJE $99 → $29 USDT',
+      urgencyBadge: 'Founding / launch',
+      directBscText: 'Direct BSC payment. No VOLT per-sale fee.',
+      demoButton: 'Probar demo interactiva',
     },
     checkout: {
-      activeOrder: 'ORDEN CREADA',
+      activeOrder: 'ORDEN DE PAGO ACTIVA',
       timeRemaining: 'TIEMPO RESTANTE',
       orderId: 'ID de Orden',
       amountToPay: 'Monto a Transferir',
       recipientAddress: 'Wallet Receptora',
       network: 'Red de Pago',
-      statusPending: 'Esperando Pago...',
+      statusPending: 'Esperando Pago On-Chain...',
       statusConfirming: 'Confirmando On-Chain...',
       copyAddress: 'Copiar Dirección',
       addressCopied: '¡Dirección Copiada!',
@@ -445,137 +817,175 @@ export const translations: Record<Language, Translations> = {
       txSentConfirming: 'Transacción Emitida - Confirmando...',
       simulatePaymentDemo: 'Simular Confirmación de Pago (Modo Demo)',
       simulating: 'Simulando pago...',
-      manualInstructions: 'Envía el monto exacto indicado a la dirección receptora. La verificación se realiza automáticamente en tiempo real.',
+      manualInstructions: 'Envía el monto exacto indicado a la dirección receptora en BNB Smart Chain. La verificación se realiza automáticamente en tiempo real.',
       expiredTitle: 'La orden ha expirado',
       expiredDesc: 'El tiempo límite para realizar el pago finalizó. Por favor crea una nueva orden.',
-      createNewOrder: 'Crear nueva orden',
-      cancelledTitle: 'Orden cancelada',
+      createNewOrder: 'Crear Nueva Orden',
+      cancelledTitle: 'Orden Cancelada',
       cancelledDesc: 'Esta orden de pago ha sido cancelada o requiere revisión manual.',
-      backToStart: 'Volver al inicio',
+      backToStart: 'Volver al Inicio',
     },
     paid: {
-      paymentConfirmed: '¡Pago Confirmado!',
-      latePaymentConfirmed: 'Pago Tardío Confirmado',
-      orderCompleted: 'Tu pago ha sido verificado con éxito en BNB Smart Chain.',
+      paymentConfirmed: '¡Pago Confirmado On-Chain!',
+      latePaymentConfirmed: 'Pago Confirmado',
+      orderCompleted: 'Tu pago de 29 USDT fue verificado con éxito en BNB Smart Chain.',
       txHashLabel: 'Hash de Transacción (txHash)',
       viewOnBscScan: 'Ver en BscScan',
-      downloadProduct: 'Descargar Creator Pack',
-      instantDeliveryNotice: 'Entrega digital inmediata garantizada por VOLT Engine.',
+      downloadProduct: 'Descargar Commercial Kit (ZIP)',
+      instantDeliveryNotice: 'Entrega digital segura e instantánea mediante VOLT Engine.',
       confirmationsCount: 'Confirmaciones',
     },
-    whyUs: {
-      badge: 'Pasarela de Pagos USDT de Nueva Generación',
-      heading: '¿Por qué Creadores y Developers eligen VOLT Paywall frente a Stripe o Gumroad?',
-      subheading: 'La pasarela de cobros en USDT BEP-20 non-custodial más rápida, segura y económica para monetizar productos digitales a nivel global.',
-      valueSectionBadge: 'POR QUÉ VALE MÁS DE $29 USDT / AHORRO REAL',
-      valueSectionHeading: 'Ahorra Cientos de Dólares en Comisiones: Gumroad vs. VOLT Paywall',
-      valueSectionSubheading: 'Gumroad y Lemon Squeezy se quedan con hasta el 10% de tus ingresos y retienen tus fondos. VOLT Paywall te da independencia financiera total de por vida.',
-      roiTitle: 'Cálculo de Retorno Inmediato (ROI): Gumroad vs. VOLT Paywall',
-      roiSubtitle: '¿Cuánto dinero regalas en comisiones de plataforma cada vez que vendes $5,000 USD?',
-      roiMathGumroad: 'Comisión Gumroad (10% + $0.30): Pagas $500.00+ USD a intermediarios',
-      roiMathLemon: 'Lemon Squeezy (5% + $0.50 + 10% Retención): $250+ USD retenidos por 90 días',
-      roiMathVolt: 'VOLT Paywall ($29 USDT Pago Único): $0.00 en comisiones. 100% directo a tu wallet',
-      roiMathSaved: 'Ahorro Neto Real: $500.00 USD en tus primeros $5,000 en ventas — ¡Recuperas tu inversión 17 veces desde el primer día!',
-      card1Title: '0% Comisiones por Intermediarios',
-      card1Sub: 'PAGOS DIRECTOS WALLET-A-WALLET',
-      card1Desc: 'A diferencia de Stripe o procesadores crypto con custodia que cobran del 1% al 5% por transacción, VOLT Paywall transfiere el 100% de los USDT directamente a tu wallet personal. Solo se paga el gas estándar de BNB Smart Chain (~$0.01 - $0.03).',
-      tradGatewaysFee: 'Pasarelas Tradicionales',
-      voltFee: 'VOLT Paywall',
-      card2Title: '100% Autocustodia (Non-Custodial)',
-      card2Desc: 'Tus fondos nunca tocan servidores centralizados. Sin riesgo de congelamiento de cuenta, bloqueos de saldo ni chargebacks maliciosos.',
-      card2Foot: 'Tu Wallet, Tus Claves',
-      card3Title: 'Verificación On-Chain Automatizada',
-      card3Desc: 'Escaneo inteligente de eventos Transfer en BNB Smart Chain con tolerancia a fallos RPC y respuesta inmediata para entrega digital.',
-      card3Foot: 'Confirmación Instantánea (~3 sec)',
-      card4Title: 'Despliegue Serverless en 2 Minutos',
-      card4Sub: 'Cloudflare Workers + Vite / React + D1 SQLite',
-      card4Desc: 'Arquitectura moderna lista para subir a Cloudflare Workers o cualquier servidor Node.js. Sin bases de datos complejas de configurar.',
-      noKyc: 'Sin registros ni KYC',
-      walletQrSupport: 'Soporte MetaMask & QR',
-      globalBorderless: 'Global sin fronteras',
-      tableHeading: 'Tabla Comparativa Directa de Costos y Riesgos (2026)',
-      tableSub: 'Compara las características clave y comisiones ocultas de VOLT Paywall frente a las alternativas del mercado.',
-      colFeature: 'Característica',
-      colStripe: 'Stripe / Tarjetas',
-      colGumroad: 'Gumroad / Lemon Squeezy',
-      colCryptoCentralized: 'Crypto Centralizado (BitPay/Coinbase)',
-      colVolt: 'VOLT Paywall (BEP-20)',
-      rowFee: 'Comisión por Transacción / Plataforma',
-      stripeFeeVal: '2.9% + $0.30 USD',
-      gumroadFeeVal: '10.0% o 5.0% + $0.50',
-      cryptoFeeVal: '1.0% - 2.0% por tx',
-      voltFeeVal: '0.00% (0% Comisión de Plataforma)',
-      rowCustody: 'Custodia de Fondos y Riesgo',
-      stripeCustodyVal: 'Centralizada (Retención Stripe)',
-      gumroadCustodyVal: '10% Retención Rolling (90 Días)',
-      cryptoCustodyVal: 'Exchange Centralizado',
-      voltCustodyVal: '100% Autocustodia (Directo P2P)',
-      rowPayout: 'Liquidación / Pagos',
-      stripePayoutVal: '7 - 14 Días Hábiles',
-      gumroadPayoutVal: 'Pagos Semanales (Con Retardo)',
-      cryptoPayoutVal: '24 - 48 Horas',
-      voltPayoutVal: 'Instantánea (~3 segundos)',
-      rowChargebacks: 'Riesgo de Chargebacks y Bloqueos',
-      stripeChargebackVal: 'Alto (Fraude de Tarjetas)',
-      gumroadChargebackVal: 'Alto (Riesgo de Cierre de Cuenta)',
-      cryptoChargebackVal: 'Bajo',
-      voltChargebackVal: '0% (Imposible en Blockchain)',
-      rowKyc: 'Requisitos de KYC / Registro',
-      stripeKycVal: 'Obligatorio y Extenso',
-      gumroadKycVal: 'Verificación Bancaria e Identidad',
-      cryptoKycVal: 'KYC Corporativo Obligatorio',
-      voltKycVal: 'Sin Registro / Sin KYC',
+    faq: {
+      badge: 'PREGUNTAS FRECUENTES',
+      heading: 'Preguntas Frecuentes',
+      subheading: 'Respuestas claras y honestas a las dudas más importantes antes de comprar',
+      q1: '¿Funciona en el subdominio gratuito workers.dev?',
+      a1: '¡Sí, totalmente! Toda la pasarela funciona 100% dentro del tier gratuito de Cloudflare (100,000 peticiones/día, $0/mes) en tu subdominio gratuito tu-nombre.workers.dev. También puedes conectar tu propio dominio personalizado (ej. checkout.tumarca.com) en 1 clic desde el panel de Cloudflare sin costo extra.',
+      q2: '¿Qué ocurre inmediatamente tras realizar el pago?',
+      a2: 'El Cloudflare Worker detecta la transferencia de USDT en BNB Smart Chain en ~3 segundos. Al confirmarse on-chain, la pantalla se desbloquea de inmediato generando un token firmado para descargar el ZIP completo del Commercial Kit en tu navegador.',
+      q3: '¿Cuáles son los requisitos mínimos para desplegarlo?',
+      a3: 'Solo necesitas tres cosas: 1) Una cuenta gratuita de Cloudflare, 2) Cualquier wallet EVM (MetaMask, Trust Wallet, Rabby, Binance Web3 Wallet, etc.) para recibir tus USDT en BNB Smart Chain, y 3) Node.js instalado en tu computadora para ejecutar el script de despliegue inicial en 2 minutos.',
+      q4: '¿Los pagos en crypto son irreversibles?',
+      a4: 'Sí. A diferencia de las tarjetas de crédito o PayPal donde los compradores pueden meter contracargos fraudulentos meses después y cobrarte comisiones de disputa, las transacciones en BNB Smart Chain son definitivas e irreversibles, protegiendo 100% tu capital.',
+      q5: '¿Cómo funciona la entrega digital? ¿Tiene DRM?',
+      a5: 'Acceso digital inmediato tras pago verificado on-chain. Recibes un token firmado para descargar el paquete de código fuente completo. Los archivos descargables pueden respaldarse y reenviarse directamente sin promesas ficticias de DRM ni ataduras.',
+    },
+    catalog: {
+      badge: 'FUTURO CATÁLOGO',
+      title: 'More from VOLT — coming next',
+      sub: 'VOLT comienza con el checkout USDT auto-alojado. Más herramientas en camino.',
+      startsCopy: 'VOLT starts with self-hosted USDT checkout. More tools coming.',
+      comingSoonTag: 'Coming soon',
+    },
+    navTabs: {
+      checkout: 'Checkout',
+      demo: 'Demo en Vivo',
+      kit: 'Qué Incluye',
+      comparison: 'Vs Gumroad',
+      faq: 'FAQ y Seguridad',
+      all: 'Ver Todo',
+      buyNowFloating: 'Comprar por 29 USDT',
     },
     embed: {
-      title: 'Integración No-Code y Generador de Embed',
-      subtitle: 'Genera tu enlace de cobro o incrusta la pasarela en cualquier web en segundos.',
-      tabGenerator: 'Generador de Embed y Link',
+      title: 'Integración No-Code y Generador de Embeds',
+      subtitle: 'Genera tu enlace directo de cobro o incrusta la pasarela en cualquier web en segundos.',
+      tabGenerator: 'Generador de Embeds y Enlaces',
       tabQuickstart: 'Guía Rápida en 3 Pasos',
-      configTitle: 'Configura los Parámetros de Cobro',
+      configTitle: 'Configurar Parámetros de Cobro',
       walletLabel: 'Wallet Receptora (EVM / BSC)',
       productLabel: 'Nombre del Producto',
       amountLabel: 'Monto en USDT',
       networkLabel: 'Red BNB Smart Chain',
-      directLinkTitle: 'Enlace Directo de Pago',
+      directLinkTitle: 'Enlace Directo de Checkout',
       copyLink: 'Copiar Enlace',
       copiedLink: '¡Copiado!',
       iframeTitle: 'Código HTML / Iframe para WordPress, Webflow o Webs Personalizadas',
       copyIframe: 'Copiar Código Iframe',
       copiedIframe: '¡Copiado!',
       quickstartTitle: 'Guía de Despliegue en 2 Minutos',
-      step1Title: 'Configura tus Variables de Entorno',
-      step1Desc: 'Establece tu wallet receptora y dirección de contrato en tu archivo .env o en Cloudflare Workers.',
+      step1Title: 'Configura Variables de Entorno',
+      step1Desc: 'Configura tu wallet receptora y parámetros en tu archivo .env o en Cloudflare Workers.',
       step2Title: 'Despliega el Backend Serverless',
       step2Desc: 'Ejecuta npx wrangler deploy para publicar la API y la base de datos D1 SQLite.',
-      step3Title: 'Incrusta el Iframe o Comparte el Enlace',
-      step3Desc: 'Pega el código iframe generado en tu sitio web. ¡Los pagos en USDT llegarán directamente a tu wallet!',
-      copyEnv: 'Copiar Fragmento .env',
+      step3Title: 'Incrusta el Iframe o Comparte el Link',
+      step3Desc: 'Pega el snippet de iframe en tu web. ¡Los pagos en USDT entran directo a tu wallet!',
+      copyEnv: 'Copiar Snippet .env',
       copiedEnv: '¡Copiado!',
       close: 'Cerrar',
     },
-    faq: {
-      badge: 'PREGUNTAS FRECUENTES',
-      heading: 'Todo lo que necesitas saber antes de comprar',
-      subheading: 'Respuestas claras para resolver cualquier duda sobre despliegue, entrega digital y autocustodia.',
-      q1: '¿Necesito pagar mensualidades a Cloudflare?',
-      a1: 'No, en absoluto. Todo el stack (Cloudflare Workers, KV y D1 SQLite) corre 100% en el plan gratuito de Cloudflare, el cual incluye 100,000 peticiones diarias sin costo. Tu costo operativo mensual es de $0 USD.',
-      q2: '¿Cómo recibo los pagos?',
-      a2: 'Las transferencias van directo P2P a tu wallet personal Web3, sin custodia intermedia. VOLT Paywall nunca retiene, toca ni congela tu dinero. Recibes tus ingresos al instante con 0% comisiones.',
-      q3: '¿Qué pasa si necesito ayuda para instalarlo?',
-      a3: 'Incluye el script automatizado ./setup.sh en 1 clic y una guía paso a paso en español e inglés. Cualquier desarrollador o creador puede desplegarlo en Cloudflare en menos de 2 minutos sin complicaciones.',
-      q4: '¿Qué incluye exactamente mi pago de 29 USDT?',
-      a4: 'Recibes el Creator Pack completo: 1) Código fuente 100% editable (React + Tailwind + Cloudflare Worker), 2) VOLT Studio para generar embeds y links de cobro, 3) Webhook para alertas en Telegram en vivo, 4) Motor de verificación BSC on-chain con failover RPC, 5) Licencia comercial ilimitada y 6) Guía paso a paso en PDF/Markdown + script setup.sh para desplegar en 2 minutos en el plan gratuito de Cloudflare ($0/mes).',
-      q5: '¿Cómo funciona la entrega digital y qué pasa con el enlace de acceso?',
-      a5: 'La entrega es 100% inmediata y automatizada. Tras verificarse tu pago de 29 USDT en la red BSC (~3 segundos), el sistema desbloquea tu token de acceso criptográfico para descargar el paquete ZIP o acceder al enlace directo de Google Drive. Nota de transparencia: como en cualquier producto digital entregado mediante enlace directo, el comprador tiene acceso total y permanente a los archivos y técnicamente podría reenviar la URL; confiamos plenamente en la ética de la comunidad de desarrolladores y te entregamos tu licencia comercial oficial para que puedas monetizar legalmente tus propios proyectos.',
-      q6: '¿Por qué funciona en Cloudflare Workers y puedo usar mi propio dominio?',
-      a6: 'Cloudflare Workers es una infraestructura edge global distribuida en más de 300 ciudades, garantizando tiempos de carga de milisegundos y 100,000 peticiones diarias gratis ($0/mes). Puedes usar la URL directa .workers.dev o vincular tu propio dominio personalizado (ejemplo: tudominio.com) en 1 solo clic desde tu panel de Cloudflare sin costo adicional.',
-      supportNotice: '¿Tienes dudas adicionales sobre la integración?',
-      supportAction: 'Ver Guía de Instalación',
-    },
     footer: {
-      poweredBy: 'Powered by VOLT Engine · Secure Payment Interface',
+      poweredBy: 'Powered by VOLT Paywall · Checkout Crypto Auto-alojado',
       generateEmbed: 'Generar Embed No-Code',
-      serverOnline: 'Estado del Servidor: En línea',
+      serverOnline: 'Estado del Servidor: Online',
+    },
+    demoPlayground: {
+      badge: 'ZONA DE PRUEBAS / DEMO INTERACTIVA',
+      heading: 'Prueba la Experiencia de Checkout ANTES de Pagar 29 USDT',
+      subheading: 'Experimenta todo el flujo del comprador en un entorno seguro del navegador. Cero cripto real requerida, no se tocan órdenes en la base de datos.',
+      bannerNotice: 'SANDBOX DEMO · CERO FONDOS REALES REQUERIDOS · PRUEBA LIBREMENTE',
+      ctaFixed: 'Obtener el kit completo — 29 USDT',
+      tabCheckout: '1. Simulación UX de Checkout',
+      tabBrand: '2. Personalizador de Marca y Embed',
+      tabSavings: '3. Calculadora de Ahorro',
+      tabWorkerChecks: '4. Qué Valida el Worker',
+      checkoutBadge: 'MODO DEMO · ORDEN DE JUGUETE SIN RIESGO',
+      checkoutTitle: 'Simulación de Checkout Digital de Muestra',
+      sampleToyPrice: '12.50 USDT',
+      sampleToyDisclaimer: 'Monto de muestra para pruebas (no es la orden real de 29 USDT).',
+      copyAddress: 'Copiar Dirección de Muestra',
+      copiedAddress: '¡Copiada!',
+      networkNotice: 'La simulación reproduce transferencias estrictamente en BNB Smart Chain (BEP-20).',
+      btnSimulateWallet: 'Simular Clic de Wallet Web3',
+      btnSimulateManual: 'Simular Hash TX Manual',
+      btnResetDemo: 'Reiniciar Simulación',
+      verifyingTitle: 'Verificando Transacción en BNB Smart Chain...',
+      verifyingStep1: 'Consultando endpoint multi-nodo BSC RPC...',
+      verifyingStep2: 'Analizando Transfer(from, to, value) en contrato USDT BEP-20...',
+      verifyingStep3: 'Comprobando confirmaciones de bloque (3/3 completadas)...',
+      successTitle: '¡Pago Confirmado On-Chain!',
+      successDesc: 'Acceso desbloqueado inmediatamente. Enlace de descarga tokenizado generado en ~2.8 segundos.',
+      sampleDownloadBtn: 'Descargar Archivo de Muestra (.txt)',
+      sampleFileNotice: 'Esta descarga de prueba demuestra cómo los clientes reales desbloquean sus productos tras pagar.',
+      brandTitle: 'Personalizador de Marca y Embed en Vivo',
+      brandDesc: 'Cambia el nombre y color de tu tienda y observa la previsualización actualizarse al instante.',
+      storeNameLabel: 'Nombre de tu Tienda / Marca',
+      productNameLabel: 'Nombre del Producto',
+      priceLabel: 'Precio (USDT)',
+      colorLabel: 'Color de Acento de la Marca',
+      copyEmbedCode: 'Copiar Código HTML / Iframe',
+      copiedEmbedCode: '¡Código Copiado!',
+      livePreviewTag: 'Vista Previa en Vivo (Frontend)',
+      savingsTitle: 'Calculadora de Ingresos y Ahorro',
+      savingsDesc: 'Calcula cuánto dinero recuperas cada mes al eliminar las comisiones del 10% de intermediarios.',
+      monthlySalesLabel: 'Ventas Digitales Mensuales Estimadas ($)',
+      productPriceLabel: 'Precio Promedio por Producto ($)',
+      gumroadLoss: 'Comisión en Gumroad (10% + $0.30/venta)',
+      lemonLoss: 'Comisión en Lemon Squeezy (5% + $0.50/venta)',
+      voltPlatformCut: 'Comisión de Plataforma en VOLT Paywall',
+      netAnnualSavings: 'Ahorro Anual Neto Estimado',
+      netMonthlySavings: 'Ahorro al mes',
+      estimateDisclaimer: '*Estimación basada en comisiones típicas del 10% + $0.30 por venta en Gumroad y 5% + $0.50 en Lemon Squeezy vs 0% comisión de plataforma en VOLT Paywall. El gas de red BSC (~$0.02) lo asume directamente el comprador en cada pago.',
+      workerChecksTitle: 'Lo que el Worker de Cloudflare Valida On-Chain',
+      workerChecksDesc: 'Cada pago entrante debe satisfacer 5 estrictos criterios de seguridad en blockchain antes de entregar acceso:',
+      check1Title: '1. Verificación de Red (Chain ID: 56)',
+      check1Detail: 'Comprueba que la transacción se haya emitido exclusivamente en BNB Smart Chain mainnet, rechazando redes erróneas o de prueba.',
+      check2Title: '2. Contrato Oficial USDT BEP-20',
+      check2Detail: 'Verifica que el contrato del token sea estrictamente el USDT oficial de BSC (0x55d398326f99059fF775485246999027B3197955), ignorando tokens falsificados.',
+      check3Title: '3. Wallet Receptora del Vendedor',
+      check3Detail: 'Confirma que la dirección receptora en el evento Transfer coincida exactamente con tu wallet configurada.',
+      check4Title: '4. Verificación del Monto Exacto',
+      check4Detail: 'Valida que el valor en unidades uint256 (18 decimales) iguale o supere el precio esperado de la orden.',
+      check5Title: '5. Protección Anti-Replay y Nonce',
+      check5Detail: 'Verifica en D1 SQLite que el hash de la transacción nunca haya sido reclamado antes, imposibilitando el doble gasto.',
+      provableThingsTitle: '5 Cosas que Puedes Probar y Comprobar sin Pagar',
+      provableThingsSubtitle: 'Prueba cada aspecto de la experiencia de compra autónoma directamente en tu navegador antes de adquirir el kit por 29 USDT:',
+      provableThingsList: [
+        {
+          title: 'Flujo Completo de Checkout en 3 Pasos',
+          desc: 'Recorre las instrucciones de pago con QR, la simulación de verificación on-chain multi-nodo y el recibo final con token de descarga sin gastar saldo.',
+          badge: 'Flujo Simulado',
+        },
+        {
+          title: 'Personalizador de Marca y Preview de Embed',
+          desc: 'Modifica el nombre de tu tienda, título del producto, precio y 5 colores de acento con actualización en tiempo real del código HTML embebible.',
+          badge: 'Studio Frontend',
+        },
+        {
+          title: 'Calculadora de Ahorro Real de Comisiones',
+          desc: 'Comprueba cuánto dinero recuperas al mes frente a Gumroad (10% + $0.30) y Lemon Squeezy (5% + $0.50) según tu volumen proyectado de ventas digitales.',
+          badge: 'Estimador ROI',
+        },
+        {
+          title: 'Inspector de Reglas On-Chain del Worker',
+          desc: 'Analiza los 5 filtros estrictos del Cloudflare Worker: red BSC (56), contrato oficial USDT, wallet receptora, monto exacto uint256 y anti-replay.',
+          badge: 'Auditoría On-Chain',
+        },
+        {
+          title: 'Conectividad Web3 y Detección de Red',
+          desc: 'Conecta MetaMask o Trust Wallet en la landing, valida la detección automática de BNB Smart Chain y el fallback a pago manual/QR.',
+          badge: 'Compatible EIP-1193',
+        },
+      ],
     },
   },
 };
@@ -590,14 +1000,13 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
-    // Detect browser language
     if (typeof window !== 'undefined' && window.navigator) {
       const browserLang = window.navigator.language || '';
       if (browserLang.toLowerCase().startsWith('es')) {
         return 'ES';
       }
     }
-    return 'EN'; // Default language
+    return 'EN';
   });
 
   const setLanguage = (lang: Language) => {

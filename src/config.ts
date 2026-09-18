@@ -97,6 +97,50 @@ export const PRODUCT_INFO = {
   networkBadge: 'BSC USDT',
 };
 
+export interface CatalogItem {
+  id: string;
+  name: string;
+  price: string;
+  currency: 'USDT';
+  network: 'BSC';
+  active: boolean;
+  tagline: string;
+  description: string;
+}
+
+export const PRODUCTS_CATALOG: CatalogItem[] = [
+  {
+    id: 'creator-pack',
+    name: 'VOLT Paywall V1 — Commercial Kit',
+    price: '29',
+    currency: 'USDT',
+    network: 'BSC',
+    active: true,
+    tagline: 'Self-Hosted USDT Checkout Engine',
+    description: 'Complete source code + Cloudflare Worker backend + unlimited commercial license.',
+  },
+  {
+    id: 'volt-affiliates',
+    name: 'VOLT Affiliates — On-Chain Referral Splitter',
+    price: '49',
+    currency: 'USDT',
+    network: 'BSC',
+    active: false,
+    tagline: 'Coming soon',
+    description: 'Automated on-chain revenue sharing and affiliate payouts for digital merchants.',
+  },
+  {
+    id: 'volt-subscriptions',
+    name: 'VOLT Subscriptions — Token-Gated Recurring Access',
+    price: '59',
+    currency: 'USDT',
+    network: 'BSC',
+    active: false,
+    tagline: 'Coming soon',
+    description: 'Time-expiring cryptographic passes and periodic renewal checks without custodian.',
+  },
+];
+
 // Simulated receiver wallet address for demo mode (uses user's configured BNB address)
 export const SIMULATED_WALLET_ADDRESS = '0x1750C0c093650C36DcF45843446567FF3f50cC5A';
 

@@ -154,6 +154,45 @@ export const realApi: ApiClient = {
   },
 
   /**
+   * Explicitly triggers on-chain verification for an order via POST /api/verify
+   */
+  async verifyPayment(orderId: string, txHash: string): Promise<ApiClientResponse<OrderStatusResponse>> {
+    if (!API_BASE_URL) {
+      return mockApi.verifyPayment ? mockApi.verifyPayment(orderId, txHash) : mockApi.getOrderStatus(orderId, txHash);
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderId, txHash }),
+      });
+
+      if (response.status === 404) {
+        return mockApi.verifyPayment ? mockApi.verifyPayment(orderId, txHash) : mockApi.getOrderStatus(orderId, txHash);
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          error: handleApiError(errorData, 'VERIFICATION_FAILED'),
+        };
+      }
+
+      const statusResponse: OrderStatusResponse = await response.json();
+      return {
+        success: true,
+        statusResponse,
+      };
+    } catch {
+      return mockApi.verifyPayment ? mockApi.verifyPayment(orderId, txHash) : mockApi.getOrderStatus(orderId, txHash);
+    }
+  },
+
+  /**
    * Request secure single-use download token via POST /api/download-token
    */
   async getDownloadToken(orderId: string): Promise<ApiClientResponse<{ token: string }>> {

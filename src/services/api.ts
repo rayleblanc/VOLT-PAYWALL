@@ -34,6 +34,17 @@ export const api = {
   },
 
   /**
+   * Explicitly request verification of an order payment on-chain.
+   */
+  async verifyPayment(orderId: string, txHash: string) {
+    const client = getApiClient();
+    if (client.verifyPayment) {
+      return client.verifyPayment(orderId, txHash);
+    }
+    return client.getOrderStatus(orderId, txHash);
+  },
+
+  /**
    * Request secure single-use download token.
    */
   async getDownloadToken(orderId: string) {

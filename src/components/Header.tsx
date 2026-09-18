@@ -9,12 +9,14 @@ interface HeaderProps {
   onResetDemo?: () => void;
   showReset?: boolean;
   onOpenEmbedModal?: () => void;
+  onTryDemo?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   onResetDemo,
   showReset = false,
   onOpenEmbedModal,
+  onTryDemo,
 }) => {
   const { walletState } = useWallet();
   const { language, setLanguage, t } = useLanguage();
@@ -65,6 +67,19 @@ export const Header: React.FC<HeaderProps> = ({
               ES
             </button>
           </div>
+
+          {/* Interactive Demo Fast Jump */}
+          {onTryDemo && (
+            <button
+              onClick={onTryDemo}
+              className="bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-gray-200 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full flex items-center gap-1.5 text-[10px] sm:text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 shrink-0"
+              title={language === 'ES' ? 'Probar Demo Interactiva' : 'Try Interactive Demo'}
+              aria-label={language === 'ES' ? 'Probar Demo Interactiva' : 'Try Interactive Demo'}
+            >
+              <Play className="w-3 h-3 text-[#FFB800] fill-[#FFB800]" />
+              <span>{language === 'ES' ? 'Demo' : 'Try Demo'}</span>
+            </button>
+          )}
 
           {/* Embed / No-Code Integration Snippets */}
           {onOpenEmbedModal && (

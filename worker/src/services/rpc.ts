@@ -11,10 +11,10 @@ import {
 } from '../config';
 
 export class RpcError extends Error {
-  code?: number;
-  status?: number;
+  code: string;
+  status: number;
 
-  constructor(message: string, code?: number, status?: number) {
+  constructor(message: string, code = 'RPC_UNAVAILABLE', status = 502) {
     super(message);
     this.name = 'RpcError';
     this.code = code;
@@ -174,7 +174,7 @@ export async function callJsonRpc<T>(
     };
 
     if (json.error) {
-      throw new RpcError(`RPC Error ${json.error.code}: ${json.error.message}`, json.error.code);
+      throw new RpcError(`RPC Error ${json.error.code}: ${json.error.message}`, `RPC_ERROR_${json.error.code}`, 502);
     }
 
     if (json.result === undefined || json.result === null) {
