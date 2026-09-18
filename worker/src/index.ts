@@ -166,8 +166,42 @@ app.post('/api/verify', async (c) => {
     if (!status) {
       return c.json({ error: { code: 'ORDER_NOT_FOUND', message: `Order '${orderId}' not found.` } }, 404);
     }
-    // Return sanitized status (never includes secret URLs)
-    return c.json(status, 200);
+
+    const isPaid = status.status === 'PAID' || status.status === 'PAID_LATE';
+    let token: string | undefined = undefined;
+    let downloadUrl: string | undefined = undefined;
+
+    if (isPaid && c.env.JWT_SECRET) {
+      try {
+        const { token: signedToken, jti, expiresAtIso, createdAtIso } = await signDownloadToken(orderId, c.env.JWT_SECRET, 3600);
+        await c.env.DB.prepare(
+          'INSERT INTO download_tokens (order_id, token_hash, jti, expires_at, created_at) VALUES (?, ?, ?, ?, ?)'
+        )
+          .bind(orderId, signedToken, jti, expiresAtIso, createdAtIso)
+          .run();
+        token = signedToken;
+        downloadUrl = `/api/download?token=${encodeURIComponent(signedToken)}`;
+      } catch (tokenErr) {
+        console.error('Failed to auto-generate download token during verify:', tokenErr);
+      }
+    }
+
+    // Return sanitized verify response (never includes secret URLs or Drive links)
+    return c.json({
+      success: isPaid,
+      orderId: status.orderId,
+      status: status.status,
+      token,
+      downloadUrl,
+      amount: status.amount,
+      currency: status.currency,
+      network: status.network,
+      chainId: status.chainId,
+      recipient: status.recipient,
+      txHash: status.txHash,
+      confirmations: status.confirmations,
+      expiresAt: status.expiresAt,
+    }, 200);
   } catch (err: any) {
     const message = err instanceof Error ? err.message : String(err);
     const code = err.code || 'VERIFICATION_FAILED';
@@ -196,7 +230,43 @@ app.get('/api/status', async (c) => {
     if (!status) {
       return c.json({ error: { code: 'ORDER_NOT_FOUND', message: `Order '${orderId}' not found.` } }, 404);
     }
-    return c.json(status, 200);
+
+    const isPaid = status.status === 'PAID' || status.status === 'PAID_LATE';
+    let token: string | undefined = undefined;
+    let downloadUrl: string | undefined = undefined;
+
+    if (isPaid && c.env.JWT_SECRET) {
+      try {
+        const { token: signedToken, jti, expiresAtIso, createdAtIso } = await signDownloadToken(orderId, c.env.JWT_SECRET, 3600);
+        await c.env.DB.prepare(
+          'INSERT INTO download_tokens (order_id, token_hash, jti, expires_at, created_at) VALUES (?, ?, ?, ?, ?)'
+        )
+          .bind(orderId, signedToken, jti, expiresAtIso, createdAtIso)
+          .run();
+        token = signedToken;
+        downloadUrl = `/api/download?token=${encodeURIComponent(signedToken)}`;
+      } catch (tokenErr) {
+        console.error('Failed to auto-generate download token during status:', tokenErr);
+      }
+    }
+
+    return c.json({
+      success: isPaid,
+      orderId: status.orderId,
+      status: status.status,
+      token,
+      downloadUrl,
+      paymentMode: status.paymentMode,
+      amount: status.amount,
+      expectedAmount: status.expectedAmount,
+      currency: status.currency,
+      network: status.network,
+      chainId: status.chainId,
+      recipient: status.recipient,
+      txHash: status.txHash,
+      confirmations: status.confirmations,
+      expiresAt: status.expiresAt,
+    }, 200);
   } catch (err: any) {
     if (err.code === 'ORDER_EXPIRED') {
       return c.json({ error: { code: 'ORDER_EXPIRED', message: 'La orden ha expirado.' } }, 400);
