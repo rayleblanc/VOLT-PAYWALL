@@ -246,15 +246,15 @@ export const PaidCard: React.FC<PaidCardProps> = ({ order, onDownloadClick }) =>
               className="w-full py-4 px-6 rounded-2xl font-black text-base bg-[#FFB800] hover:bg-[#FFC107] text-black transition-all duration-200 shadow-xl shadow-[#FFB800]/20 flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.99]"
             >
               <Sparkles className="w-5 h-5 text-black" />
-              <span>{isSpanish ? 'Abrir Vibe Error Fixer ↗' : 'Launch Vibe Error Fixer ↗'}</span>
+              <span>{isSpanish ? 'Abrir Vibe Error Fixer ↗' : 'Open Vibe Error Fixer ↗'}</span>
             </a>
 
             <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-[#00C853]" />
               <span>
                 {isSpanish
-                  ? 'Guarda tu token. Puedes usarlo directamente en la aplicación para tus 5 diagnósticos.'
-                  : 'Save your token. Use it directly in the app to authenticate your 5 diagnostic runs.'}
+                  ? 'Pega tu token de acceso en la herramienta para analizar logs de error.'
+                  : 'Paste your access token in the tool to analyze error logs'}
               </span>
             </p>
           </div>
