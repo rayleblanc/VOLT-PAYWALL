@@ -95,6 +95,85 @@ curl -X GET "http://localhost:8787/api/status?orderId=volt_ord_8f3a9e1c4b2d"
 
 ---
 
+### 3. Check Vibe Error Fixer Credits (Canonical Route)
+- **Endpoint**: `GET /api/credits?token=volt_fixer_...`
+- **Alternative Header**: `Authorization: Bearer volt_fixer_...`
+- **Optional Header**: `X-Volt-Secret: <CONSUME_SECRET>` (for server-to-server inspection)
+- **Response** (`200 OK`):
+  ```json
+  {
+    "success": true,
+    "valid": true,
+    "creditsRemaining": 5,
+    "initialCredits": 5,
+    "expiresAt": "2026-10-18T21:00:00.000Z",
+    "productId": "vibe-error-fixer"
+  }
+  ```
+
+#### Example cURL Request (Check Credits):
+```bash
+curl -X GET "http://localhost:8787/api/credits?token=volt_fixer_8a9b0c1d2e3f4a5b"
+```
+
+---
+
+### 4. Consume Vibe Error Fixer Credits (Canonical Route)
+- **Endpoint**: `POST /api/credits/consume`
+- **Mandatory Service Header**: `X-Volt-Secret: <CONSUME_SECRET>` (compared with `c.env.CONSUME_SECRET`)
+- **Headers**: `Content-Type: application/json`
+- **Request Body**:
+  ```json
+  {
+    "token": "volt_fixer_8a9b0c1d2e3f4a5b",
+    "amount": 1
+  }
+  ```
+- **Response** (`200 OK`):
+  ```json
+  {
+    "success": true,
+    "remainingCredits": 4,
+    "productId": "vibe-error-fixer"
+  }
+  ```
+
+#### Example cURL Requests (Consume Credits):
+
+**1) Without secret or with invalid secret (Returns `401 UNAUTHORIZED`):**
+```bash
+curl -X POST http://localhost:8787/api/credits/consume \
+  -H "Content-Type: application/json" \
+  -d '{"token": "volt_fixer_8a9b0c1d2e3f4a5b", "amount": 1}'
+```
+*Output (`401 UNAUTHORIZED`):*
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Invalid or missing X-Volt-Secret authentication header."
+  }
+}
+```
+
+**2) With valid service secret (Returns `200 OK`):**
+```bash
+curl -X POST http://localhost:8787/api/credits/consume \
+  -H "Content-Type: application/json" \
+  -H "X-Volt-Secret: my_secret_key" \
+  -d '{"token": "volt_fixer_8a9b0c1d2e3f4a5b", "amount": 1}'
+```
+*Output (`200 OK`):*
+```json
+{
+  "success": true,
+  "remainingCredits": 4,
+  "productId": "vibe-error-fixer"
+}
+```
+
+---
+
 ## 🔄 Connecting Frontend ↔ Local Worker
 
 ### Connect Frontend to Local Worker:

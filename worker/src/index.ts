@@ -30,7 +30,7 @@ app.use('/api/*', async (c, next) => {
   if (isAllowed && allowOrigin) {
     c.res.headers.set('Access-Control-Allow-Origin', allowOrigin);
     c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Volt-Secret, x-volt-secret');
     c.res.headers.set('Access-Control-Max-Age', '86400');
   }
 });
@@ -51,7 +51,7 @@ app.options('/api/*', (c) => {
     headers: {
       'Access-Control-Allow-Origin': allowOrigin,
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Volt-Secret, x-volt-secret',
       'Access-Control-Max-Age': '86400',
     },
   });
@@ -417,16 +417,31 @@ app.get('/api/status', async (c) => {
 // ----------------------------------------------------------------------------
 // Credits Engine API (For Vibe Error Fixer Token Validation & Consumption)
 // ----------------------------------------------------------------------------
+
+/**
+ * GET /api/credits
+ * Query: ?token=... or Header Authorization: Bearer <token>
+ * Optional server-to-server check with X-Volt-Secret
+ * Response: { success: true, valid: true, creditsRemaining, initialCredits, expiresAt, productId }
+ * NEVER returns Drive URLs or other product details.
+ */
 app.get('/api/credits', async (c) => {
+  const ip = c.req.header('cf-connecting-ip') || '127.0.0.1';
+  const rateLimit = await checkRateLimit(c.env, ip, 'credits_check', 30);
+  if (!rateLimit.isAllowed) {
+    c.header('Retry-After', String(rateLimit.retryAfter));
+    return c.json({ error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Rate limit exceeded. Please try again later.' } }, 429);
+  }
+
   const token = c.req.query('token') || c.req.header('Authorization')?.replace(/^Bearer\s+/i, '');
-  if (!token) {
-    return c.json({ error: { code: 'MISSING_TOKEN', message: 'Token query parameter or Authorization Bearer header is required.' } }, 400);
+  if (!token || !token.trim()) {
+    return c.json({ error: { code: 'MISSING_TOKEN', message: 'Token parameter or Authorization Bearer header is required.' } }, 400);
   }
 
   try {
     const record = await c.env.DB.prepare(
       'SELECT * FROM access_tokens WHERE token_hash = ? LIMIT 1'
-    ).bind(token).first<D1AccessTokenRecord>();
+    ).bind(token.trim()).first<D1AccessTokenRecord>();
 
     if (!record) {
       return c.json({ error: { code: 'INVALID_TOKEN', message: 'Access token not found or invalid.' } }, 404);
@@ -441,18 +456,63 @@ app.get('/api/credits', async (c) => {
     return c.json({
       success: true,
       valid: true,
-      productId: record.product_id,
       creditsRemaining: record.credits_remaining,
       initialCredits: record.initial_credits,
       expiresAt: record.expires_at,
-    });
+      productId: record.product_id,
+    }, 200);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return c.json({ error: { code: 'CREDITS_CHECK_FAILED', message } }, 500);
   }
 });
 
+/**
+ * POST /api/credits/consume
+ * Mandatory service authentication header: X-Volt-Secret
+ * Compare with env CONSUME_SECRET / CREDITS_API_SECRET / FIXER_SERVICE_SECRET
+ * Missing secret in server -> 500 CONFIG_ERROR
+ * Missing/invalid header -> 401 UNAUTHORIZED
+ * Body: { "token": "<access_token>", "amount": 1 }
+ * Response OK: { "success": true, "remainingCredits": number, "productId": "vibe-error-fixer" }
+ * Error codes: MISSING_TOKEN, INVALID_TOKEN, TOKEN_EXPIRED, INSUFFICIENT_CREDITS, UNAUTHORIZED, CONFIG_ERROR
+ */
 app.post('/api/credits/consume', async (c) => {
+  const ip = c.req.header('cf-connecting-ip') || '127.0.0.1';
+  const rateLimit = await checkRateLimit(c.env, ip, 'credits_consume', 30);
+  if (!rateLimit.isAllowed) {
+    c.header('Retry-After', String(rateLimit.retryAfter));
+    return c.json({ error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Rate limit exceeded. Please try again later.' } }, 429);
+  }
+
+  // 1. Mandatory Service Authentication Check (Server Config)
+  const serviceSecret = c.env.CONSUME_SECRET || c.env.CREDITS_API_SECRET || c.env.FIXER_SERVICE_SECRET;
+  if (!serviceSecret || serviceSecret.trim().length === 0) {
+    return c.json({
+      error: {
+        code: 'CONFIG_ERROR',
+        message: 'CONSUME_SECRET environment variable is not configured on the server.',
+      },
+    }, 500);
+  }
+
+  // 2. Mandatory Service Authentication Header Check
+  const clientSecret =
+    c.req.header('X-Volt-Secret') ||
+    c.req.header('x-volt-secret') ||
+    c.req.header('X-VOLT-SECRET') ||
+    c.req.header('Authorization')?.replace(/^Bearer\s+/i, '');
+
+  if (!clientSecret || clientSecret.trim() !== serviceSecret.trim()) {
+    return c.json({
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Invalid or missing X-Volt-Secret authentication header.',
+      },
+    }, 401);
+  }
+
+  // 3. Request Body Validation
   try {
     let body: any = {};
     try {
@@ -461,27 +521,30 @@ app.post('/api/credits/consume', async (c) => {
       return c.json({ error: { code: 'INVALID_JSON', message: 'Invalid JSON request body.' } }, 400);
     }
 
-    const token = body.token || c.req.header('Authorization')?.replace(/^Bearer\s+/i, '');
+    const token = body.token;
+    if (!token || typeof token !== 'string' || token.trim().length === 0) {
+      return c.json({ error: { code: 'MISSING_TOKEN', message: 'Field token is required in request body.' } }, 400);
+    }
+
     const amountToConsume = typeof body.amount === 'number' && body.amount > 0 ? body.amount : 1;
 
-    if (!token) {
-      return c.json({ error: { code: 'MISSING_TOKEN', message: 'Field token is required.' } }, 400);
-    }
-
+    // 4. Token Lookup in D1
     const record = await c.env.DB.prepare(
       'SELECT * FROM access_tokens WHERE token_hash = ? LIMIT 1'
-    ).bind(token).first<D1AccessTokenRecord>();
+    ).bind(token.trim()).first<D1AccessTokenRecord>();
 
     if (!record) {
-      return c.json({ error: { code: 'INVALID_TOKEN', message: 'Access token not found.' } }, 404);
+      return c.json({ error: { code: 'INVALID_TOKEN', message: 'Access token not found or invalid.' } }, 404);
     }
 
+    // 5. Expiration Check
     const now = Date.now();
     const expiresAtMs = new Date(record.expires_at).getTime();
     if (now > expiresAtMs) {
       return c.json({ error: { code: 'TOKEN_EXPIRED', message: 'Access token has expired.' } }, 403);
     }
 
+    // 6. Sufficient Credits Check
     if (record.credits_remaining < amountToConsume) {
       return c.json({
         error: {
@@ -491,22 +554,24 @@ app.post('/api/credits/consume', async (c) => {
       }, 402);
     }
 
+    // 7. Atomic Credit Deduction in D1
     const updatedCredits = record.credits_remaining - amountToConsume;
     const nowIso = new Date(now).toISOString();
 
     await c.env.DB.prepare(
       'UPDATE access_tokens SET credits_remaining = ?, updated_at = ? WHERE token_hash = ?'
     )
-      .bind(updatedCredits, nowIso, token)
+      .bind(updatedCredits, nowIso, token.trim())
       .run();
 
     return c.json({
       success: true,
+      remainingCredits: updatedCredits,
+      creditsRemaining: updatedCredits,
       productId: record.product_id,
       consumed: amountToConsume,
-      creditsRemaining: updatedCredits,
       initialCredits: record.initial_credits,
-    });
+    }, 200);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return c.json({ error: { code: 'CREDITS_CONSUME_FAILED', message } }, 500);

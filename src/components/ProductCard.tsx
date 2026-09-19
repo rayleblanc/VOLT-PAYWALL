@@ -11,9 +11,11 @@ import {
   Play,
   Sparkles,
   Package,
-  Layers,
+  ArrowRight,
+  ArrowLeft,
+  ExternalLink,
 } from 'lucide-react';
-import { PRODUCTS_CATALOG, getCatalogItemById } from '../config';
+import { getCatalogItemById, PUBLIC_FIXER_URL } from '../config';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface ProductCardProps {
@@ -60,65 +62,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Decorative background glow */}
       <div className="absolute -top-24 -right-24 w-60 h-60 bg-[#FFB800]/10 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Product Switcher Tabs */}
-      <div className="mb-6 space-y-2">
-        <span className="text-gray-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest block">
-          {isSpanish ? 'Selecciona tu producto' : 'Choose Product'}
-        </span>
-        <div className="grid grid-cols-2 gap-2 bg-[#181818] p-1.5 rounded-2xl border border-white/5">
-          <button
-            type="button"
-            onClick={() => handleProductChange('creator-pack')}
-            className={`py-2.5 sm:py-3 px-3 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-center ${
-              isKit
-                ? 'bg-white text-black shadow-lg'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <div className="flex items-center justify-between w-full">
-              <span className="text-xs sm:text-sm font-extrabold flex items-center gap-1.5 truncate">
-                <Package className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">VOLT Kit</span>
-              </span>
-              <span className={`text-xs font-mono font-black ${isKit ? 'text-black' : 'text-[#FFB800]'}`}>
-                29 USDT
-              </span>
-            </div>
-            <span className={`text-[10px] font-medium truncate mt-0.5 ${isKit ? 'text-gray-700' : 'text-gray-400'}`}>
-              {isSpanish ? 'Código fuente + Licencia' : 'Source Code + License'}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleProductChange('vibe-error-fixer')}
-            className={`py-2.5 sm:py-3 px-3 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-center ${
-              !isKit
-                ? 'bg-white text-black shadow-lg'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <div className="flex items-center justify-between w-full">
-              <span className="text-xs sm:text-sm font-extrabold flex items-center gap-1.5 truncate">
-                <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">Error Fixer</span>
-              </span>
-              <span className={`text-xs font-mono font-black ${!isKit ? 'text-black' : 'text-[#FFB800]'}`}>
-                9 USDT
-              </span>
-            </div>
-            <span className={`text-[10px] font-medium truncate mt-0.5 ${!isKit ? 'text-gray-700' : 'text-gray-400'}`}>
-              {isSpanish ? '5 Créditos AI Debug' : '5 AI Debug Credits'}
-            </span>
-          </button>
-        </div>
-      </div>
+      {/* Back to Kit Banner (Shown only when viewing secondary product Vibe Error Fixer) */}
+      {!isKit && (
+        <button
+          type="button"
+          onClick={() => handleProductChange('creator-pack')}
+          className="mb-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 hover:text-white transition-all cursor-pointer border border-white/10"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>
+            {isSpanish
+              ? '← Volver al VOLT Commercial Kit (29 USDT)'
+              : '← Back to VOLT Commercial Kit (29 USDT)'}
+          </span>
+        </button>
+      )}
 
       {/* Badge Founding / launch */}
       <div className="flex items-center justify-between mb-4 sm:mb-5 gap-2">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FFB800]/10 border border-[#FFB800]/30 rounded-full text-[11px] sm:text-xs font-mono font-bold text-[#FFB800]">
           <Zap className="w-3.5 h-3.5 fill-[#FFB800]" />
-          <span>{currentProduct.badge || t.product.urgencyBadge}</span>
+          <span>{isKit ? 'Founding / launch · 29 USDT' : 'AI Debug Tool · 9 USDT'}</span>
         </div>
         <div className="bg-[#181818] border border-white/5 px-2.5 sm:px-3 py-1 rounded-full flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-300">
           <ShieldCheck className="w-3.5 h-3.5 text-[#00C853]" />
@@ -141,7 +105,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div className="flex items-baseline gap-2.5 flex-wrap mb-2">
           {/* Strikethrough Original Price */}
           <span className="text-lg sm:text-2xl font-bold text-gray-500 line-through font-mono decoration-rose-500/80 decoration-2">
-            {isKit ? t.product.originalPrice : '~~25~~'}
+            {isKit ? t.product.originalPrice : '$25.00 USD'}
           </span>
 
           {/* Offer Price */}
@@ -300,9 +264,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <>
               <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-black" />
               <span>
-                {isSpanish
-                  ? `Comprar ahora (${currentProduct.price} USDT)`
-                  : `Buy Now (${currentProduct.price} USDT)`}
+                {isKit
+                  ? isSpanish
+                    ? 'Comprar Commercial Kit — 29 USDT'
+                    : 'Buy Commercial Kit — 29 USDT'
+                  : isSpanish
+                  ? 'Comprar Créditos Fixer — 9 USDT'
+                  : 'Buy Fixer Credits — 9 USDT'}
               </span>
             </>
           )}
@@ -319,10 +287,61 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </button>
         )}
 
+        {!isKit && (
+          <div className="pt-2 text-center">
+            <a
+              href={PUBLIC_FIXER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:underline font-mono"
+            >
+              <span>{isSpanish ? 'Abrir herramienta Vibe Error Fixer' : 'Open the Fixer tool'}</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        )}
+
         <p className="text-center text-[10px] sm:text-xs text-gray-400 font-medium pt-1">
           {t.product.secureNotice}
         </p>
       </div>
+
+      {/* DISCREET SECONDARY BLOCK: Vibe Error Fixer Upsell (Shown when Kit is active) */}
+      {isKit && (
+        <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 bg-[#161616] p-4 sm:p-4.5 rounded-2xl border border-white/5">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                {isSpanish ? 'Herramienta Secundaria' : 'Secondary Utility'}
+              </span>
+              <h4 className="text-xs sm:text-sm font-bold text-white">Vibe Error Fixer</h4>
+            </div>
+            <p className="text-[11px] text-gray-400 leading-relaxed">
+              {isSpanish
+                ? 'Créditos de diagnóstico IA para errores en apps generadas por IA — 9 USDT (5 análisis)'
+                : 'AI debug credits for AI-generated app errors — 9 USDT (5 analyses)'}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto shrink-0 pt-1 sm:pt-0">
+            <a
+              href={PUBLIC_FIXER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-mono text-gray-400 hover:text-cyan-400 underline transition-colors"
+            >
+              {isSpanish ? 'Abrir herramienta' : 'Open Fixer tool'}
+            </a>
+            <button
+              type="button"
+              onClick={() => handleProductChange('vibe-error-fixer')}
+              className="px-3.5 py-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>{isSpanish ? 'Obtener créditos' : 'Get Fixer credits'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

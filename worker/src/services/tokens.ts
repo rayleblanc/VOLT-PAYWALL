@@ -159,49 +159,19 @@ export interface AccessTokenPayload {
 export async function signAccessToken(
   orderId: string,
   productId: string,
-  secret: string,
+  secret?: string,
   credits: number = 5,
   ttlSeconds: number = 30 * 24 * 3600 // 30 days
 ): Promise<{ token: string; jti: string; expiresAtIso: string; createdAtIso: string }> {
-  if (!secret || secret.trim().length === 0) {
-    throw new Error('JWT_SECRET_REQUIRED: JWT_SECRET signature key is mandatory to issue access tokens.');
-  }
-
   const nowMs = Date.now();
-  const nowSec = Math.floor(nowMs / 1000);
-  const expSec = nowSec + ttlSeconds;
   const createdAtIso = new Date(nowMs).toISOString();
   const expiresAtIso = new Date(nowMs + ttlSeconds * 1000).toISOString();
 
   const jti = `vibe_ak_${crypto.randomUUID().replace(/-/g, '')}`;
 
-  const header = { alg: 'HS256', typ: 'ACCESS_KEY' };
-  const payload: AccessTokenPayload = {
-    orderId,
-    productId,
-    credits,
-    jti,
-    iat: nowSec,
-    exp: expSec,
-  };
-
-  const enc = new TextEncoder();
-  const headerB64 = base64UrlEncode(enc.encode(JSON.stringify(header)));
-  const payloadB64 = base64UrlEncode(enc.encode(JSON.stringify(payload)));
-  const dataToSign = `${headerB64}.${payloadB64}`;
-
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    enc.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-
-  const signature = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(dataToSign));
-  const signatureB64 = base64UrlEncode(signature);
-
-  const token = `${dataToSign}.${signatureB64}`;
+  // Opaque random token with volt_fixer_ prefix
+  const randomHex = `${crypto.randomUUID().replace(/-/g, '')}${crypto.randomUUID().replace(/-/g, '')}`;
+  const token = `volt_fixer_${randomHex}`;
 
   return {
     token,

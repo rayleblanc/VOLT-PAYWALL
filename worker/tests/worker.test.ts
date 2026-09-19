@@ -2382,7 +2382,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     const mockEnv: Env = {
       DB: mockDb,
       APP_ENV: 'development',
-      PAYMENT_RECIPIENT: '0x000000000000000000000000000000000000dEaD',
+      PAYMENT_RECIPIENT: '0x1750C0c093650C36DcF45843446567FF3f50cC5A',
     };
 
     // Attacker sends arbitrary overrides in POST body
@@ -2405,7 +2405,7 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
 
     assert.equal(data.status, 'PENDING');
     assert.equal(data.amount, '29');
-    assert.equal(data.recipient, '0x000000000000000000000000000000000000dEaD');
+    assert.equal(data.recipient, '0x1750C0c093650C36DcF45843446567FF3f50cC5A');
     assert.equal(insertedData.status, 'PENDING');
     assert.equal(insertedData.amount, '29');
   });
@@ -3025,6 +3025,142 @@ describe('VOLT Paywall Worker - Dual Payment Paths & Security Hardening Tests', 
     } finally {
       globalThis.fetch = originalFetch;
     }
+  });
+
+  it('60. POST /api/credits/consume exige CONSUME_SECRET configurado (500 CONFIG_ERROR si no existe)', async () => {
+    const mockEnv: Env = {
+      DB: {} as D1Database,
+      APP_ENV: 'development',
+    };
+
+    const req = new Request('http://localhost:8787/api/credits/consume', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: 'volt_fixer_test', amount: 1 }),
+    });
+
+    const res = await worker.fetch(req, mockEnv);
+    assert.equal(res.status, 500);
+    const data = await res.json() as any;
+    assert.equal(data.error.code, 'CONFIG_ERROR');
+  });
+
+  it('61. POST /api/credits/consume rechaza peticiones sin X-Volt-Secret (401 UNAUTHORIZED)', async () => {
+    const mockEnv: Env = {
+      DB: {} as D1Database,
+      APP_ENV: 'development',
+      CONSUME_SECRET: 'super_secret_key_123',
+    };
+
+    const req = new Request('http://localhost:8787/api/credits/consume', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: 'volt_fixer_test', amount: 1 }),
+    });
+
+    const res = await worker.fetch(req, mockEnv);
+    assert.equal(res.status, 401);
+    const data = await res.json() as any;
+    assert.equal(data.error.code, 'UNAUTHORIZED');
+  });
+
+  it('62. POST /api/credits/consume consume créditos con X-Volt-Secret válido', async () => {
+    let updatedCredits = 5;
+    const tokenRecord = {
+      id: 1,
+      token_hash: 'volt_fixer_valid_token_123',
+      order_id: 'volt_ord_fixer1',
+      product_id: 'vibe-error-fixer',
+      credits_remaining: 5,
+      initial_credits: 5,
+      expires_at: new Date(Date.now() + 86400000).toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const mockDb: D1Database = {
+      prepare: (query: string) => ({
+        bind: (...args: any[]) => ({
+          first: async () => {
+            if (query.includes('SELECT * FROM access_tokens')) return tokenRecord;
+            return null;
+          },
+          run: async () => {
+            if (query.includes('UPDATE access_tokens')) {
+              updatedCredits = args[0] as number;
+            }
+            return { success: true };
+          },
+        }),
+      }),
+    } as unknown as D1Database;
+
+    const mockEnv: Env = {
+      DB: mockDb,
+      APP_ENV: 'development',
+      CONSUME_SECRET: 'super_secret_key_123',
+    };
+
+    const req = new Request('http://localhost:8787/api/credits/consume', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Volt-Secret': 'super_secret_key_123',
+      },
+      body: JSON.stringify({ token: 'volt_fixer_valid_token_123', amount: 1 }),
+    });
+
+    const res = await worker.fetch(req, mockEnv);
+    assert.equal(res.status, 200);
+    const data = await res.json() as any;
+    assert.equal(data.success, true);
+    assert.equal(data.remainingCredits, 4);
+    assert.equal(data.productId, 'vibe-error-fixer');
+    assert.equal(updatedCredits, 4);
+  });
+
+  it('63. GET /api/credits devuelve créditos sin exponer URLs de Drive', async () => {
+    const tokenRecord = {
+      id: 1,
+      token_hash: 'volt_fixer_valid_token_123',
+      order_id: 'volt_ord_fixer1',
+      product_id: 'vibe-error-fixer',
+      credits_remaining: 4,
+      initial_credits: 5,
+      expires_at: new Date(Date.now() + 86400000).toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const mockDb: D1Database = {
+      prepare: (query: string) => ({
+        bind: (...args: any[]) => ({
+          first: async () => {
+            if (query.includes('SELECT * FROM access_tokens')) return tokenRecord;
+            return null;
+          },
+        }),
+      }),
+    } as unknown as D1Database;
+
+    const mockEnv: Env = {
+      DB: mockDb,
+      APP_ENV: 'development',
+    };
+
+    const req = new Request('http://localhost:8787/api/credits?token=volt_fixer_valid_token_123', {
+      method: 'GET',
+    });
+
+    const res = await worker.fetch(req, mockEnv);
+    assert.equal(res.status, 200);
+    const data = await res.json() as any;
+    assert.equal(data.success, true);
+    assert.equal(data.valid, true);
+    assert.equal(data.creditsRemaining, 4);
+    assert.equal(data.productId, 'vibe-error-fixer');
+    assert.equal(data.downloadUrl, undefined);
+    assert.equal(data.driveUrl, undefined);
   });
 });
 

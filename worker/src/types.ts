@@ -35,6 +35,8 @@ export interface Env {
   GOOGLE_DRIVE_URL?: string;
   PUBLIC_FIXER_URL?: string;
   FIXER_SERVICE_SECRET?: string;
+  CONSUME_SECRET?: string;
+  CREDITS_API_SECRET?: string;
   ADMIN_SECRET?: string;
 }
 
