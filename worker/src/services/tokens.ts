@@ -142,3 +142,126 @@ export async function verifyDownloadToken(
     return { valid: false, error: 'VERIFICATION_FAILED' };
   }
 }
+
+export interface AccessTokenPayload {
+  orderId: string;
+  productId: string;
+  credits: number;
+  jti: string;
+  iat: number;
+  exp: number;
+}
+
+/**
+ * Signs and generates a secure, opaque access token for credit-based products (e.g. Vibe Error Fixer).
+ * Default expiry: 30 days.
+ */
+export async function signAccessToken(
+  orderId: string,
+  productId: string,
+  secret: string,
+  credits: number = 5,
+  ttlSeconds: number = 30 * 24 * 3600 // 30 days
+): Promise<{ token: string; jti: string; expiresAtIso: string; createdAtIso: string }> {
+  if (!secret || secret.trim().length === 0) {
+    throw new Error('JWT_SECRET_REQUIRED: JWT_SECRET signature key is mandatory to issue access tokens.');
+  }
+
+  const nowMs = Date.now();
+  const nowSec = Math.floor(nowMs / 1000);
+  const expSec = nowSec + ttlSeconds;
+  const createdAtIso = new Date(nowMs).toISOString();
+  const expiresAtIso = new Date(nowMs + ttlSeconds * 1000).toISOString();
+
+  const jti = `vibe_ak_${crypto.randomUUID().replace(/-/g, '')}`;
+
+  const header = { alg: 'HS256', typ: 'ACCESS_KEY' };
+  const payload: AccessTokenPayload = {
+    orderId,
+    productId,
+    credits,
+    jti,
+    iat: nowSec,
+    exp: expSec,
+  };
+
+  const enc = new TextEncoder();
+  const headerB64 = base64UrlEncode(enc.encode(JSON.stringify(header)));
+  const payloadB64 = base64UrlEncode(enc.encode(JSON.stringify(payload)));
+  const dataToSign = `${headerB64}.${payloadB64}`;
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(dataToSign));
+  const signatureB64 = base64UrlEncode(signature);
+
+  const token = `${dataToSign}.${signatureB64}`;
+
+  return {
+    token,
+    jti,
+    expiresAtIso,
+    createdAtIso,
+  };
+}
+
+/**
+ * Cryptographically verifies an access token using HMAC-SHA256.
+ */
+export async function verifyAccessToken(
+  token: string,
+  secret: string
+): Promise<{ valid: boolean; payload?: AccessTokenPayload; error?: string }> {
+  if (!secret || secret.trim().length === 0) {
+    return { valid: false, error: 'JWT_SECRET_REQUIRED' };
+  }
+
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return { valid: false, error: 'INVALID_TOKEN_FORMAT' };
+  }
+
+  const [headerB64, payloadB64, signatureB64] = parts;
+  const dataToSign = `${headerB64}.${payloadB64}`;
+
+  const enc = new TextEncoder();
+  try {
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      enc.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+
+    const signatureBytes = base64UrlDecode(signatureB64);
+    const isValidSig = await crypto.subtle.verify(
+      'HMAC',
+      cryptoKey,
+      signatureBytes,
+      enc.encode(dataToSign)
+    );
+
+    if (!isValidSig) {
+      return { valid: false, error: 'INVALID_SIGNATURE' };
+    }
+
+    const payloadJson = new TextDecoder().decode(base64UrlDecode(payloadB64));
+    const payload: AccessTokenPayload = JSON.parse(payloadJson);
+
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (payload.exp && nowSec > payload.exp) {
+      return { valid: false, error: 'TOKEN_EXPIRED' };
+    }
+
+    return { valid: true, payload };
+  } catch {
+    return { valid: false, error: 'VERIFICATION_FAILED' };
+  }
+}

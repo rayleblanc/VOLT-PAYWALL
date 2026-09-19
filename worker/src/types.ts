@@ -11,6 +11,8 @@ export type OrderStatus =
   | 'CANCELLED'
   | 'MANUAL_REVIEW';
 
+export type DeliveryMode = 'DRIVE_FILE' | 'CREDITS';
+
 export interface Env {
   DB: D1Database;
   PAYMENT_RECIPIENT?: string;
@@ -21,25 +23,31 @@ export interface Env {
   USDT_CONTRACT_ADDRESS?: string;
   RPC_CHUNK_SIZE?: string;
   ASSETS_KV?: KVNamespace;
-  PRODUCT_PAYLOAD_KV?: KVNamespace; // Namespace for Project B ZIP delivery
+  PRODUCT_PAYLOAD_KV?: KVNamespace;
   RATE_LIMIT_KV?: KVNamespace;
   ASSETS?: Fetcher;
   JWT_SECRET?: string;
   DRIVE_DELIVERY_URL?: string;
+  DRIVE_DELIVERY_URL_KIT?: string;
   DEFAULT_DELIVERY_URL?: string;
   SECRET_CONTENT_URL?: string;
   DRIVE_URL?: string;
   GOOGLE_DRIVE_URL?: string;
+  PUBLIC_FIXER_URL?: string;
+  FIXER_SERVICE_SECRET?: string;
+  ADMIN_SECRET?: string;
 }
 
 export interface ProductConfig {
   id: string;
   name: string;
-  price: string; // Base integer price as string e.g. "29"
+  price: string; // Base price as string e.g. "29" or "9"
   currency: 'USDT';
   network: 'BSC';
   chainId: 56 | 97;
   active: boolean;
+  deliveryMode: DeliveryMode;
+  credits?: number;
   tagline?: string;
   description?: string;
 }
@@ -52,10 +60,12 @@ export interface CreateOrderRequest {
 export interface CreateOrderSuccessResponse {
   orderId: string;
   productId: string;
+  productName: string;
+  deliveryMode: DeliveryMode;
   paymentMode: 'wallet' | 'manual';
-  amount: string; // "39" for wallet, "39.XXXX" for manual
+  amount: string; // "29" or "9"
   expectedAmount: string;
-  expectedUnits: string; // Exact token units string in 18 decimals (e.g. "39000000000000000000")
+  expectedUnits: string; // Exact token units in 18 decimals
   currency: 'USDT';
   network: 'BSC';
   chainId: 56 | 97;
@@ -67,6 +77,9 @@ export interface CreateOrderSuccessResponse {
 
 export interface OrderStatusSuccessResponse {
   orderId: string;
+  productId: string;
+  productName: string;
+  deliveryMode: DeliveryMode;
   status: OrderStatus;
   paymentMode: 'wallet' | 'manual';
   amount: string;
@@ -81,6 +94,12 @@ export interface OrderStatusSuccessResponse {
   txHash: string | null;
   confirmations: number;
   createdBlock: number | null;
+  token?: string; // For DRIVE_FILE products
+  downloadUrl?: string; // For DRIVE_FILE products
+  accessToken?: string; // For CREDITS products (e.g. Vibe Error Fixer)
+  creditsRemaining?: number; // For CREDITS products
+  initialCredits?: number;
+  fixerUrl?: string;
 }
 
 export interface ApiErrorResponse {
@@ -149,4 +168,16 @@ export interface D1DownloadTokenRecord {
   expires_at: string;
   used_at: string | null;
   created_at: string;
+}
+
+export interface D1AccessTokenRecord {
+  id: number;
+  token_hash: string;
+  order_id: string;
+  product_id: string;
+  credits_remaining: number;
+  initial_credits: number;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
 }

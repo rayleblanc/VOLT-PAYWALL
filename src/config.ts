@@ -97,6 +97,8 @@ export const PRODUCT_INFO = {
   networkBadge: 'BSC USDT',
 };
 
+export const PUBLIC_FIXER_URL = (import.meta.env.VITE_PUBLIC_FIXER_URL as string) || 'https://vibe-fixer.workers.dev';
+
 export interface CatalogItem {
   id: string;
   name: string;
@@ -106,6 +108,10 @@ export interface CatalogItem {
   active: boolean;
   tagline: string;
   description: string;
+  deliveryMode: 'DRIVE_FILE' | 'CREDITS';
+  credits?: number;
+  badge?: string;
+  features: string[];
 }
 
 export const PRODUCTS_CATALOG: CatalogItem[] = [
@@ -118,6 +124,33 @@ export const PRODUCTS_CATALOG: CatalogItem[] = [
     active: true,
     tagline: 'Self-Hosted USDT Checkout Engine',
     description: 'Complete source code + Cloudflare Worker backend + unlimited commercial license.',
+    deliveryMode: 'DRIVE_FILE',
+    badge: 'Popular Kit',
+    features: [
+      'Full React + Worker source code',
+      'Anti-replay D1 transaction ledger',
+      'Instant 1-hour signed ZIP download',
+      'Zero monthly platform fees',
+    ],
+  },
+  {
+    id: 'vibe-error-fixer',
+    name: 'Vibe Error Fixer — 5 AI Debug Credits',
+    price: '9',
+    currency: 'USDT',
+    network: 'BSC',
+    active: true,
+    tagline: '5 AI Debug & Trace Passes',
+    description: 'Instant cryptographic access key to diagnose and fix applet build & runtime errors.',
+    deliveryMode: 'CREDITS',
+    credits: 5,
+    badge: 'AI Powered',
+    features: [
+      '5 AI-powered build & runtime trace fixes',
+      'Private 30-day cryptographic pass key',
+      'Direct one-click launch interface',
+      'No subscription commitments',
+    ],
   },
   {
     id: 'volt-affiliates',
@@ -128,6 +161,12 @@ export const PRODUCTS_CATALOG: CatalogItem[] = [
     active: false,
     tagline: 'Coming soon',
     description: 'Automated on-chain revenue sharing and affiliate payouts for digital merchants.',
+    deliveryMode: 'DRIVE_FILE',
+    features: [
+      'Automated smart contract revenue splits',
+      'Multi-tier commission tracking',
+      'BSC BEP-20 native settlement',
+    ],
   },
   {
     id: 'volt-subscriptions',
@@ -138,8 +177,18 @@ export const PRODUCTS_CATALOG: CatalogItem[] = [
     active: false,
     tagline: 'Coming soon',
     description: 'Time-expiring cryptographic passes and periodic renewal checks without custodian.',
+    deliveryMode: 'CREDITS',
+    features: [
+      'Token-gated periodic renewal verification',
+      'Cryptographic time-expiring passes',
+      'Non-custodial access control',
+    ],
   },
 ];
+
+export const getCatalogItemById = (id: string): CatalogItem => {
+  return PRODUCTS_CATALOG.find((p) => p.id === id) || PRODUCTS_CATALOG[0];
+};
 
 // Simulated receiver wallet address for demo mode (uses user's configured BNB address)
 export const SIMULATED_WALLET_ADDRESS = '0x1750C0c093650C36DcF45843446567FF3f50cC5A';

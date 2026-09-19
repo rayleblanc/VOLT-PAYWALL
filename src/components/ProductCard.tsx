@@ -1,10 +1,25 @@
 import React, { useState } from 'react';
-import { ShoppingCart, ShieldCheck, AlertCircle, Loader2, Check, Wallet, Smartphone, Zap, ExternalLink, Play, Sparkles } from 'lucide-react';
-import { PRODUCT_INFO } from '../config';
+import {
+  ShoppingCart,
+  ShieldCheck,
+  AlertCircle,
+  Loader2,
+  Check,
+  Wallet,
+  Smartphone,
+  Zap,
+  Play,
+  Sparkles,
+  Package,
+  Layers,
+} from 'lucide-react';
+import { PRODUCTS_CATALOG, getCatalogItemById } from '../config';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface ProductCardProps {
-  onBuyNow: (paymentMode: 'wallet' | 'manual') => void;
+  selectedProductId?: string;
+  onSelectProduct?: (productId: string) => void;
+  onBuyNow: (paymentMode: 'wallet' | 'manual', productId?: string) => void;
   onTryDemo?: () => void;
   isLoading: boolean;
   error?: string | null;
@@ -12,25 +27,98 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
+  selectedProductId = 'creator-pack',
+  onSelectProduct,
   onBuyNow,
   onTryDemo,
   isLoading,
   error,
   onRetry,
 }) => {
+  const [internalProductId, setInternalProductId] = useState<string>(selectedProductId);
   const [paymentMode, setPaymentMode] = useState<'wallet' | 'manual'>('wallet');
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isSpanish = language === 'ES';
+
+  const activeProductId = selectedProductId || internalProductId;
+  const currentProduct = getCatalogItemById(activeProductId);
+
+  const handleProductChange = (id: string) => {
+    setInternalProductId(id);
+    if (onSelectProduct) {
+      onSelectProduct(id);
+    }
+  };
+
+  const isKit = activeProductId === 'creator-pack';
 
   return (
-    <div id="pricing-block" className="w-full max-w-xl mx-auto bg-[#111111] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-9 shadow-2xl relative overflow-hidden">
+    <div
+      id="pricing-block"
+      className="w-full max-w-xl mx-auto bg-[#111111] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-9 shadow-2xl relative overflow-hidden"
+    >
       {/* Decorative background glow */}
       <div className="absolute -top-24 -right-24 w-60 h-60 bg-[#FFB800]/10 rounded-full blur-3xl pointer-events-none" />
 
-      {/* 7) Badge Founding / launch */}
-      <div className="flex items-center justify-between mb-5 sm:mb-6 gap-2">
+      {/* Product Switcher Tabs */}
+      <div className="mb-6 space-y-2">
+        <span className="text-gray-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest block">
+          {isSpanish ? 'Selecciona tu producto' : 'Choose Product'}
+        </span>
+        <div className="grid grid-cols-2 gap-2 bg-[#181818] p-1.5 rounded-2xl border border-white/5">
+          <button
+            type="button"
+            onClick={() => handleProductChange('creator-pack')}
+            className={`py-2.5 sm:py-3 px-3 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-center ${
+              isKit
+                ? 'bg-white text-black shadow-lg'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <div className="flex items-center justify-between w-full">
+              <span className="text-xs sm:text-sm font-extrabold flex items-center gap-1.5 truncate">
+                <Package className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">VOLT Kit</span>
+              </span>
+              <span className={`text-xs font-mono font-black ${isKit ? 'text-black' : 'text-[#FFB800]'}`}>
+                29 USDT
+              </span>
+            </div>
+            <span className={`text-[10px] font-medium truncate mt-0.5 ${isKit ? 'text-gray-700' : 'text-gray-400'}`}>
+              {isSpanish ? 'Código fuente + Licencia' : 'Source Code + License'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleProductChange('vibe-error-fixer')}
+            className={`py-2.5 sm:py-3 px-3 rounded-xl text-left transition-all cursor-pointer flex flex-col justify-center ${
+              !isKit
+                ? 'bg-white text-black shadow-lg'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <div className="flex items-center justify-between w-full">
+              <span className="text-xs sm:text-sm font-extrabold flex items-center gap-1.5 truncate">
+                <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Error Fixer</span>
+              </span>
+              <span className={`text-xs font-mono font-black ${!isKit ? 'text-black' : 'text-[#FFB800]'}`}>
+                9 USDT
+              </span>
+            </div>
+            <span className={`text-[10px] font-medium truncate mt-0.5 ${!isKit ? 'text-gray-700' : 'text-gray-400'}`}>
+              {isSpanish ? '5 Créditos AI Debug' : '5 AI Debug Credits'}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Badge Founding / launch */}
+      <div className="flex items-center justify-between mb-4 sm:mb-5 gap-2">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#FFB800]/10 border border-[#FFB800]/30 rounded-full text-[11px] sm:text-xs font-mono font-bold text-[#FFB800]">
           <Zap className="w-3.5 h-3.5 fill-[#FFB800]" />
-          <span>{t.product.urgencyBadge}</span>
+          <span>{currentProduct.badge || t.product.urgencyBadge}</span>
         </div>
         <div className="bg-[#181818] border border-white/5 px-2.5 sm:px-3 py-1 rounded-full flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-300">
           <ShieldCheck className="w-3.5 h-3.5 text-[#00C853]" />
@@ -41,29 +129,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Product Title & Tagline */}
       <div className="mb-5 sm:mb-6">
         <h2 className="text-xl sm:text-3xl font-black text-white leading-tight mb-2">
-          {t.product.title}
+          {isKit ? t.product.title : currentProduct.name}
         </h2>
         <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
-          {t.product.description}
+          {isKit ? t.product.description : currentProduct.description}
         </p>
       </div>
 
-      {/* 7) Precio: ~~99~~ → 29 USDT one-time + Direct BSC payment. No VOLT per-sale fee. */}
+      {/* Price Box */}
       <div className="p-4 sm:p-5 bg-black/40 border border-white/10 rounded-2xl mb-6">
         <div className="flex items-baseline gap-2.5 flex-wrap mb-2">
-          {/* Strikethrough Original Price: ~~99~~ */}
+          {/* Strikethrough Original Price */}
           <span className="text-lg sm:text-2xl font-bold text-gray-500 line-through font-mono decoration-rose-500/80 decoration-2">
-            {t.product.originalPrice}
+            {isKit ? t.product.originalPrice : '~~25~~'}
           </span>
 
-          {/* Offer Price: 29 USDT one-time */}
+          {/* Offer Price */}
           <span className="text-3xl sm:text-5xl font-black text-[#FFB800] font-mono tracking-tight">
-            {PRODUCT_INFO.basePrice}.00
+            {currentProduct.price}.00
           </span>
           <span className="text-lg sm:text-xl text-gray-200 font-extrabold">USDT</span>
 
           <span className="text-xs font-mono font-bold text-gray-400 bg-white/5 px-2 py-0.5 rounded">
-            one-time
+            {isKit ? 'one-time' : '5 credits'}
           </span>
         </div>
 
@@ -76,22 +164,61 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       {/* Features List */}
       <div className="space-y-2.5 mb-6 text-xs sm:text-sm text-gray-300">
-        <div className="flex items-start gap-2.5">
-          <Check className="w-4 h-4 text-[#FFB800] shrink-0 mt-0.5" />
-          <span>{t.product.feature1}</span>
-        </div>
-        <div className="flex items-start gap-2.5">
-          <Check className="w-4 h-4 text-[#FFB800] shrink-0 mt-0.5" />
-          <span>{t.product.feature2}</span>
-        </div>
-        <div className="flex items-start gap-2.5">
-          <Check className="w-4 h-4 text-[#FFB800] shrink-0 mt-0.5" />
-          <span>{t.product.feature3}</span>
-        </div>
-        <div className="flex items-start gap-2.5">
-          <Check className="w-4 h-4 text-[#FFB800] shrink-0 mt-0.5" />
-          <span>{t.product.feature4}</span>
-        </div>
+        {isKit ? (
+          <>
+            <div className="flex items-start gap-2.5">
+              <Check className="w-4 h-4 text-[#FFB800] shrink-0 mt-0.5" />
+              <span>{t.product.feature1}</span>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <Check className="w-4 h-4 text-[#FFB800] shrink-0 mt-0.5" />
+              <span>{t.product.feature2}</span>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <Check className="w-4 h-4 text-[#FFB800] shrink-0 mt-0.5" />
+              <span>{t.product.feature3}</span>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <Check className="w-4 h-4 text-[#FFB800] shrink-0 mt-0.5" />
+              <span>{t.product.feature4}</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-start gap-2.5">
+              <Check className="w-4 h-4 text-[#FFB800] shrink-0 mt-0.5" />
+              <span>
+                {isSpanish
+                  ? '5 diagnósticos y soluciones de errores en código/logs con IA'
+                  : '5 comprehensive AI-powered build & runtime error diagnoses'}
+              </span>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <Check className="w-4 h-4 text-[#FFB800] shrink-0 mt-0.5" />
+              <span>
+                {isSpanish
+                  ? 'Clave criptográfica privada de acceso válida por 30 días'
+                  : 'Private cryptographic access pass valid for 30 days'}
+              </span>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <Check className="w-4 h-4 text-[#FFB800] shrink-0 mt-0.5" />
+              <span>
+                {isSpanish
+                  ? 'Sin suscripciones mensuales recurrentes obligatorias'
+                  : 'No forced monthly recurring subscriptions or commitments'}
+              </span>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <Check className="w-4 h-4 text-[#FFB800] shrink-0 mt-0.5" />
+              <span>
+                {isSpanish
+                  ? 'Entrega digital instantánea verificada en BNB Chain'
+                  : 'Instant digital key provisioning verified on BNB Chain'}
+              </span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Error Banner */}
@@ -155,7 +282,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="space-y-3">
         <button
           type="button"
-          onClick={() => onBuyNow(paymentMode)}
+          onClick={() => onBuyNow(paymentMode, activeProductId)}
           disabled={isLoading}
           aria-label={t.hero.ctaPrimary}
           className={`w-full py-4 px-5 rounded-xl sm:rounded-2xl font-black text-sm sm:text-base transition-all duration-200 shadow-xl flex items-center justify-center space-x-2 cursor-pointer ${
@@ -172,12 +299,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           ) : (
             <>
               <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-black" />
-              <span>{t.hero.ctaPrimary}</span>
+              <span>
+                {isSpanish
+                  ? `Comprar ahora (${currentProduct.price} USDT)`
+                  : `Buy Now (${currentProduct.price} USDT)`}
+              </span>
             </>
           )}
         </button>
 
-        {onTryDemo && (
+        {onTryDemo && isKit && (
           <button
             type="button"
             onClick={onTryDemo}

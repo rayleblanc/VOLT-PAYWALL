@@ -206,7 +206,7 @@ export async function verifyOrderPayment(orderId: string, env: Env, clientTxHash
 
         if (!validCandidate && foundTransfer) {
           if (amountTooLowFound) {
-            const error: any = new Error('Monto pagado inferior al precio requerido (29 USDT).');
+            const error: any = new Error(`Monto pagado inferior al precio requerido (${record.amount} USDT).`);
             error.code = 'INSUFFICIENT_AMOUNT';
             error.status = 400;
             throw error;

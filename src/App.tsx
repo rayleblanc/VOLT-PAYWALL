@@ -42,6 +42,8 @@ export default function App() {
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [selectedProductId, setSelectedProductId] = useState<string>(PRODUCT_ID);
+
   // Helper function to clear active timers
   const clearTimers = () => {
     if (pollingTimerRef.current) {
@@ -55,15 +57,19 @@ export default function App() {
   };
 
   // Create order handler - strictly sends { productId, paymentMode }
-  const handleBuyNow = async (paymentMode: 'wallet' | 'manual' = 'wallet') => {
+  const handleBuyNow = async (
+    paymentMode: 'wallet' | 'manual' = 'wallet',
+    productIdToBuy?: string
+  ) => {
     if (viewMode === 'CREATING_ORDER') return; // Prevent duplicate clicks
 
+    const prodId = productIdToBuy || selectedProductId || PRODUCT_ID;
     setErrorMessage(null);
     setViewMode('CREATING_ORDER');
 
     try {
       const response = await api.createOrder({
-        productId: PRODUCT_ID,
+        productId: prodId,
         paymentMode,
       });
 
@@ -394,11 +400,13 @@ export default function App() {
                 {/* Pricing & Checkout Box */}
                 <section className="w-full px-4 sm:px-6 pb-12 sm:pb-16">
                   <ProductCard
+                    selectedProductId={selectedProductId}
+                    onSelectProduct={setSelectedProductId}
                     onBuyNow={handleBuyNow}
                     onTryDemo={handleTryDemo}
                     isLoading={viewMode === 'CREATING_ORDER'}
                     error={errorMessage}
-                    onRetry={() => handleBuyNow('wallet')}
+                    onRetry={() => handleBuyNow('wallet', selectedProductId)}
                   />
                 </section>
 
@@ -452,7 +460,13 @@ export default function App() {
             {(activeTab === 'faq' || activeTab === 'all') && (
               <div>
                 <FAQ />
-                <FutureCatalogSection />
+                <FutureCatalogSection
+                  onSelectProduct={(id) => {
+                    setSelectedProductId(id);
+                    setActiveTab('checkout');
+                    scrollToPricing();
+                  }}
+                />
               </div>
             )}
 

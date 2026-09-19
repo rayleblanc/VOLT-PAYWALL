@@ -2,10 +2,10 @@
 
 import { Env, CreateOrderSuccessResponse, OrderStatusSuccessResponse, D1OrderRecord } from '../types';
 import {
-  PRODUCT,
+  getProductById,
+  DEFAULT_PRODUCT,
   DEV_PAYMENT_RECIPIENT,
   ORDER_TTL_MS,
-  generateExactAmount,
   generateOrderId,
   usdtToTokenUnits,
 } from '../config';
@@ -21,8 +21,14 @@ export async function createOrderInD1(
   paymentMode: 'wallet' | 'manual' = 'manual',
   env: Env
 ): Promise<CreateOrderSuccessResponse> {
-  if (productId !== PRODUCT.id && productId !== 'volt-founding-kit') {
-    throw new Error(`INVALID_PRODUCT_ID: Product '${productId}' is not supported.`);
+  const cleanProductId = (productId || '').trim();
+  if (!cleanProductId) {
+    throw new Error('INVALID_PRODUCT: Product ID is required.');
+  }
+
+  const targetProduct = getProductById(cleanProductId);
+  if (!targetProduct || !targetProduct.active) {
+    throw new Error(`INVALID_PRODUCT: Product '${cleanProductId}' does not exist or is currently inactive. Orders cannot be created for inactive products.`);
   }
 
   const orderId = generateOrderId();
@@ -45,9 +51,9 @@ export async function createOrderInD1(
     );
   }
 
-  // Price is strictly 29 USDT server-side authoritative
-  const amount = PRODUCT.price; // "29" USDT
-  const expectedAmount = PRODUCT.price;
+  // Price is strictly server-side authoritative from catalog (e.g. "29" or "9" USDT)
+  const amount = targetProduct.price;
+  const expectedAmount = targetProduct.price;
 
   // Exact BigInt calculation of 18-decimal token units (no floating point)
   const expectedUnits = usdtToTokenUnits(expectedAmount);
@@ -58,14 +64,13 @@ export async function createOrderInD1(
 
   const activeChainId = env.CHAIN_ID ? parseInt(env.CHAIN_ID, 10) : 56;
 
-  // Obtain block number via RPC if configured (Objetivo 3 & Audit hardening)
+  // Obtain block number via RPC if configured
   let createdBlock: number | null = null;
   const rpcConfigured = Boolean(
     env.BSC_RPC_URL &&
     !['', 'none', 'disabled'].includes(env.BSC_RPC_URL.trim().toLowerCase())
   );
   if (rpcConfigured) {
-    // Real/Testnet blockchain flow: RPC is configured, so we MUST successfully fetch chainId and blockNumber
     try {
       const chainId = await getChainId(env);
       if (chainId !== activeChainId) {
@@ -79,7 +84,6 @@ export async function createOrderInD1(
       throw new Error(`BLOCKCHAIN_RPC_FAILURE: Failed to obtain valid created_block from RPC: ${err instanceof Error ? err.message : String(err)}`);
     }
   } else {
-    // Demo / offline mode without RPC configured: createdBlock remains null
     createdBlock = null;
   }
 
@@ -99,13 +103,13 @@ export async function createOrderInD1(
   await env.DB.prepare(insertQuery)
     .bind(
       orderId,
-      PRODUCT.id,
+      targetProduct.id,
       paymentMode,
       amount,
       expectedAmount,
       expectedUnits,
-      PRODUCT.currency,
-      PRODUCT.network,
+      targetProduct.currency,
+      targetProduct.network,
       activeChainId,
       recipient,
       'PENDING',
@@ -118,13 +122,15 @@ export async function createOrderInD1(
 
   return {
     orderId,
-    productId: PRODUCT.id,
+    productId: targetProduct.id,
+    productName: targetProduct.name,
+    deliveryMode: targetProduct.deliveryMode,
     paymentMode,
     amount,
     expectedAmount,
     expectedUnits,
-    currency: PRODUCT.currency,
-    network: PRODUCT.network,
+    currency: targetProduct.currency,
+    network: targetProduct.network,
     chainId: activeChainId as 56 | 97,
     recipient,
     expiresAt: expiresAtIso,
@@ -149,7 +155,7 @@ export async function getOrderStatusFromD1(
     return null;
   }
 
-  // Attempt verification if pending, expired, or confirming (to update confirmations or transition to PAID)
+  // Attempt verification if pending, expired, or confirming
   if (record.status === 'PENDING' || record.status === 'EXPIRED' || record.status === 'CONFIRMING') {
     try {
       await verifyOrderPayment(orderId, env, clientTxHash);
@@ -172,8 +178,13 @@ export async function getOrderStatusFromD1(
     await env.DB.prepare(updateQuery).bind('EXPIRED', new Date(nowMs).toISOString(), orderId).run();
   }
 
+  const product = getProductById(freshRecord.product_id) || DEFAULT_PRODUCT;
+
   return {
     orderId: freshRecord.id,
+    productId: freshRecord.product_id || product.id,
+    productName: product.name,
+    deliveryMode: product.deliveryMode,
     status: currentStatus,
     paymentMode: freshRecord.payment_mode || 'manual',
     amount: freshRecord.amount,

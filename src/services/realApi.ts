@@ -18,7 +18,7 @@ import {
   Order,
   ApiError,
 } from '../types';
-import { API_BASE_URL, PRODUCT_INFO } from '../config';
+import { API_BASE_URL, PRODUCT_INFO, getCatalogItemById } from '../config';
 import { mockApi } from './mockApi';
 
 /**
@@ -91,11 +91,14 @@ export const realApi: ApiClient = {
       }
 
       const data: CreateOrderResponse = await response.json();
+      const catalogItem = getCatalogItemById(data.productId);
 
       const order: Order = {
         orderId: data.orderId,
         productId: data.productId,
-        productName: PRODUCT_INFO.name,
+        productName: data.productName || catalogItem.name,
+        deliveryMode: data.deliveryMode || catalogItem.deliveryMode,
+        paymentMode: data.paymentMode || params.paymentMode,
         amount: data.amount, // STRICTLY string
         currency: 'USDT',
         network: 'BNB Smart Chain',

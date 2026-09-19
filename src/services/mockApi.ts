@@ -11,17 +11,12 @@ import {
   SIMULATED_WALLET_ADDRESS,
   ORDER_EXPIRATION_SECONDS,
   DEFAULT_CHAIN_ID,
+  getCatalogItemById,
+  PUBLIC_FIXER_URL,
 } from '../config';
 
 // In-memory mock database store for orders
 const mockOrdersStore: Map<string, Order> = new Map();
-
-/**
- * Generates exact amount as a string strictly 29.00 USDT
- */
-function generateSimulatedAmount(basePrice: number): string {
-  return `${basePrice}.00`;
-}
 
 /**
  * Generates a mock order ID
@@ -40,6 +35,14 @@ function generateMockTxHash(): string {
 }
 
 /**
+ * Generates mock access token for credit-based products
+ */
+function generateMockAccessToken(): string {
+  const randomHex = Math.random().toString(16).substring(2, 12);
+  return `vfix_${randomHex}_demo_pass`;
+}
+
+/**
  * Simulates slight network latency
  */
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -53,20 +56,32 @@ export const mockApi: ApiClient = {
     await delay(500);
 
     try {
+      const prodId = (params.productId || 'creator-pack').trim();
+      const catalogItem = getCatalogItemById(prodId);
+
+      if (!catalogItem || !catalogItem.active) {
+        return {
+          success: false,
+          error: {
+            code: 'INVALID_PRODUCT',
+            message: `Product '${prodId}' does not exist or is currently inactive. Orders cannot be created for inactive products.`,
+          },
+        };
+      }
+
       const orderId = generateOrderId();
       const paymentMode = params.paymentMode || 'manual';
-      let amountExactStr: string;
-      let expectedUnitsStr: string;
 
-      amountExactStr = '29.00';
-      expectedUnitsStr = '29000000000000000000';
+      const amountExactStr = `${catalogItem.price}.00`;
+      const expectedUnitsStr = `${parseInt(catalogItem.price, 10)}000000000000000000`;
 
       const expiresAtIso = new Date(Date.now() + ORDER_EXPIRATION_SECONDS * 1000).toISOString();
 
       const newOrder: Order = {
         orderId,
-        productId: params.productId || PRODUCT_INFO.id,
-        productName: PRODUCT_INFO.name,
+        productId: catalogItem.id,
+        productName: catalogItem.name,
+        deliveryMode: catalogItem.deliveryMode,
         paymentMode,
         amount: amountExactStr, // Strictly string
         expectedAmount: amountExactStr,
@@ -125,6 +140,9 @@ export const mockApi: ApiClient = {
 
     const statusResponse: OrderStatusResponse = {
       orderId: order.orderId,
+      productId: order.productId,
+      productName: order.productName,
+      deliveryMode: order.deliveryMode,
       status: order.status,
       amount: order.amount,
       currency: 'USDT',
@@ -134,6 +152,10 @@ export const mockApi: ApiClient = {
       expiresAt: order.expiresAt,
       txHash: order.txHash,
       confirmations: order.confirmations,
+      accessToken: order.accessToken,
+      creditsRemaining: order.creditsRemaining,
+      initialCredits: order.initialCredits,
+      fixerUrl: order.fixerUrl,
     };
 
     return {
@@ -158,11 +180,22 @@ export const mockApi: ApiClient = {
     order.status = 'PAID';
     order.txHash = txHash;
     order.confirmations = 3;
+
+    if (order.deliveryMode === 'CREDITS' || order.productId === 'vibe-error-fixer') {
+      order.accessToken = generateMockAccessToken();
+      order.creditsRemaining = 5;
+      order.initialCredits = 5;
+      order.fixerUrl = PUBLIC_FIXER_URL;
+    }
+
     mockOrdersStore.set(orderId, order);
     return {
       success: true,
       statusResponse: {
         orderId: order.orderId,
+        productId: order.productId,
+        productName: order.productName,
+        deliveryMode: order.deliveryMode,
         status: 'PAID',
         amount: order.amount,
         currency: 'USDT',
@@ -172,6 +205,10 @@ export const mockApi: ApiClient = {
         expiresAt: order.expiresAt,
         txHash,
         confirmations: 3,
+        accessToken: order.accessToken,
+        creditsRemaining: order.creditsRemaining,
+        initialCredits: order.initialCredits,
+        fixerUrl: order.fixerUrl,
       },
     };
   },
@@ -198,6 +235,14 @@ export const mockApi: ApiClient = {
     order.status = 'PAID';
     order.txHash = txHash;
     order.confirmations = 12;
+
+    if (order.deliveryMode === 'CREDITS' || order.productId === 'vibe-error-fixer') {
+      order.accessToken = generateMockAccessToken();
+      order.creditsRemaining = 5;
+      order.initialCredits = 5;
+      order.fixerUrl = PUBLIC_FIXER_URL;
+    }
+
     mockOrdersStore.set(orderId, order);
 
     return {

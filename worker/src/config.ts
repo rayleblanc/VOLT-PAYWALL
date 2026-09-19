@@ -6,41 +6,43 @@ import { ProductConfig } from './types';
 export const PRODUCTS: ProductConfig[] = [
   {
     id: 'creator-pack',
-    name: 'VOLT Paywall V1 — Commercial Kit',
+    name: 'VOLT Paywall Kit',
     price: '29',
     currency: 'USDT',
     network: 'BSC',
     chainId: 56,
     active: true,
+    deliveryMode: 'DRIVE_FILE',
     tagline: 'Self-Hosted USDT Checkout Engine',
-    description: 'Complete source code + Cloudflare Worker backend + unlimited commercial license.',
+    description: 'Full source code + Cloudflare Worker payment backend + commercial license.',
   },
   {
-    id: 'volt-affiliates',
-    name: 'VOLT Affiliates — On-Chain Referral Splitter',
-    price: '49',
+    id: 'vibe-error-fixer',
+    name: 'Vibe Error Fixer',
+    price: '9',
     currency: 'USDT',
     network: 'BSC',
     chainId: 56,
-    active: false,
-    tagline: 'Coming soon',
-    description: 'Automated on-chain revenue sharing and affiliate payouts for digital merchants.',
-  },
-  {
-    id: 'volt-subscriptions',
-    name: 'VOLT Subscriptions — Token-Gated Recurring Access',
-    price: '59',
-    currency: 'USDT',
-    network: 'BSC',
-    chainId: 56,
-    active: false,
-    tagline: 'Coming soon',
-    description: 'Time-expiring cryptographic passes and periodic renewal checks without custodian.',
+    active: true,
+    deliveryMode: 'CREDITS',
+    credits: 5,
+    tagline: 'AI Debug & Error Resolution Pack',
+    description: '5 autonomous AI debug analyses to diagnose and fix stack traces, build errors, and runtime crashes.',
   },
 ];
 
-// Active single product specification (BSC Mainnet default)
+// Fallback / default product
+export const DEFAULT_PRODUCT: ProductConfig = PRODUCTS[0];
 export const PRODUCT: ProductConfig = PRODUCTS[0];
+
+/**
+ * Finds a product by its ID in the authoritative server catalog.
+ */
+export function getProductById(productId: string): ProductConfig | undefined {
+  if (!productId) return undefined;
+  const cleanId = productId.trim().toLowerCase();
+  return PRODUCTS.find((p) => p.id.toLowerCase() === cleanId || (cleanId === 'volt-founding-kit' && p.id === 'creator-pack'));
+}
 
 // Fallback payment receiver address (Matches production recipient: 0x1750C0c093650C36DcF45843446567FF3f50cC5A)
 export const DEV_PAYMENT_RECIPIENT = '0x1750C0c093650C36DcF45843446567FF3f50cC5A';

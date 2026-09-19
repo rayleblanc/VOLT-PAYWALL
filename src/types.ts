@@ -15,8 +15,10 @@ export interface CreateOrderParams {
 export interface CreateOrderResponse {
   orderId: string;
   productId: string;
+  productName?: string;
+  deliveryMode?: 'DRIVE_FILE' | 'CREDITS';
   paymentMode?: 'wallet' | 'manual';
-  amount: string; // STRICTLY string! (e.g. "39" or "39.4271"). Never number.
+  amount: string; // STRICTLY string! (e.g. "29" or "9"). Never number.
   expectedAmount?: string;
   expectedUnits?: string;
   currency: 'USDT';
@@ -29,6 +31,9 @@ export interface CreateOrderResponse {
 
 export interface OrderStatusResponse {
   orderId: string;
+  productId?: string;
+  productName?: string;
+  deliveryMode?: 'DRIVE_FILE' | 'CREDITS';
   status: OrderStatus;
   paymentMode?: 'wallet' | 'manual';
   amount: string; // STRICTLY string
@@ -42,6 +47,12 @@ export interface OrderStatusResponse {
   txHash?: string;
   confirmations?: number;
   createdBlock?: number | null;
+  token?: string;
+  downloadUrl?: string;
+  accessToken?: string;
+  creditsRemaining?: number;
+  initialCredits?: number;
+  fixerUrl?: string;
 }
 
 export interface ApiError {
@@ -60,8 +71,9 @@ export interface Order {
   orderId: string;
   productId: string;
   productName: string;
+  deliveryMode?: 'DRIVE_FILE' | 'CREDITS';
   paymentMode?: 'wallet' | 'manual';
-  amount: string; // STRICTLY string (e.g. "39" or "39.4271")
+  amount: string; // STRICTLY string (e.g. "29" or "9")
   expectedAmount?: string;
   expectedUnits?: string;
   currency: 'USDT';
@@ -72,6 +84,12 @@ export interface Order {
   status: OrderStatus;
   txHash?: string;
   confirmations?: number;
+  token?: string;
+  downloadUrl?: string;
+  accessToken?: string;
+  creditsRemaining?: number;
+  initialCredits?: number;
+  fixerUrl?: string;
 }
 
 export interface ApiClientResponse<T> {

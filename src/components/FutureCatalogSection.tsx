@@ -1,75 +1,164 @@
 import React from 'react';
-import { Layers, Clock, Sparkles, Shield, ArrowRight } from 'lucide-react';
+import { Layers, Clock, Sparkles, ShieldCheck, ArrowRight, CheckCircle2, Zap, Terminal } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { PRODUCTS_CATALOG } from '../config';
 
-export const FutureCatalogSection: React.FC = () => {
+interface FutureCatalogSectionProps {
+  onSelectProduct?: (productId: string) => void;
+}
+
+export const FutureCatalogSection: React.FC<FutureCatalogSectionProps> = ({ onSelectProduct }) => {
   const { t, language } = useLanguage();
   const isSpanish = language === 'ES';
 
-  // Filter out the active product so only the future roadmap placeholders appear here
-  const upcomingProducts = PRODUCTS_CATALOG.filter((p) => !p.active);
+  const activeProducts = PRODUCTS_CATALOG.filter((p) => p.active);
+  const roadmapProducts = PRODUCTS_CATALOG.filter((p) => !p.active);
+
+  const handleSelect = (id: string) => {
+    if (onSelectProduct) {
+      onSelectProduct(id);
+    }
+    const pricingElem = document.getElementById('pricing-block');
+    if (pricingElem) {
+      pricingElem.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <section className="w-full py-12 sm:py-16 border-t border-white/5 bg-[#0a0a0a]" id="catalog-roadmap">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-10">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[11px] font-mono font-bold uppercase tracking-wider mb-4">
+        <div className="text-center max-w-2xl mx-auto">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFB800]/10 border border-[#FFB800]/20 text-[#FFB800] text-[11px] font-mono font-bold uppercase tracking-wider mb-3">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>{t.catalog?.badge || 'FUTURE ROADMAP'}</span>
+            <span>{isSpanish ? 'CATÁLOGO OFICIAL VOLT' : 'OFFICIAL VOLT CATALOG'}</span>
           </div>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight mb-3">
-            {t.catalog?.title || 'More from VOLT — coming next'}
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">
+            {isSpanish ? 'Herramientas de Software VOLT' : 'More from the VOLT Ecosystem'}
           </h2>
           <p className="text-sm sm:text-base text-gray-400 font-medium">
-            {t.catalog?.startsCopy || 'VOLT starts with self-hosted USDT checkout. More tools coming.'}
+            {isSpanish
+              ? 'Productos listos para producción y herramientas especializadas cobradas 100% en USDT (BEP-20).'
+              : 'Production-ready software and developer tools settled 100% directly in USDT on BNB Smart Chain.'}
           </p>
         </div>
 
-        {/* Catalog Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-          {upcomingProducts.map((item) => (
-            <div
-              key={item.id}
-              className="p-6 rounded-2xl bg-[#121212] border border-white/10 relative overflow-hidden flex flex-col justify-between group hover:border-white/20 transition-all"
-            >
-              {/* Coming Soon Pill */}
-              <div className="flex items-center justify-between gap-2 mb-4">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#222222] border border-white/10 text-gray-300 text-xs font-mono font-bold">
-                  <Clock className="w-3.5 h-3.5 text-[#FFB800]" />
-                  <span>{t.catalog?.comingSoonTag || 'Coming soon'}</span>
+        {/* 1. Live Available Products */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#00C853] animate-pulse" />
+            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-gray-400">
+              {isSpanish ? 'Disponibles Ahora en la Tienda' : 'Active & Available Now'}
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {activeProducts.map((item) => {
+              const isKit = item.id === 'creator-pack';
+              return (
+                <div
+                  key={item.id}
+                  className={`p-6 rounded-2xl border relative overflow-hidden flex flex-col justify-between transition-all ${
+                    isKit
+                      ? 'bg-[#121212] border-[#FFB800]/30 hover:border-[#FFB800]/60'
+                      : 'bg-[#121212] border-cyan-500/30 hover:border-cyan-500/60'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase ${
+                          isKit
+                            ? 'bg-[#FFB800]/15 text-[#FFB800] border border-[#FFB800]/30'
+                            : 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
+                        }`}
+                      >
+                        {isKit ? <Zap className="w-3 h-3" /> : <Terminal className="w-3 h-3" />}
+                        <span>{item.deliveryMode === 'DRIVE_FILE' ? 'Source Code ZIP' : '5 AI Credits Key'}</span>
+                      </span>
+                      <span className="text-sm font-black font-mono text-white">
+                        {item.price} USDT <span className="text-[10px] text-gray-400 font-normal">BEP-20</span>
+                      </span>
+                    </div>
+
+                    <h4 className="text-lg font-bold text-white mb-1.5">{item.name}</h4>
+                    <p className="text-xs sm:text-sm text-gray-400 leading-relaxed mb-4">
+                      {item.description}
+                    </p>
+
+                    <div className="space-y-1.5 mb-6">
+                      {item.features.slice(0, 3).map((feat, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-xs text-gray-300">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#00C853] shrink-0" />
+                          <span>{feat}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelect(item.id)}
+                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      isKit
+                        ? 'bg-[#FFB800] hover:bg-[#FFC107] text-black shadow-lg shadow-[#FFB800]/10'
+                        : 'bg-cyan-500 hover:bg-cyan-400 text-black shadow-lg shadow-cyan-500/10'
+                    }`}
+                  >
+                    <span>{isSpanish ? `Comprar ${item.name} (${item.price} USDT)` : `Select ${item.name} (${item.price} USDT)`}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-                <span className="text-xs font-mono text-gray-500">BSC · USDT</span>
-              </div>
-
-              {/* Title & Description */}
-              <div className="space-y-2 mb-6">
-                <h3 className="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors">
-                  {item.name}
-                </h3>
-                <p className="text-sm text-gray-400 leading-relaxed">
-                  {item.description}
-                </p>
-              </div>
-
-              {/* Footer status (NO checkout) */}
-              <div className="pt-4 border-t border-white/5 flex items-center justify-between text-xs text-gray-500 font-mono">
-                <span>Estimated: ~{item.price} USDT</span>
-                <span className="text-gray-400 font-medium">
-                  {isSpanish ? 'En desarrollo' : 'In active development'}
-                </span>
-              </div>
-            </div>
-          ))}
+              );
+            })}
+          </div>
         </div>
 
-        {/* Philosophy Footer Banner */}
-        <div className="mt-8 p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center">
+        {/* 2. Upcoming Roadmap (No fake buy buttons) */}
+        <div className="space-y-4 pt-4">
+          <div className="flex items-center gap-2">
+            <Clock className="w-3.5 h-3.5 text-gray-500" />
+            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-gray-500">
+              {isSpanish ? 'Próximos Lanzamientos (Hoja de Ruta)' : 'Roadmap & Future Extensions'}
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {roadmapProducts.map((item) => (
+              <div
+                key={item.id}
+                className="p-5 rounded-2xl bg-[#0e0e0e] border border-white/5 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white/5 text-gray-400 text-[11px] font-mono font-bold">
+                      <Clock className="w-3 h-3 text-gray-500" />
+                      <span>{isSpanish ? 'En Desarrollo' : 'In Development'}</span>
+                    </span>
+                    <span className="text-xs font-mono text-gray-500">~{item.price} USDT</span>
+                  </div>
+
+                  <h4 className="text-base font-bold text-gray-200 mb-1">{item.name}</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed mb-3">
+                    {item.description}
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-gray-500 font-mono">
+                  <span>BSC · BEP-20</span>
+                  <span>{isSpanish ? 'Sin órdenes activas' : 'Not open for purchase'}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer Guarantee */}
+        <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center">
           <p className="text-xs text-gray-400 font-mono">
-            💡 {isSpanish
-              ? 'Arquitectura modular Cloudflare Workers + BEP-20. Un solo producto activo a la vez para máxima estabilidad.'
-              : 'Modular Cloudflare Workers + BEP-20 architecture. One active core product at a time for maximum stability.'}
+            {isSpanish
+              ? '🔒 Seguridad garantizada: Solo los productos activos pueden ser ordenados. Todos los pagos se procesan en USDT BEP-20 directo a tu wallet.'
+              : '🔒 Cryptographic assurance: Only active products accept orders. All checkouts settle directly via USDT (BEP-20) on BNB Smart Chain.'}
           </p>
         </div>
       </div>
